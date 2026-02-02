@@ -1,0 +1,1001 @@
+Complaint_ID,Location,Complaint_Text,Category,Priority_Label
+CMP-1000,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1001,Hyderabad,"Unsafe area at night in Hyderabad, police patrolling required.",Women Safety,High
+CMP-1002,Delhi,Garbage not collected for days in Delhi.,Garbage Disposal,Low
+CMP-1003,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1004,Bengaluru,"Traffic signals not working at Bengaluru, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1005,Bengaluru,Patient not treated in emergency ward at Bengaluru.,Hospital Emergency,High
+CMP-1006,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1007,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1008,Hyderabad,Power outage since morning in Hyderabad.,Electricity Outage,Medium
+CMP-1009,Bengaluru,Road repair pending for months in Bengaluru.,Road Damage,Medium
+CMP-1010,Bengaluru,No water supply in Bengaluru for 3 days.,Water Supply,Low
+CMP-1011,Bengaluru,"Ambulance delayed, urgent help needed in Bengaluru.",Hospital Emergency,High
+CMP-1012,Chennai,Officer demanded bribe for service approval in Chennai.,Corruption Bribe,High
+CMP-1013,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1014,Chennai,Frequent voltage fluctuation in Chennai.,Electricity Outage,Medium
+CMP-1015,Chennai,"Unsafe area at night in Chennai, police patrolling required.",Women Safety,High
+CMP-1016,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1017,Mumbai,Garbage not collected for days in Mumbai.,Garbage Disposal,Low
+CMP-1018,Hyderabad,Patient not treated in emergency ward at Hyderabad.,Hospital Emergency,High
+CMP-1019,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1020,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1021,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1022,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1023,Mumbai,"Ambulance delayed, urgent help needed in Mumbai.",Hospital Emergency,High
+CMP-1024,Chennai,Officer demanded bribe for service approval in Chennai.,Corruption Bribe,High
+CMP-1025,Chennai,"Unsafe area at night in Chennai, police patrolling required.",Women Safety,High
+CMP-1026,Delhi,Dirty drinking water coming from taps in Delhi.,Water Supply,Low
+CMP-1027,Bengaluru,"Traffic signals not working at Bengaluru, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1028,Bengaluru,"Ambulance delayed, urgent help needed in Bengaluru.",Hospital Emergency,High
+CMP-1029,Chennai,Power outage since morning in Chennai.,Electricity Outage,Medium
+CMP-1030,Chennai,Patient not treated in emergency ward at Chennai.,Hospital Emergency,High
+CMP-1031,Bengaluru,No water supply in Bengaluru for 3 days.,Water Supply,Low
+CMP-1032,Chennai,No water supply in Chennai for 3 days.,Water Supply,Low
+CMP-1033,Delhi,Illegal payments forced for basic work in Delhi.,Corruption Bribe,High
+CMP-1034,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1035,Bengaluru,"Traffic signals not working at Bengaluru, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1036,Bengaluru,Patient not treated in emergency ward at Bengaluru.,Hospital Emergency,High
+CMP-1037,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1038,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1039,Delhi,Frequent voltage fluctuation in Delhi.,Electricity Outage,Medium
+CMP-1040,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1041,Chennai,Patient not treated in emergency ward at Chennai.,Hospital Emergency,High
+CMP-1042,Chennai,Dirty drinking water coming from taps in Chennai.,Water Supply,Low
+CMP-1043,Bengaluru,Frequent voltage fluctuation in Bengaluru.,Electricity Outage,Medium
+CMP-1044,Mumbai,Huge potholes causing accidents near Mumbai.,Road Damage,Medium
+CMP-1045,Hyderabad,Dirty drinking water coming from taps in Hyderabad.,Water Supply,Low
+CMP-1046,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1047,Chennai,"Unsafe area at night in Chennai, police patrolling required.",Women Safety,High
+CMP-1048,Bengaluru,Frequent voltage fluctuation in Bengaluru.,Electricity Outage,Medium
+CMP-1049,Mumbai,Road repair pending for months in Mumbai.,Road Damage,Medium
+CMP-1050,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1051,Chennai,"Unsafe area at night in Chennai, police patrolling required.",Women Safety,High
+CMP-1052,Hyderabad,Dirty drinking water coming from taps in Hyderabad.,Water Supply,Low
+CMP-1053,Mumbai,Illegal payments forced for basic work in Mumbai.,Corruption Bribe,High
+CMP-1054,Bengaluru,Huge potholes causing accidents near Bengaluru.,Road Damage,Medium
+CMP-1055,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1056,Mumbai,Harassment incidents reported near Mumbai. Immediate action needed.,Women Safety,High
+CMP-1057,Hyderabad,"Unsafe area at night in Hyderabad, police patrolling required.",Women Safety,High
+CMP-1058,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1059,Chennai,Huge potholes causing accidents near Chennai.,Road Damage,Medium
+CMP-1060,Chennai,Broken traffic lights causing congestion in Chennai.,Traffic Signal Failure,Medium
+CMP-1061,Delhi,Power outage since morning in Delhi.,Electricity Outage,Medium
+CMP-1062,Chennai,No water supply in Chennai for 3 days.,Water Supply,Low
+CMP-1063,Bengaluru,Dirty drinking water coming from taps in Bengaluru.,Water Supply,Low
+CMP-1064,Mumbai,Harassment incidents reported near Mumbai. Immediate action needed.,Women Safety,High
+CMP-1065,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1066,Delhi,"Ambulance delayed, urgent help needed in Delhi.",Hospital Emergency,High
+CMP-1067,Hyderabad,Patient not treated in emergency ward at Hyderabad.,Hospital Emergency,High
+CMP-1068,Bengaluru,No water supply in Bengaluru for 3 days.,Water Supply,Low
+CMP-1069,Chennai,Road repair pending for months in Chennai.,Road Damage,Medium
+CMP-1070,Bengaluru,Road repair pending for months in Bengaluru.,Road Damage,Medium
+CMP-1071,Delhi,Patient not treated in emergency ward at Delhi.,Hospital Emergency,High
+CMP-1072,Mumbai,Garbage not collected for days in Mumbai.,Garbage Disposal,Low
+CMP-1073,Mumbai,Overflowing waste bins causing bad smell in Mumbai.,Garbage Disposal,Low
+CMP-1074,Mumbai,"Unsafe area at night in Mumbai, police patrolling required.",Women Safety,High
+CMP-1075,Bengaluru,Frequent voltage fluctuation in Bengaluru.,Electricity Outage,Medium
+CMP-1076,Bengaluru,Power outage since morning in Bengaluru.,Electricity Outage,Medium
+CMP-1077,Bengaluru,Illegal payments forced for basic work in Bengaluru.,Corruption Bribe,High
+CMP-1078,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1079,Hyderabad,Road repair pending for months in Hyderabad.,Road Damage,Medium
+CMP-1080,Bengaluru,Huge potholes causing accidents near Bengaluru.,Road Damage,Medium
+CMP-1081,Mumbai,Illegal payments forced for basic work in Mumbai.,Corruption Bribe,High
+CMP-1082,Chennai,No water supply in Chennai for 3 days.,Water Supply,Low
+CMP-1083,Hyderabad,Road repair pending for months in Hyderabad.,Road Damage,Medium
+CMP-1084,Bengaluru,Huge potholes causing accidents near Bengaluru.,Road Damage,Medium
+CMP-1085,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1086,Chennai,"Unsafe area at night in Chennai, police patrolling required.",Women Safety,High
+CMP-1087,Bengaluru,Huge potholes causing accidents near Bengaluru.,Road Damage,Medium
+CMP-1088,Delhi,Dirty drinking water coming from taps in Delhi.,Water Supply,Low
+CMP-1089,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1090,Bengaluru,Road repair pending for months in Bengaluru.,Road Damage,Medium
+CMP-1091,Bengaluru,Dirty drinking water coming from taps in Bengaluru.,Water Supply,Low
+CMP-1092,Hyderabad,Illegal payments forced for basic work in Hyderabad.,Corruption Bribe,High
+CMP-1093,Hyderabad,Garbage not collected for days in Hyderabad.,Garbage Disposal,Low
+CMP-1094,Delhi,Patient not treated in emergency ward at Delhi.,Hospital Emergency,High
+CMP-1095,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1096,Delhi,"Traffic signals not working at Delhi, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1097,Mumbai,"Unsafe area at night in Mumbai, police patrolling required.",Women Safety,High
+CMP-1098,Delhi,Road repair pending for months in Delhi.,Road Damage,Medium
+CMP-1099,Chennai,Officer demanded bribe for service approval in Chennai.,Corruption Bribe,High
+CMP-1100,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1101,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1102,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1103,Delhi,Illegal payments forced for basic work in Delhi.,Corruption Bribe,High
+CMP-1104,Delhi,"Ambulance delayed, urgent help needed in Delhi.",Hospital Emergency,High
+CMP-1105,Hyderabad,Broken traffic lights causing congestion in Hyderabad.,Traffic Signal Failure,Medium
+CMP-1106,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1107,Hyderabad,Harassment incidents reported near Hyderabad. Immediate action needed.,Women Safety,High
+CMP-1108,Hyderabad,Garbage not collected for days in Hyderabad.,Garbage Disposal,Low
+CMP-1109,Delhi,"Ambulance delayed, urgent help needed in Delhi.",Hospital Emergency,High
+CMP-1110,Bengaluru,Dirty drinking water coming from taps in Bengaluru.,Water Supply,Low
+CMP-1111,Bengaluru,"Ambulance delayed, urgent help needed in Bengaluru.",Hospital Emergency,High
+CMP-1112,Bengaluru,Patient not treated in emergency ward at Bengaluru.,Hospital Emergency,High
+CMP-1113,Mumbai,Huge potholes causing accidents near Mumbai.,Road Damage,Medium
+CMP-1114,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1115,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1116,Mumbai,Illegal payments forced for basic work in Mumbai.,Corruption Bribe,High
+CMP-1117,Bengaluru,Road repair pending for months in Bengaluru.,Road Damage,Medium
+CMP-1118,Hyderabad,Officer demanded bribe for service approval in Hyderabad.,Corruption Bribe,High
+CMP-1119,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1120,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1121,Chennai,Huge potholes causing accidents near Chennai.,Road Damage,Medium
+CMP-1122,Bengaluru,Road repair pending for months in Bengaluru.,Road Damage,Medium
+CMP-1123,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1124,Chennai,Harassment incidents reported near Chennai. Immediate action needed.,Women Safety,High
+CMP-1125,Hyderabad,Patient not treated in emergency ward at Hyderabad.,Hospital Emergency,High
+CMP-1126,Hyderabad,"Unsafe area at night in Hyderabad, police patrolling required.",Women Safety,High
+CMP-1127,Bengaluru,"Traffic signals not working at Bengaluru, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1128,Delhi,Garbage not collected for days in Delhi.,Garbage Disposal,Low
+CMP-1129,Hyderabad,Dirty drinking water coming from taps in Hyderabad.,Water Supply,Low
+CMP-1130,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1131,Mumbai,Overflowing waste bins causing bad smell in Mumbai.,Garbage Disposal,Low
+CMP-1132,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1133,Chennai,No water supply in Chennai for 3 days.,Water Supply,Low
+CMP-1134,Bengaluru,Harassment incidents reported near Bengaluru. Immediate action needed.,Women Safety,High
+CMP-1135,Hyderabad,Road repair pending for months in Hyderabad.,Road Damage,Medium
+CMP-1136,Delhi,"Traffic signals not working at Delhi, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1137,Hyderabad,Illegal payments forced for basic work in Hyderabad.,Corruption Bribe,High
+CMP-1138,Mumbai,No water supply in Mumbai for 3 days.,Water Supply,Low
+CMP-1139,Delhi,Patient not treated in emergency ward at Delhi.,Hospital Emergency,High
+CMP-1140,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1141,Hyderabad,Dirty drinking water coming from taps in Hyderabad.,Water Supply,Low
+CMP-1142,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1143,Delhi,"Ambulance delayed, urgent help needed in Delhi.",Hospital Emergency,High
+CMP-1144,Mumbai,Huge potholes causing accidents near Mumbai.,Road Damage,Medium
+CMP-1145,Bengaluru,No water supply in Bengaluru for 3 days.,Water Supply,Low
+CMP-1146,Chennai,Dirty drinking water coming from taps in Chennai.,Water Supply,Low
+CMP-1147,Chennai,"Unsafe area at night in Chennai, police patrolling required.",Women Safety,High
+CMP-1148,Delhi,Overflowing waste bins causing bad smell in Delhi.,Garbage Disposal,Low
+CMP-1149,Hyderabad,Officer demanded bribe for service approval in Hyderabad.,Corruption Bribe,High
+CMP-1150,Chennai,Huge potholes causing accidents near Chennai.,Road Damage,Medium
+CMP-1151,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1152,Mumbai,Dirty drinking water coming from taps in Mumbai.,Water Supply,Low
+CMP-1153,Mumbai,Garbage not collected for days in Mumbai.,Garbage Disposal,Low
+CMP-1154,Bengaluru,Officer demanded bribe for service approval in Bengaluru.,Corruption Bribe,High
+CMP-1155,Bengaluru,Huge potholes causing accidents near Bengaluru.,Road Damage,Medium
+CMP-1156,Mumbai,Road repair pending for months in Mumbai.,Road Damage,Medium
+CMP-1157,Bengaluru,Officer demanded bribe for service approval in Bengaluru.,Corruption Bribe,High
+CMP-1158,Bengaluru,"Unsafe area at night in Bengaluru, police patrolling required.",Women Safety,High
+CMP-1159,Chennai,Patient not treated in emergency ward at Chennai.,Hospital Emergency,High
+CMP-1160,Chennai,No water supply in Chennai for 3 days.,Water Supply,Low
+CMP-1161,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1162,Mumbai,"Ambulance delayed, urgent help needed in Mumbai.",Hospital Emergency,High
+CMP-1163,Mumbai,Frequent voltage fluctuation in Mumbai.,Electricity Outage,Medium
+CMP-1164,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1165,Delhi,Garbage not collected for days in Delhi.,Garbage Disposal,Low
+CMP-1166,Mumbai,Patient not treated in emergency ward at Mumbai.,Hospital Emergency,High
+CMP-1167,Delhi,Overflowing waste bins causing bad smell in Delhi.,Garbage Disposal,Low
+CMP-1168,Hyderabad,Illegal payments forced for basic work in Hyderabad.,Corruption Bribe,High
+CMP-1169,Delhi,Patient not treated in emergency ward at Delhi.,Hospital Emergency,High
+CMP-1170,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1171,Bengaluru,Huge potholes causing accidents near Bengaluru.,Road Damage,Medium
+CMP-1172,Chennai,Patient not treated in emergency ward at Chennai.,Hospital Emergency,High
+CMP-1173,Chennai,Garbage not collected for days in Chennai.,Garbage Disposal,Low
+CMP-1174,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1175,Delhi,Power outage since morning in Delhi.,Electricity Outage,Medium
+CMP-1176,Mumbai,Frequent voltage fluctuation in Mumbai.,Electricity Outage,Medium
+CMP-1177,Chennai,Officer demanded bribe for service approval in Chennai.,Corruption Bribe,High
+CMP-1178,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1179,Chennai,Dirty drinking water coming from taps in Chennai.,Water Supply,Low
+CMP-1180,Hyderabad,Patient not treated in emergency ward at Hyderabad.,Hospital Emergency,High
+CMP-1181,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1182,Hyderabad,"Unsafe area at night in Hyderabad, police patrolling required.",Women Safety,High
+CMP-1183,Delhi,Officer demanded bribe for service approval in Delhi.,Corruption Bribe,High
+CMP-1184,Hyderabad,"Ambulance delayed, urgent help needed in Hyderabad.",Hospital Emergency,High
+CMP-1185,Mumbai,"Ambulance delayed, urgent help needed in Mumbai.",Hospital Emergency,High
+CMP-1186,Hyderabad,Patient not treated in emergency ward at Hyderabad.,Hospital Emergency,High
+CMP-1187,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1188,Bengaluru,"Unsafe area at night in Bengaluru, police patrolling required.",Women Safety,High
+CMP-1189,Mumbai,Frequent voltage fluctuation in Mumbai.,Electricity Outage,Medium
+CMP-1190,Bengaluru,Power outage since morning in Bengaluru.,Electricity Outage,Medium
+CMP-1191,Mumbai,Harassment incidents reported near Mumbai. Immediate action needed.,Women Safety,High
+CMP-1192,Delhi,Patient not treated in emergency ward at Delhi.,Hospital Emergency,High
+CMP-1193,Hyderabad,Garbage not collected for days in Hyderabad.,Garbage Disposal,Low
+CMP-1194,Bengaluru,No water supply in Bengaluru for 3 days.,Water Supply,Low
+CMP-1195,Bengaluru,Frequent voltage fluctuation in Bengaluru.,Electricity Outage,Medium
+CMP-1196,Delhi,Frequent voltage fluctuation in Delhi.,Electricity Outage,Medium
+CMP-1197,Chennai,Officer demanded bribe for service approval in Chennai.,Corruption Bribe,High
+CMP-1198,Delhi,Power outage since morning in Delhi.,Electricity Outage,Medium
+CMP-1199,Mumbai,Overflowing waste bins causing bad smell in Mumbai.,Garbage Disposal,Low
+CMP-1200,Mumbai,"Ambulance delayed, urgent help needed in Mumbai.",Hospital Emergency,High
+CMP-1201,Bengaluru,"Unsafe area at night in Bengaluru, police patrolling required.",Women Safety,High
+CMP-1202,Mumbai,Officer demanded bribe for service approval in Mumbai.,Corruption Bribe,High
+CMP-1203,Bengaluru,"Unsafe area at night in Bengaluru, police patrolling required.",Women Safety,High
+CMP-1204,Delhi,Broken traffic lights causing congestion in Delhi.,Traffic Signal Failure,Medium
+CMP-1205,Chennai,Power outage since morning in Chennai.,Electricity Outage,Medium
+CMP-1206,Hyderabad,Harassment incidents reported near Hyderabad. Immediate action needed.,Women Safety,High
+CMP-1207,Bengaluru,Dirty drinking water coming from taps in Bengaluru.,Water Supply,Low
+CMP-1208,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1209,Delhi,Overflowing waste bins causing bad smell in Delhi.,Garbage Disposal,Low
+CMP-1210,Mumbai,Patient not treated in emergency ward at Mumbai.,Hospital Emergency,High
+CMP-1211,Bengaluru,Huge potholes causing accidents near Bengaluru.,Road Damage,Medium
+CMP-1212,Hyderabad,Overflowing waste bins causing bad smell in Hyderabad.,Garbage Disposal,Low
+CMP-1213,Mumbai,Power outage since morning in Mumbai.,Electricity Outage,Medium
+CMP-1214,Chennai,Frequent voltage fluctuation in Chennai.,Electricity Outage,Medium
+CMP-1215,Chennai,Frequent voltage fluctuation in Chennai.,Electricity Outage,Medium
+CMP-1216,Bengaluru,No water supply in Bengaluru for 3 days.,Water Supply,Low
+CMP-1217,Hyderabad,"Unsafe area at night in Hyderabad, police patrolling required.",Women Safety,High
+CMP-1218,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1219,Chennai,Garbage not collected for days in Chennai.,Garbage Disposal,Low
+CMP-1220,Delhi,Power outage since morning in Delhi.,Electricity Outage,Medium
+CMP-1221,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1222,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1223,Bengaluru,"Ambulance delayed, urgent help needed in Bengaluru.",Hospital Emergency,High
+CMP-1224,Mumbai,Garbage not collected for days in Mumbai.,Garbage Disposal,Low
+CMP-1225,Delhi,Road repair pending for months in Delhi.,Road Damage,Medium
+CMP-1226,Mumbai,Harassment incidents reported near Mumbai. Immediate action needed.,Women Safety,High
+CMP-1227,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1228,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1229,Mumbai,"Unsafe area at night in Mumbai, police patrolling required.",Women Safety,High
+CMP-1230,Bengaluru,Illegal payments forced for basic work in Bengaluru.,Corruption Bribe,High
+CMP-1231,Mumbai,Officer demanded bribe for service approval in Mumbai.,Corruption Bribe,High
+CMP-1232,Bengaluru,Power outage since morning in Bengaluru.,Electricity Outage,Medium
+CMP-1233,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1234,Chennai,Patient not treated in emergency ward at Chennai.,Hospital Emergency,High
+CMP-1235,Bengaluru,"Traffic signals not working at Bengaluru, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1236,Mumbai,Power outage since morning in Mumbai.,Electricity Outage,Medium
+CMP-1237,Chennai,Harassment incidents reported near Chennai. Immediate action needed.,Women Safety,High
+CMP-1238,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1239,Bengaluru,Patient not treated in emergency ward at Bengaluru.,Hospital Emergency,High
+CMP-1240,Mumbai,Overflowing waste bins causing bad smell in Mumbai.,Garbage Disposal,Low
+CMP-1241,Chennai,Officer demanded bribe for service approval in Chennai.,Corruption Bribe,High
+CMP-1242,Bengaluru,Harassment incidents reported near Bengaluru. Immediate action needed.,Women Safety,High
+CMP-1243,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1244,Delhi,Dirty drinking water coming from taps in Delhi.,Water Supply,Low
+CMP-1245,Delhi,Huge potholes causing accidents near Delhi.,Road Damage,Medium
+CMP-1246,Hyderabad,No water supply in Hyderabad for 3 days.,Water Supply,Low
+CMP-1247,Chennai,Garbage not collected for days in Chennai.,Garbage Disposal,Low
+CMP-1248,Bengaluru,"Traffic signals not working at Bengaluru, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1249,Delhi,Illegal payments forced for basic work in Delhi.,Corruption Bribe,High
+CMP-1250,Chennai,Officer demanded bribe for service approval in Chennai.,Corruption Bribe,High
+CMP-1251,Chennai,Overflowing waste bins causing bad smell in Chennai.,Garbage Disposal,Low
+CMP-1252,Mumbai,Dirty drinking water coming from taps in Mumbai.,Water Supply,Low
+CMP-1253,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1254,Chennai,Road repair pending for months in Chennai.,Road Damage,Medium
+CMP-1255,Hyderabad,"Ambulance delayed, urgent help needed in Hyderabad.",Hospital Emergency,High
+CMP-1256,Hyderabad,Broken traffic lights causing congestion in Hyderabad.,Traffic Signal Failure,Medium
+CMP-1257,Delhi,Garbage not collected for days in Delhi.,Garbage Disposal,Low
+CMP-1258,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1259,Delhi,Illegal payments forced for basic work in Delhi.,Corruption Bribe,High
+CMP-1260,Chennai,Overflowing waste bins causing bad smell in Chennai.,Garbage Disposal,Low
+CMP-1261,Delhi,Officer demanded bribe for service approval in Delhi.,Corruption Bribe,High
+CMP-1262,Chennai,Broken traffic lights causing congestion in Chennai.,Traffic Signal Failure,Medium
+CMP-1263,Bengaluru,"Unsafe area at night in Bengaluru, police patrolling required.",Women Safety,High
+CMP-1264,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1265,Bengaluru,Harassment incidents reported near Bengaluru. Immediate action needed.,Women Safety,High
+CMP-1266,Hyderabad,Patient not treated in emergency ward at Hyderabad.,Hospital Emergency,High
+CMP-1267,Hyderabad,Broken traffic lights causing congestion in Hyderabad.,Traffic Signal Failure,Medium
+CMP-1268,Hyderabad,"Ambulance delayed, urgent help needed in Hyderabad.",Hospital Emergency,High
+CMP-1269,Hyderabad,"Unsafe area at night in Hyderabad, police patrolling required.",Women Safety,High
+CMP-1270,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1271,Bengaluru,No water supply in Bengaluru for 3 days.,Water Supply,Low
+CMP-1272,Hyderabad,Road repair pending for months in Hyderabad.,Road Damage,Medium
+CMP-1273,Hyderabad,No water supply in Hyderabad for 3 days.,Water Supply,Low
+CMP-1274,Delhi,Patient not treated in emergency ward at Delhi.,Hospital Emergency,High
+CMP-1275,Delhi,Garbage not collected for days in Delhi.,Garbage Disposal,Low
+CMP-1276,Bengaluru,No water supply in Bengaluru for 3 days.,Water Supply,Low
+CMP-1277,Mumbai,"Unsafe area at night in Mumbai, police patrolling required.",Women Safety,High
+CMP-1278,Chennai,Frequent voltage fluctuation in Chennai.,Electricity Outage,Medium
+CMP-1279,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1280,Delhi,Frequent voltage fluctuation in Delhi.,Electricity Outage,Medium
+CMP-1281,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1282,Mumbai,Power outage since morning in Mumbai.,Electricity Outage,Medium
+CMP-1283,Delhi,Huge potholes causing accidents near Delhi.,Road Damage,Medium
+CMP-1284,Bengaluru,Power outage since morning in Bengaluru.,Electricity Outage,Medium
+CMP-1285,Chennai,"Unsafe area at night in Chennai, police patrolling required.",Women Safety,High
+CMP-1286,Mumbai,Illegal payments forced for basic work in Mumbai.,Corruption Bribe,High
+CMP-1287,Bengaluru,Dirty drinking water coming from taps in Bengaluru.,Water Supply,Low
+CMP-1288,Chennai,Huge potholes causing accidents near Chennai.,Road Damage,Medium
+CMP-1289,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1290,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1291,Chennai,Frequent voltage fluctuation in Chennai.,Electricity Outage,Medium
+CMP-1292,Chennai,Road repair pending for months in Chennai.,Road Damage,Medium
+CMP-1293,Hyderabad,Patient not treated in emergency ward at Hyderabad.,Hospital Emergency,High
+CMP-1294,Delhi,Road repair pending for months in Delhi.,Road Damage,Medium
+CMP-1295,Delhi,Broken traffic lights causing congestion in Delhi.,Traffic Signal Failure,Medium
+CMP-1296,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1297,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1298,Bengaluru,Frequent voltage fluctuation in Bengaluru.,Electricity Outage,Medium
+CMP-1299,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1300,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1301,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1302,Delhi,Officer demanded bribe for service approval in Delhi.,Corruption Bribe,High
+CMP-1303,Delhi,Illegal payments forced for basic work in Delhi.,Corruption Bribe,High
+CMP-1304,Mumbai,Garbage not collected for days in Mumbai.,Garbage Disposal,Low
+CMP-1305,Chennai,Road repair pending for months in Chennai.,Road Damage,Medium
+CMP-1306,Hyderabad,Garbage not collected for days in Hyderabad.,Garbage Disposal,Low
+CMP-1307,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1308,Chennai,Frequent voltage fluctuation in Chennai.,Electricity Outage,Medium
+CMP-1309,Delhi,Power outage since morning in Delhi.,Electricity Outage,Medium
+CMP-1310,Delhi,Garbage not collected for days in Delhi.,Garbage Disposal,Low
+CMP-1311,Chennai,Harassment incidents reported near Chennai. Immediate action needed.,Women Safety,High
+CMP-1312,Hyderabad,Road repair pending for months in Hyderabad.,Road Damage,Medium
+CMP-1313,Bengaluru,"Traffic signals not working at Bengaluru, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1314,Mumbai,"Unsafe area at night in Mumbai, police patrolling required.",Women Safety,High
+CMP-1315,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1316,Chennai,Broken traffic lights causing congestion in Chennai.,Traffic Signal Failure,Medium
+CMP-1317,Bengaluru,Patient not treated in emergency ward at Bengaluru.,Hospital Emergency,High
+CMP-1318,Hyderabad,"Ambulance delayed, urgent help needed in Hyderabad.",Hospital Emergency,High
+CMP-1319,Mumbai,Overflowing waste bins causing bad smell in Mumbai.,Garbage Disposal,Low
+CMP-1320,Bengaluru,Patient not treated in emergency ward at Bengaluru.,Hospital Emergency,High
+CMP-1321,Delhi,"Traffic signals not working at Delhi, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1322,Mumbai,No water supply in Mumbai for 3 days.,Water Supply,Low
+CMP-1323,Chennai,Garbage not collected for days in Chennai.,Garbage Disposal,Low
+CMP-1324,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1325,Mumbai,Officer demanded bribe for service approval in Mumbai.,Corruption Bribe,High
+CMP-1326,Chennai,Dirty drinking water coming from taps in Chennai.,Water Supply,Low
+CMP-1327,Chennai,Huge potholes causing accidents near Chennai.,Road Damage,Medium
+CMP-1328,Bengaluru,Illegal payments forced for basic work in Bengaluru.,Corruption Bribe,High
+CMP-1329,Bengaluru,Officer demanded bribe for service approval in Bengaluru.,Corruption Bribe,High
+CMP-1330,Bengaluru,"Unsafe area at night in Bengaluru, police patrolling required.",Women Safety,High
+CMP-1331,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1332,Mumbai,Frequent voltage fluctuation in Mumbai.,Electricity Outage,Medium
+CMP-1333,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1334,Mumbai,Illegal payments forced for basic work in Mumbai.,Corruption Bribe,High
+CMP-1335,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1336,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1337,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1338,Bengaluru,Huge potholes causing accidents near Bengaluru.,Road Damage,Medium
+CMP-1339,Chennai,Frequent voltage fluctuation in Chennai.,Electricity Outage,Medium
+CMP-1340,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1341,Chennai,Officer demanded bribe for service approval in Chennai.,Corruption Bribe,High
+CMP-1342,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1343,Hyderabad,Harassment incidents reported near Hyderabad. Immediate action needed.,Women Safety,High
+CMP-1344,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1345,Delhi,Power outage since morning in Delhi.,Electricity Outage,Medium
+CMP-1346,Delhi,Broken traffic lights causing congestion in Delhi.,Traffic Signal Failure,Medium
+CMP-1347,Mumbai,Overflowing waste bins causing bad smell in Mumbai.,Garbage Disposal,Low
+CMP-1348,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1349,Delhi,Huge potholes causing accidents near Delhi.,Road Damage,Medium
+CMP-1350,Delhi,Illegal payments forced for basic work in Delhi.,Corruption Bribe,High
+CMP-1351,Bengaluru,Officer demanded bribe for service approval in Bengaluru.,Corruption Bribe,High
+CMP-1352,Chennai,Dirty drinking water coming from taps in Chennai.,Water Supply,Low
+CMP-1353,Bengaluru,Patient not treated in emergency ward at Bengaluru.,Hospital Emergency,High
+CMP-1354,Delhi,Officer demanded bribe for service approval in Delhi.,Corruption Bribe,High
+CMP-1355,Delhi,Frequent voltage fluctuation in Delhi.,Electricity Outage,Medium
+CMP-1356,Bengaluru,Frequent voltage fluctuation in Bengaluru.,Electricity Outage,Medium
+CMP-1357,Chennai,No water supply in Chennai for 3 days.,Water Supply,Low
+CMP-1358,Chennai,No water supply in Chennai for 3 days.,Water Supply,Low
+CMP-1359,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1360,Chennai,No water supply in Chennai for 3 days.,Water Supply,Low
+CMP-1361,Bengaluru,Officer demanded bribe for service approval in Bengaluru.,Corruption Bribe,High
+CMP-1362,Bengaluru,"Traffic signals not working at Bengaluru, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1363,Bengaluru,Huge potholes causing accidents near Bengaluru.,Road Damage,Medium
+CMP-1364,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1365,Hyderabad,Patient not treated in emergency ward at Hyderabad.,Hospital Emergency,High
+CMP-1366,Mumbai,Patient not treated in emergency ward at Mumbai.,Hospital Emergency,High
+CMP-1367,Delhi,"Traffic signals not working at Delhi, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1368,Hyderabad,Officer demanded bribe for service approval in Hyderabad.,Corruption Bribe,High
+CMP-1369,Chennai,Officer demanded bribe for service approval in Chennai.,Corruption Bribe,High
+CMP-1370,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1371,Hyderabad,Illegal payments forced for basic work in Hyderabad.,Corruption Bribe,High
+CMP-1372,Chennai,Garbage not collected for days in Chennai.,Garbage Disposal,Low
+CMP-1373,Mumbai,"Unsafe area at night in Mumbai, police patrolling required.",Women Safety,High
+CMP-1374,Chennai,Harassment incidents reported near Chennai. Immediate action needed.,Women Safety,High
+CMP-1375,Delhi,"Ambulance delayed, urgent help needed in Delhi.",Hospital Emergency,High
+CMP-1376,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1377,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1378,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1379,Delhi,"Ambulance delayed, urgent help needed in Delhi.",Hospital Emergency,High
+CMP-1380,Mumbai,Dirty drinking water coming from taps in Mumbai.,Water Supply,Low
+CMP-1381,Chennai,Power outage since morning in Chennai.,Electricity Outage,Medium
+CMP-1382,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1383,Bengaluru,Road repair pending for months in Bengaluru.,Road Damage,Medium
+CMP-1384,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1385,Chennai,"Unsafe area at night in Chennai, police patrolling required.",Women Safety,High
+CMP-1386,Mumbai,Dirty drinking water coming from taps in Mumbai.,Water Supply,Low
+CMP-1387,Delhi,Huge potholes causing accidents near Delhi.,Road Damage,Medium
+CMP-1388,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1389,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1390,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1391,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1392,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1393,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1394,Delhi,Dirty drinking water coming from taps in Delhi.,Water Supply,Low
+CMP-1395,Delhi,Frequent voltage fluctuation in Delhi.,Electricity Outage,Medium
+CMP-1396,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1397,Chennai,Harassment incidents reported near Chennai. Immediate action needed.,Women Safety,High
+CMP-1398,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1399,Hyderabad,Road repair pending for months in Hyderabad.,Road Damage,Medium
+CMP-1400,Hyderabad,Overflowing waste bins causing bad smell in Hyderabad.,Garbage Disposal,Low
+CMP-1401,Bengaluru,"Ambulance delayed, urgent help needed in Bengaluru.",Hospital Emergency,High
+CMP-1402,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1403,Chennai,Broken traffic lights causing congestion in Chennai.,Traffic Signal Failure,Medium
+CMP-1404,Delhi,Garbage not collected for days in Delhi.,Garbage Disposal,Low
+CMP-1405,Chennai,Officer demanded bribe for service approval in Chennai.,Corruption Bribe,High
+CMP-1406,Delhi,Officer demanded bribe for service approval in Delhi.,Corruption Bribe,High
+CMP-1407,Mumbai,Huge potholes causing accidents near Mumbai.,Road Damage,Medium
+CMP-1408,Bengaluru,"Traffic signals not working at Bengaluru, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1409,Hyderabad,Garbage not collected for days in Hyderabad.,Garbage Disposal,Low
+CMP-1410,Mumbai,Huge potholes causing accidents near Mumbai.,Road Damage,Medium
+CMP-1411,Chennai,Garbage not collected for days in Chennai.,Garbage Disposal,Low
+CMP-1412,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1413,Chennai,Harassment incidents reported near Chennai. Immediate action needed.,Women Safety,High
+CMP-1414,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1415,Bengaluru,No water supply in Bengaluru for 3 days.,Water Supply,Low
+CMP-1416,Mumbai,Patient not treated in emergency ward at Mumbai.,Hospital Emergency,High
+CMP-1417,Hyderabad,Overflowing waste bins causing bad smell in Hyderabad.,Garbage Disposal,Low
+CMP-1418,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1419,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1420,Hyderabad,No water supply in Hyderabad for 3 days.,Water Supply,Low
+CMP-1421,Chennai,Road repair pending for months in Chennai.,Road Damage,Medium
+CMP-1422,Hyderabad,No water supply in Hyderabad for 3 days.,Water Supply,Low
+CMP-1423,Mumbai,Road repair pending for months in Mumbai.,Road Damage,Medium
+CMP-1424,Chennai,Overflowing waste bins causing bad smell in Chennai.,Garbage Disposal,Low
+CMP-1425,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1426,Hyderabad,Harassment incidents reported near Hyderabad. Immediate action needed.,Women Safety,High
+CMP-1427,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1428,Hyderabad,Broken traffic lights causing congestion in Hyderabad.,Traffic Signal Failure,Medium
+CMP-1429,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1430,Chennai,Garbage not collected for days in Chennai.,Garbage Disposal,Low
+CMP-1431,Hyderabad,No water supply in Hyderabad for 3 days.,Water Supply,Low
+CMP-1432,Chennai,Patient not treated in emergency ward at Chennai.,Hospital Emergency,High
+CMP-1433,Mumbai,"Ambulance delayed, urgent help needed in Mumbai.",Hospital Emergency,High
+CMP-1434,Mumbai,Garbage not collected for days in Mumbai.,Garbage Disposal,Low
+CMP-1435,Hyderabad,Patient not treated in emergency ward at Hyderabad.,Hospital Emergency,High
+CMP-1436,Bengaluru,Road repair pending for months in Bengaluru.,Road Damage,Medium
+CMP-1437,Delhi,Overflowing waste bins causing bad smell in Delhi.,Garbage Disposal,Low
+CMP-1438,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1439,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1440,Chennai,Overflowing waste bins causing bad smell in Chennai.,Garbage Disposal,Low
+CMP-1441,Bengaluru,Frequent voltage fluctuation in Bengaluru.,Electricity Outage,Medium
+CMP-1442,Delhi,Dirty drinking water coming from taps in Delhi.,Water Supply,Low
+CMP-1443,Bengaluru,Illegal payments forced for basic work in Bengaluru.,Corruption Bribe,High
+CMP-1444,Delhi,Road repair pending for months in Delhi.,Road Damage,Medium
+CMP-1445,Mumbai,Road repair pending for months in Mumbai.,Road Damage,Medium
+CMP-1446,Mumbai,Overflowing waste bins causing bad smell in Mumbai.,Garbage Disposal,Low
+CMP-1447,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1448,Hyderabad,Patient not treated in emergency ward at Hyderabad.,Hospital Emergency,High
+CMP-1449,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1450,Chennai,Overflowing waste bins causing bad smell in Chennai.,Garbage Disposal,Low
+CMP-1451,Chennai,Overflowing waste bins causing bad smell in Chennai.,Garbage Disposal,Low
+CMP-1452,Mumbai,No water supply in Mumbai for 3 days.,Water Supply,Low
+CMP-1453,Hyderabad,Harassment incidents reported near Hyderabad. Immediate action needed.,Women Safety,High
+CMP-1454,Chennai,Road repair pending for months in Chennai.,Road Damage,Medium
+CMP-1455,Delhi,Overflowing waste bins causing bad smell in Delhi.,Garbage Disposal,Low
+CMP-1456,Mumbai,Road repair pending for months in Mumbai.,Road Damage,Medium
+CMP-1457,Mumbai,Harassment incidents reported near Mumbai. Immediate action needed.,Women Safety,High
+CMP-1458,Bengaluru,"Ambulance delayed, urgent help needed in Bengaluru.",Hospital Emergency,High
+CMP-1459,Mumbai,Power outage since morning in Mumbai.,Electricity Outage,Medium
+CMP-1460,Chennai,No water supply in Chennai for 3 days.,Water Supply,Low
+CMP-1461,Bengaluru,Harassment incidents reported near Bengaluru. Immediate action needed.,Women Safety,High
+CMP-1462,Bengaluru,"Unsafe area at night in Bengaluru, police patrolling required.",Women Safety,High
+CMP-1463,Mumbai,Harassment incidents reported near Mumbai. Immediate action needed.,Women Safety,High
+CMP-1464,Hyderabad,Dirty drinking water coming from taps in Hyderabad.,Water Supply,Low
+CMP-1465,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1466,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1467,Chennai,Broken traffic lights causing congestion in Chennai.,Traffic Signal Failure,Medium
+CMP-1468,Bengaluru,"Unsafe area at night in Bengaluru, police patrolling required.",Women Safety,High
+CMP-1469,Delhi,Dirty drinking water coming from taps in Delhi.,Water Supply,Low
+CMP-1470,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1471,Bengaluru,Power outage since morning in Bengaluru.,Electricity Outage,Medium
+CMP-1472,Mumbai,Overflowing waste bins causing bad smell in Mumbai.,Garbage Disposal,Low
+CMP-1473,Hyderabad,Broken traffic lights causing congestion in Hyderabad.,Traffic Signal Failure,Medium
+CMP-1474,Hyderabad,Overflowing waste bins causing bad smell in Hyderabad.,Garbage Disposal,Low
+CMP-1475,Chennai,No water supply in Chennai for 3 days.,Water Supply,Low
+CMP-1476,Mumbai,Huge potholes causing accidents near Mumbai.,Road Damage,Medium
+CMP-1477,Hyderabad,Dirty drinking water coming from taps in Hyderabad.,Water Supply,Low
+CMP-1478,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1479,Delhi,Broken traffic lights causing congestion in Delhi.,Traffic Signal Failure,Medium
+CMP-1480,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1481,Chennai,Harassment incidents reported near Chennai. Immediate action needed.,Women Safety,High
+CMP-1482,Mumbai,Road repair pending for months in Mumbai.,Road Damage,Medium
+CMP-1483,Chennai,Garbage not collected for days in Chennai.,Garbage Disposal,Low
+CMP-1484,Hyderabad,"Ambulance delayed, urgent help needed in Hyderabad.",Hospital Emergency,High
+CMP-1485,Delhi,Dirty drinking water coming from taps in Delhi.,Water Supply,Low
+CMP-1486,Bengaluru,Power outage since morning in Bengaluru.,Electricity Outage,Medium
+CMP-1487,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1488,Hyderabad,Road repair pending for months in Hyderabad.,Road Damage,Medium
+CMP-1489,Delhi,Illegal payments forced for basic work in Delhi.,Corruption Bribe,High
+CMP-1490,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1491,Chennai,Overflowing waste bins causing bad smell in Chennai.,Garbage Disposal,Low
+CMP-1492,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1493,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1494,Chennai,Patient not treated in emergency ward at Chennai.,Hospital Emergency,High
+CMP-1495,Bengaluru,Frequent voltage fluctuation in Bengaluru.,Electricity Outage,Medium
+CMP-1496,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1497,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1498,Delhi,Garbage not collected for days in Delhi.,Garbage Disposal,Low
+CMP-1499,Mumbai,Patient not treated in emergency ward at Mumbai.,Hospital Emergency,High
+CMP-1500,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1501,Bengaluru,Harassment incidents reported near Bengaluru. Immediate action needed.,Women Safety,High
+CMP-1502,Hyderabad,Officer demanded bribe for service approval in Hyderabad.,Corruption Bribe,High
+CMP-1503,Delhi,Frequent voltage fluctuation in Delhi.,Electricity Outage,Medium
+CMP-1504,Delhi,Officer demanded bribe for service approval in Delhi.,Corruption Bribe,High
+CMP-1505,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1506,Bengaluru,"Unsafe area at night in Bengaluru, police patrolling required.",Women Safety,High
+CMP-1507,Hyderabad,No water supply in Hyderabad for 3 days.,Water Supply,Low
+CMP-1508,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1509,Chennai,Road repair pending for months in Chennai.,Road Damage,Medium
+CMP-1510,Delhi,Broken traffic lights causing congestion in Delhi.,Traffic Signal Failure,Medium
+CMP-1511,Delhi,Huge potholes causing accidents near Delhi.,Road Damage,Medium
+CMP-1512,Mumbai,"Unsafe area at night in Mumbai, police patrolling required.",Women Safety,High
+CMP-1513,Hyderabad,Harassment incidents reported near Hyderabad. Immediate action needed.,Women Safety,High
+CMP-1514,Delhi,Road repair pending for months in Delhi.,Road Damage,Medium
+CMP-1515,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1516,Chennai,Frequent voltage fluctuation in Chennai.,Electricity Outage,Medium
+CMP-1517,Delhi,Overflowing waste bins causing bad smell in Delhi.,Garbage Disposal,Low
+CMP-1518,Delhi,Broken traffic lights causing congestion in Delhi.,Traffic Signal Failure,Medium
+CMP-1519,Chennai,Road repair pending for months in Chennai.,Road Damage,Medium
+CMP-1520,Mumbai,"Unsafe area at night in Mumbai, police patrolling required.",Women Safety,High
+CMP-1521,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1522,Delhi,Broken traffic lights causing congestion in Delhi.,Traffic Signal Failure,Medium
+CMP-1523,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1524,Delhi,Huge potholes causing accidents near Delhi.,Road Damage,Medium
+CMP-1525,Mumbai,Dirty drinking water coming from taps in Mumbai.,Water Supply,Low
+CMP-1526,Chennai,Harassment incidents reported near Chennai. Immediate action needed.,Women Safety,High
+CMP-1527,Hyderabad,Road repair pending for months in Hyderabad.,Road Damage,Medium
+CMP-1528,Chennai,Huge potholes causing accidents near Chennai.,Road Damage,Medium
+CMP-1529,Mumbai,Overflowing waste bins causing bad smell in Mumbai.,Garbage Disposal,Low
+CMP-1530,Delhi,"Traffic signals not working at Delhi, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1531,Mumbai,Patient not treated in emergency ward at Mumbai.,Hospital Emergency,High
+CMP-1532,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1533,Chennai,Harassment incidents reported near Chennai. Immediate action needed.,Women Safety,High
+CMP-1534,Mumbai,Huge potholes causing accidents near Mumbai.,Road Damage,Medium
+CMP-1535,Mumbai,Illegal payments forced for basic work in Mumbai.,Corruption Bribe,High
+CMP-1536,Chennai,Dirty drinking water coming from taps in Chennai.,Water Supply,Low
+CMP-1537,Hyderabad,Broken traffic lights causing congestion in Hyderabad.,Traffic Signal Failure,Medium
+CMP-1538,Bengaluru,Frequent voltage fluctuation in Bengaluru.,Electricity Outage,Medium
+CMP-1539,Mumbai,Dirty drinking water coming from taps in Mumbai.,Water Supply,Low
+CMP-1540,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1541,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1542,Hyderabad,Patient not treated in emergency ward at Hyderabad.,Hospital Emergency,High
+CMP-1543,Mumbai,Patient not treated in emergency ward at Mumbai.,Hospital Emergency,High
+CMP-1544,Delhi,Broken traffic lights causing congestion in Delhi.,Traffic Signal Failure,Medium
+CMP-1545,Delhi,Huge potholes causing accidents near Delhi.,Road Damage,Medium
+CMP-1546,Mumbai,Officer demanded bribe for service approval in Mumbai.,Corruption Bribe,High
+CMP-1547,Mumbai,Overflowing waste bins causing bad smell in Mumbai.,Garbage Disposal,Low
+CMP-1548,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1549,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1550,Chennai,Frequent voltage fluctuation in Chennai.,Electricity Outage,Medium
+CMP-1551,Delhi,"Traffic signals not working at Delhi, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1552,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1553,Chennai,"Unsafe area at night in Chennai, police patrolling required.",Women Safety,High
+CMP-1554,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1555,Delhi,Power outage since morning in Delhi.,Electricity Outage,Medium
+CMP-1556,Chennai,Broken traffic lights causing congestion in Chennai.,Traffic Signal Failure,Medium
+CMP-1557,Mumbai,"Unsafe area at night in Mumbai, police patrolling required.",Women Safety,High
+CMP-1558,Hyderabad,Broken traffic lights causing congestion in Hyderabad.,Traffic Signal Failure,Medium
+CMP-1559,Delhi,Garbage not collected for days in Delhi.,Garbage Disposal,Low
+CMP-1560,Mumbai,No water supply in Mumbai for 3 days.,Water Supply,Low
+CMP-1561,Bengaluru,Dirty drinking water coming from taps in Bengaluru.,Water Supply,Low
+CMP-1562,Mumbai,Patient not treated in emergency ward at Mumbai.,Hospital Emergency,High
+CMP-1563,Delhi,Road repair pending for months in Delhi.,Road Damage,Medium
+CMP-1564,Mumbai,Overflowing waste bins causing bad smell in Mumbai.,Garbage Disposal,Low
+CMP-1565,Delhi,"Traffic signals not working at Delhi, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1566,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1567,Chennai,Harassment incidents reported near Chennai. Immediate action needed.,Women Safety,High
+CMP-1568,Delhi,Power outage since morning in Delhi.,Electricity Outage,Medium
+CMP-1569,Delhi,Dirty drinking water coming from taps in Delhi.,Water Supply,Low
+CMP-1570,Chennai,Huge potholes causing accidents near Chennai.,Road Damage,Medium
+CMP-1571,Chennai,Patient not treated in emergency ward at Chennai.,Hospital Emergency,High
+CMP-1572,Hyderabad,"Ambulance delayed, urgent help needed in Hyderabad.",Hospital Emergency,High
+CMP-1573,Mumbai,Harassment incidents reported near Mumbai. Immediate action needed.,Women Safety,High
+CMP-1574,Mumbai,Officer demanded bribe for service approval in Mumbai.,Corruption Bribe,High
+CMP-1575,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1576,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1577,Hyderabad,"Ambulance delayed, urgent help needed in Hyderabad.",Hospital Emergency,High
+CMP-1578,Chennai,Overflowing waste bins causing bad smell in Chennai.,Garbage Disposal,Low
+CMP-1579,Chennai,Garbage not collected for days in Chennai.,Garbage Disposal,Low
+CMP-1580,Mumbai,No water supply in Mumbai for 3 days.,Water Supply,Low
+CMP-1581,Bengaluru,Officer demanded bribe for service approval in Bengaluru.,Corruption Bribe,High
+CMP-1582,Chennai,Garbage not collected for days in Chennai.,Garbage Disposal,Low
+CMP-1583,Hyderabad,Patient not treated in emergency ward at Hyderabad.,Hospital Emergency,High
+CMP-1584,Delhi,Huge potholes causing accidents near Delhi.,Road Damage,Medium
+CMP-1585,Chennai,Overflowing waste bins causing bad smell in Chennai.,Garbage Disposal,Low
+CMP-1586,Chennai,Road repair pending for months in Chennai.,Road Damage,Medium
+CMP-1587,Hyderabad,"Ambulance delayed, urgent help needed in Hyderabad.",Hospital Emergency,High
+CMP-1588,Delhi,Huge potholes causing accidents near Delhi.,Road Damage,Medium
+CMP-1589,Mumbai,Road repair pending for months in Mumbai.,Road Damage,Medium
+CMP-1590,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1591,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1592,Delhi,Power outage since morning in Delhi.,Electricity Outage,Medium
+CMP-1593,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1594,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1595,Bengaluru,Illegal payments forced for basic work in Bengaluru.,Corruption Bribe,High
+CMP-1596,Delhi,Patient not treated in emergency ward at Delhi.,Hospital Emergency,High
+CMP-1597,Mumbai,Road repair pending for months in Mumbai.,Road Damage,Medium
+CMP-1598,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1599,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1600,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1601,Delhi,Garbage not collected for days in Delhi.,Garbage Disposal,Low
+CMP-1602,Delhi,"Ambulance delayed, urgent help needed in Delhi.",Hospital Emergency,High
+CMP-1603,Bengaluru,Dirty drinking water coming from taps in Bengaluru.,Water Supply,Low
+CMP-1604,Hyderabad,Garbage not collected for days in Hyderabad.,Garbage Disposal,Low
+CMP-1605,Bengaluru,Huge potholes causing accidents near Bengaluru.,Road Damage,Medium
+CMP-1606,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1607,Chennai,"Unsafe area at night in Chennai, police patrolling required.",Women Safety,High
+CMP-1608,Hyderabad,No water supply in Hyderabad for 3 days.,Water Supply,Low
+CMP-1609,Chennai,Officer demanded bribe for service approval in Chennai.,Corruption Bribe,High
+CMP-1610,Bengaluru,"Traffic signals not working at Bengaluru, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1611,Bengaluru,Huge potholes causing accidents near Bengaluru.,Road Damage,Medium
+CMP-1612,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1613,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1614,Hyderabad,Garbage not collected for days in Hyderabad.,Garbage Disposal,Low
+CMP-1615,Hyderabad,Power outage since morning in Hyderabad.,Electricity Outage,Medium
+CMP-1616,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1617,Mumbai,"Ambulance delayed, urgent help needed in Mumbai.",Hospital Emergency,High
+CMP-1618,Hyderabad,Patient not treated in emergency ward at Hyderabad.,Hospital Emergency,High
+CMP-1619,Delhi,Overflowing waste bins causing bad smell in Delhi.,Garbage Disposal,Low
+CMP-1620,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1621,Mumbai,Frequent voltage fluctuation in Mumbai.,Electricity Outage,Medium
+CMP-1622,Hyderabad,Power outage since morning in Hyderabad.,Electricity Outage,Medium
+CMP-1623,Mumbai,Illegal payments forced for basic work in Mumbai.,Corruption Bribe,High
+CMP-1624,Chennai,Dirty drinking water coming from taps in Chennai.,Water Supply,Low
+CMP-1625,Bengaluru,Officer demanded bribe for service approval in Bengaluru.,Corruption Bribe,High
+CMP-1626,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1627,Hyderabad,No water supply in Hyderabad for 3 days.,Water Supply,Low
+CMP-1628,Chennai,Frequent voltage fluctuation in Chennai.,Electricity Outage,Medium
+CMP-1629,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1630,Chennai,Huge potholes causing accidents near Chennai.,Road Damage,Medium
+CMP-1631,Bengaluru,No water supply in Bengaluru for 3 days.,Water Supply,Low
+CMP-1632,Mumbai,Frequent voltage fluctuation in Mumbai.,Electricity Outage,Medium
+CMP-1633,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1634,Mumbai,"Ambulance delayed, urgent help needed in Mumbai.",Hospital Emergency,High
+CMP-1635,Bengaluru,"Unsafe area at night in Bengaluru, police patrolling required.",Women Safety,High
+CMP-1636,Mumbai,Illegal payments forced for basic work in Mumbai.,Corruption Bribe,High
+CMP-1637,Delhi,Illegal payments forced for basic work in Delhi.,Corruption Bribe,High
+CMP-1638,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1639,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1640,Mumbai,Officer demanded bribe for service approval in Mumbai.,Corruption Bribe,High
+CMP-1641,Bengaluru,Huge potholes causing accidents near Bengaluru.,Road Damage,Medium
+CMP-1642,Delhi,Road repair pending for months in Delhi.,Road Damage,Medium
+CMP-1643,Bengaluru,Frequent voltage fluctuation in Bengaluru.,Electricity Outage,Medium
+CMP-1644,Hyderabad,Broken traffic lights causing congestion in Hyderabad.,Traffic Signal Failure,Medium
+CMP-1645,Delhi,"Traffic signals not working at Delhi, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1646,Hyderabad,Illegal payments forced for basic work in Hyderabad.,Corruption Bribe,High
+CMP-1647,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1648,Mumbai,Overflowing waste bins causing bad smell in Mumbai.,Garbage Disposal,Low
+CMP-1649,Delhi,Officer demanded bribe for service approval in Delhi.,Corruption Bribe,High
+CMP-1650,Bengaluru,Dirty drinking water coming from taps in Bengaluru.,Water Supply,Low
+CMP-1651,Hyderabad,Road repair pending for months in Hyderabad.,Road Damage,Medium
+CMP-1652,Bengaluru,Officer demanded bribe for service approval in Bengaluru.,Corruption Bribe,High
+CMP-1653,Chennai,"Unsafe area at night in Chennai, police patrolling required.",Women Safety,High
+CMP-1654,Delhi,Garbage not collected for days in Delhi.,Garbage Disposal,Low
+CMP-1655,Mumbai,Officer demanded bribe for service approval in Mumbai.,Corruption Bribe,High
+CMP-1656,Mumbai,"Ambulance delayed, urgent help needed in Mumbai.",Hospital Emergency,High
+CMP-1657,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1658,Delhi,Officer demanded bribe for service approval in Delhi.,Corruption Bribe,High
+CMP-1659,Bengaluru,Illegal payments forced for basic work in Bengaluru.,Corruption Bribe,High
+CMP-1660,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1661,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1662,Delhi,Broken traffic lights causing congestion in Delhi.,Traffic Signal Failure,Medium
+CMP-1663,Bengaluru,Dirty drinking water coming from taps in Bengaluru.,Water Supply,Low
+CMP-1664,Delhi,"Ambulance delayed, urgent help needed in Delhi.",Hospital Emergency,High
+CMP-1665,Delhi,Road repair pending for months in Delhi.,Road Damage,Medium
+CMP-1666,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1667,Hyderabad,Harassment incidents reported near Hyderabad. Immediate action needed.,Women Safety,High
+CMP-1668,Mumbai,No water supply in Mumbai for 3 days.,Water Supply,Low
+CMP-1669,Hyderabad,No water supply in Hyderabad for 3 days.,Water Supply,Low
+CMP-1670,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1671,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1672,Hyderabad,Road repair pending for months in Hyderabad.,Road Damage,Medium
+CMP-1673,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1674,Chennai,Harassment incidents reported near Chennai. Immediate action needed.,Women Safety,High
+CMP-1675,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1676,Delhi,Patient not treated in emergency ward at Delhi.,Hospital Emergency,High
+CMP-1677,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1678,Hyderabad,No water supply in Hyderabad for 3 days.,Water Supply,Low
+CMP-1679,Hyderabad,Overflowing waste bins causing bad smell in Hyderabad.,Garbage Disposal,Low
+CMP-1680,Delhi,Garbage not collected for days in Delhi.,Garbage Disposal,Low
+CMP-1681,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1682,Delhi,"Traffic signals not working at Delhi, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1683,Chennai,Broken traffic lights causing congestion in Chennai.,Traffic Signal Failure,Medium
+CMP-1684,Delhi,"Ambulance delayed, urgent help needed in Delhi.",Hospital Emergency,High
+CMP-1685,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1686,Mumbai,Road repair pending for months in Mumbai.,Road Damage,Medium
+CMP-1687,Delhi,"Ambulance delayed, urgent help needed in Delhi.",Hospital Emergency,High
+CMP-1688,Chennai,No water supply in Chennai for 3 days.,Water Supply,Low
+CMP-1689,Delhi,Frequent voltage fluctuation in Delhi.,Electricity Outage,Medium
+CMP-1690,Bengaluru,"Unsafe area at night in Bengaluru, police patrolling required.",Women Safety,High
+CMP-1691,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1692,Mumbai,Huge potholes causing accidents near Mumbai.,Road Damage,Medium
+CMP-1693,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1694,Mumbai,"Ambulance delayed, urgent help needed in Mumbai.",Hospital Emergency,High
+CMP-1695,Chennai,Road repair pending for months in Chennai.,Road Damage,Medium
+CMP-1696,Hyderabad,"Ambulance delayed, urgent help needed in Hyderabad.",Hospital Emergency,High
+CMP-1697,Mumbai,Power outage since morning in Mumbai.,Electricity Outage,Medium
+CMP-1698,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1699,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1700,Delhi,"Traffic signals not working at Delhi, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1701,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1702,Mumbai,Harassment incidents reported near Mumbai. Immediate action needed.,Women Safety,High
+CMP-1703,Bengaluru,Patient not treated in emergency ward at Bengaluru.,Hospital Emergency,High
+CMP-1704,Chennai,Dirty drinking water coming from taps in Chennai.,Water Supply,Low
+CMP-1705,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1706,Delhi,Patient not treated in emergency ward at Delhi.,Hospital Emergency,High
+CMP-1707,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1708,Mumbai,Patient not treated in emergency ward at Mumbai.,Hospital Emergency,High
+CMP-1709,Chennai,Huge potholes causing accidents near Chennai.,Road Damage,Medium
+CMP-1710,Mumbai,Patient not treated in emergency ward at Mumbai.,Hospital Emergency,High
+CMP-1711,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1712,Hyderabad,Broken traffic lights causing congestion in Hyderabad.,Traffic Signal Failure,Medium
+CMP-1713,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1714,Chennai,No water supply in Chennai for 3 days.,Water Supply,Low
+CMP-1715,Bengaluru,Huge potholes causing accidents near Bengaluru.,Road Damage,Medium
+CMP-1716,Hyderabad,"Ambulance delayed, urgent help needed in Hyderabad.",Hospital Emergency,High
+CMP-1717,Bengaluru,No water supply in Bengaluru for 3 days.,Water Supply,Low
+CMP-1718,Hyderabad,Dirty drinking water coming from taps in Hyderabad.,Water Supply,Low
+CMP-1719,Delhi,Power outage since morning in Delhi.,Electricity Outage,Medium
+CMP-1720,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1721,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1722,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1723,Bengaluru,Officer demanded bribe for service approval in Bengaluru.,Corruption Bribe,High
+CMP-1724,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1725,Hyderabad,Officer demanded bribe for service approval in Hyderabad.,Corruption Bribe,High
+CMP-1726,Bengaluru,"Ambulance delayed, urgent help needed in Bengaluru.",Hospital Emergency,High
+CMP-1727,Mumbai,Power outage since morning in Mumbai.,Electricity Outage,Medium
+CMP-1728,Bengaluru,Illegal payments forced for basic work in Bengaluru.,Corruption Bribe,High
+CMP-1729,Hyderabad,Officer demanded bribe for service approval in Hyderabad.,Corruption Bribe,High
+CMP-1730,Hyderabad,Harassment incidents reported near Hyderabad. Immediate action needed.,Women Safety,High
+CMP-1731,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1732,Hyderabad,Garbage not collected for days in Hyderabad.,Garbage Disposal,Low
+CMP-1733,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1734,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1735,Delhi,"Ambulance delayed, urgent help needed in Delhi.",Hospital Emergency,High
+CMP-1736,Bengaluru,Harassment incidents reported near Bengaluru. Immediate action needed.,Women Safety,High
+CMP-1737,Bengaluru,Frequent voltage fluctuation in Bengaluru.,Electricity Outage,Medium
+CMP-1738,Bengaluru,Illegal payments forced for basic work in Bengaluru.,Corruption Bribe,High
+CMP-1739,Hyderabad,Illegal payments forced for basic work in Hyderabad.,Corruption Bribe,High
+CMP-1740,Bengaluru,Officer demanded bribe for service approval in Bengaluru.,Corruption Bribe,High
+CMP-1741,Bengaluru,Garbage not collected for days in Bengaluru.,Garbage Disposal,Low
+CMP-1742,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1743,Hyderabad,No water supply in Hyderabad for 3 days.,Water Supply,Low
+CMP-1744,Mumbai,Illegal payments forced for basic work in Mumbai.,Corruption Bribe,High
+CMP-1745,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1746,Bengaluru,"Ambulance delayed, urgent help needed in Bengaluru.",Hospital Emergency,High
+CMP-1747,Delhi,Garbage not collected for days in Delhi.,Garbage Disposal,Low
+CMP-1748,Mumbai,Patient not treated in emergency ward at Mumbai.,Hospital Emergency,High
+CMP-1749,Bengaluru,"Ambulance delayed, urgent help needed in Bengaluru.",Hospital Emergency,High
+CMP-1750,Mumbai,Road repair pending for months in Mumbai.,Road Damage,Medium
+CMP-1751,Hyderabad,Overflowing waste bins causing bad smell in Hyderabad.,Garbage Disposal,Low
+CMP-1752,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1753,Mumbai,Overflowing waste bins causing bad smell in Mumbai.,Garbage Disposal,Low
+CMP-1754,Mumbai,Road repair pending for months in Mumbai.,Road Damage,Medium
+CMP-1755,Bengaluru,Illegal payments forced for basic work in Bengaluru.,Corruption Bribe,High
+CMP-1756,Mumbai,Patient not treated in emergency ward at Mumbai.,Hospital Emergency,High
+CMP-1757,Bengaluru,"Ambulance delayed, urgent help needed in Bengaluru.",Hospital Emergency,High
+CMP-1758,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1759,Mumbai,Illegal payments forced for basic work in Mumbai.,Corruption Bribe,High
+CMP-1760,Hyderabad,Officer demanded bribe for service approval in Hyderabad.,Corruption Bribe,High
+CMP-1761,Delhi,Illegal payments forced for basic work in Delhi.,Corruption Bribe,High
+CMP-1762,Chennai,Road repair pending for months in Chennai.,Road Damage,Medium
+CMP-1763,Mumbai,Harassment incidents reported near Mumbai. Immediate action needed.,Women Safety,High
+CMP-1764,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1765,Hyderabad,Garbage not collected for days in Hyderabad.,Garbage Disposal,Low
+CMP-1766,Bengaluru,Patient not treated in emergency ward at Bengaluru.,Hospital Emergency,High
+CMP-1767,Bengaluru,Frequent voltage fluctuation in Bengaluru.,Electricity Outage,Medium
+CMP-1768,Mumbai,Illegal payments forced for basic work in Mumbai.,Corruption Bribe,High
+CMP-1769,Hyderabad,Road repair pending for months in Hyderabad.,Road Damage,Medium
+CMP-1770,Chennai,Power outage since morning in Chennai.,Electricity Outage,Medium
+CMP-1771,Mumbai,No water supply in Mumbai for 3 days.,Water Supply,Low
+CMP-1772,Hyderabad,Dirty drinking water coming from taps in Hyderabad.,Water Supply,Low
+CMP-1773,Chennai,Road repair pending for months in Chennai.,Road Damage,Medium
+CMP-1774,Mumbai,Officer demanded bribe for service approval in Mumbai.,Corruption Bribe,High
+CMP-1775,Hyderabad,Garbage not collected for days in Hyderabad.,Garbage Disposal,Low
+CMP-1776,Mumbai,Garbage not collected for days in Mumbai.,Garbage Disposal,Low
+CMP-1777,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1778,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1779,Bengaluru,Illegal payments forced for basic work in Bengaluru.,Corruption Bribe,High
+CMP-1780,Hyderabad,Power outage since morning in Hyderabad.,Electricity Outage,Medium
+CMP-1781,Bengaluru,Power outage since morning in Bengaluru.,Electricity Outage,Medium
+CMP-1782,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1783,Mumbai,Dirty drinking water coming from taps in Mumbai.,Water Supply,Low
+CMP-1784,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1785,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1786,Hyderabad,Road repair pending for months in Hyderabad.,Road Damage,Medium
+CMP-1787,Chennai,Garbage not collected for days in Chennai.,Garbage Disposal,Low
+CMP-1788,Mumbai,Road repair pending for months in Mumbai.,Road Damage,Medium
+CMP-1789,Chennai,No water supply in Chennai for 3 days.,Water Supply,Low
+CMP-1790,Bengaluru,Harassment incidents reported near Bengaluru. Immediate action needed.,Women Safety,High
+CMP-1791,Chennai,Dirty drinking water coming from taps in Chennai.,Water Supply,Low
+CMP-1792,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1793,Mumbai,Illegal payments forced for basic work in Mumbai.,Corruption Bribe,High
+CMP-1794,Mumbai,Dirty drinking water coming from taps in Mumbai.,Water Supply,Low
+CMP-1795,Chennai,Huge potholes causing accidents near Chennai.,Road Damage,Medium
+CMP-1796,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1797,Bengaluru,Illegal payments forced for basic work in Bengaluru.,Corruption Bribe,High
+CMP-1798,Hyderabad,Dirty drinking water coming from taps in Hyderabad.,Water Supply,Low
+CMP-1799,Hyderabad,No water supply in Hyderabad for 3 days.,Water Supply,Low
+CMP-1800,Bengaluru,No water supply in Bengaluru for 3 days.,Water Supply,Low
+CMP-1801,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1802,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1803,Bengaluru,No water supply in Bengaluru for 3 days.,Water Supply,Low
+CMP-1804,Mumbai,Frequent voltage fluctuation in Mumbai.,Electricity Outage,Medium
+CMP-1805,Bengaluru,"Unsafe area at night in Bengaluru, police patrolling required.",Women Safety,High
+CMP-1806,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1807,Mumbai,Power outage since morning in Mumbai.,Electricity Outage,Medium
+CMP-1808,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1809,Hyderabad,Patient not treated in emergency ward at Hyderabad.,Hospital Emergency,High
+CMP-1810,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1811,Delhi,Dirty drinking water coming from taps in Delhi.,Water Supply,Low
+CMP-1812,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1813,Hyderabad,Garbage not collected for days in Hyderabad.,Garbage Disposal,Low
+CMP-1814,Delhi,Dirty drinking water coming from taps in Delhi.,Water Supply,Low
+CMP-1815,Mumbai,Huge potholes causing accidents near Mumbai.,Road Damage,Medium
+CMP-1816,Delhi,Garbage not collected for days in Delhi.,Garbage Disposal,Low
+CMP-1817,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1818,Hyderabad,Broken traffic lights causing congestion in Hyderabad.,Traffic Signal Failure,Medium
+CMP-1819,Mumbai,Frequent voltage fluctuation in Mumbai.,Electricity Outage,Medium
+CMP-1820,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1821,Chennai,"Unsafe area at night in Chennai, police patrolling required.",Women Safety,High
+CMP-1822,Mumbai,"Unsafe area at night in Mumbai, police patrolling required.",Women Safety,High
+CMP-1823,Hyderabad,Overflowing waste bins causing bad smell in Hyderabad.,Garbage Disposal,Low
+CMP-1824,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1825,Delhi,Broken traffic lights causing congestion in Delhi.,Traffic Signal Failure,Medium
+CMP-1826,Hyderabad,Dirty drinking water coming from taps in Hyderabad.,Water Supply,Low
+CMP-1827,Chennai,Broken traffic lights causing congestion in Chennai.,Traffic Signal Failure,Medium
+CMP-1828,Mumbai,Frequent voltage fluctuation in Mumbai.,Electricity Outage,Medium
+CMP-1829,Delhi,Frequent voltage fluctuation in Delhi.,Electricity Outage,Medium
+CMP-1830,Hyderabad,Illegal payments forced for basic work in Hyderabad.,Corruption Bribe,High
+CMP-1831,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1832,Chennai,Broken traffic lights causing congestion in Chennai.,Traffic Signal Failure,Medium
+CMP-1833,Mumbai,"Unsafe area at night in Mumbai, police patrolling required.",Women Safety,High
+CMP-1834,Chennai,Garbage not collected for days in Chennai.,Garbage Disposal,Low
+CMP-1835,Chennai,Dirty drinking water coming from taps in Chennai.,Water Supply,Low
+CMP-1836,Bengaluru,Illegal payments forced for basic work in Bengaluru.,Corruption Bribe,High
+CMP-1837,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1838,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1839,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1840,Bengaluru,Patient not treated in emergency ward at Bengaluru.,Hospital Emergency,High
+CMP-1841,Delhi,Frequent voltage fluctuation in Delhi.,Electricity Outage,Medium
+CMP-1842,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1843,Bengaluru,"Ambulance delayed, urgent help needed in Bengaluru.",Hospital Emergency,High
+CMP-1844,Delhi,Dirty drinking water coming from taps in Delhi.,Water Supply,Low
+CMP-1845,Hyderabad,Broken traffic lights causing congestion in Hyderabad.,Traffic Signal Failure,Medium
+CMP-1846,Mumbai,Officer demanded bribe for service approval in Mumbai.,Corruption Bribe,High
+CMP-1847,Bengaluru,Illegal payments forced for basic work in Bengaluru.,Corruption Bribe,High
+CMP-1848,Bengaluru,Road repair pending for months in Bengaluru.,Road Damage,Medium
+CMP-1849,Hyderabad,Harassment incidents reported near Hyderabad. Immediate action needed.,Women Safety,High
+CMP-1850,Bengaluru,Illegal payments forced for basic work in Bengaluru.,Corruption Bribe,High
+CMP-1851,Delhi,Broken traffic lights causing congestion in Delhi.,Traffic Signal Failure,Medium
+CMP-1852,Delhi,Officer demanded bribe for service approval in Delhi.,Corruption Bribe,High
+CMP-1853,Delhi,Frequent voltage fluctuation in Delhi.,Electricity Outage,Medium
+CMP-1854,Chennai,Power outage since morning in Chennai.,Electricity Outage,Medium
+CMP-1855,Hyderabad,Power outage since morning in Hyderabad.,Electricity Outage,Medium
+CMP-1856,Mumbai,Officer demanded bribe for service approval in Mumbai.,Corruption Bribe,High
+CMP-1857,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1858,Delhi,Broken traffic lights causing congestion in Delhi.,Traffic Signal Failure,Medium
+CMP-1859,Chennai,Power outage since morning in Chennai.,Electricity Outage,Medium
+CMP-1860,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1861,Bengaluru,No water supply in Bengaluru for 3 days.,Water Supply,Low
+CMP-1862,Delhi,Dirty drinking water coming from taps in Delhi.,Water Supply,Low
+CMP-1863,Hyderabad,Dirty drinking water coming from taps in Hyderabad.,Water Supply,Low
+CMP-1864,Chennai,Overflowing waste bins causing bad smell in Chennai.,Garbage Disposal,Low
+CMP-1865,Mumbai,Patient not treated in emergency ward at Mumbai.,Hospital Emergency,High
+CMP-1866,Hyderabad,Harassment incidents reported near Hyderabad. Immediate action needed.,Women Safety,High
+CMP-1867,Chennai,Patient not treated in emergency ward at Chennai.,Hospital Emergency,High
+CMP-1868,Chennai,Power outage since morning in Chennai.,Electricity Outage,Medium
+CMP-1869,Bengaluru,Power outage since morning in Bengaluru.,Electricity Outage,Medium
+CMP-1870,Bengaluru,No water supply in Bengaluru for 3 days.,Water Supply,Low
+CMP-1871,Delhi,"Traffic signals not working at Delhi, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1872,Chennai,Garbage not collected for days in Chennai.,Garbage Disposal,Low
+CMP-1873,Hyderabad,Dirty drinking water coming from taps in Hyderabad.,Water Supply,Low
+CMP-1874,Chennai,Dirty drinking water coming from taps in Chennai.,Water Supply,Low
+CMP-1875,Bengaluru,Illegal payments forced for basic work in Bengaluru.,Corruption Bribe,High
+CMP-1876,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1877,Hyderabad,Illegal payments forced for basic work in Hyderabad.,Corruption Bribe,High
+CMP-1878,Mumbai,"Ambulance delayed, urgent help needed in Mumbai.",Hospital Emergency,High
+CMP-1879,Bengaluru,Frequent voltage fluctuation in Bengaluru.,Electricity Outage,Medium
+CMP-1880,Hyderabad,Overflowing waste bins causing bad smell in Hyderabad.,Garbage Disposal,Low
+CMP-1881,Chennai,Overflowing waste bins causing bad smell in Chennai.,Garbage Disposal,Low
+CMP-1882,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1883,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1884,Hyderabad,Power outage since morning in Hyderabad.,Electricity Outage,Medium
+CMP-1885,Mumbai,Road repair pending for months in Mumbai.,Road Damage,Medium
+CMP-1886,Delhi,Officer demanded bribe for service approval in Delhi.,Corruption Bribe,High
+CMP-1887,Bengaluru,Dirty drinking water coming from taps in Bengaluru.,Water Supply,Low
+CMP-1888,Chennai,Huge potholes causing accidents near Chennai.,Road Damage,Medium
+CMP-1889,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1890,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1891,Bengaluru,"Traffic signals not working at Bengaluru, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1892,Bengaluru,"Ambulance delayed, urgent help needed in Bengaluru.",Hospital Emergency,High
+CMP-1893,Mumbai,"Unsafe area at night in Mumbai, police patrolling required.",Women Safety,High
+CMP-1894,Mumbai,Huge potholes causing accidents near Mumbai.,Road Damage,Medium
+CMP-1895,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1896,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1897,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1898,Hyderabad,Officer demanded bribe for service approval in Hyderabad.,Corruption Bribe,High
+CMP-1899,Delhi,Broken traffic lights causing congestion in Delhi.,Traffic Signal Failure,Medium
+CMP-1900,Mumbai,Frequent voltage fluctuation in Mumbai.,Electricity Outage,Medium
+CMP-1901,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1902,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1903,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1904,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1905,Mumbai,No water supply in Mumbai for 3 days.,Water Supply,Low
+CMP-1906,Bengaluru,Frequent voltage fluctuation in Bengaluru.,Electricity Outage,Medium
+CMP-1907,Chennai,Frequent voltage fluctuation in Chennai.,Electricity Outage,Medium
+CMP-1908,Bengaluru,Dirty drinking water coming from taps in Bengaluru.,Water Supply,Low
+CMP-1909,Mumbai,No water supply in Mumbai for 3 days.,Water Supply,Low
+CMP-1910,Bengaluru,Harassment incidents reported near Bengaluru. Immediate action needed.,Women Safety,High
+CMP-1911,Bengaluru,Dirty drinking water coming from taps in Bengaluru.,Water Supply,Low
+CMP-1912,Hyderabad,Illegal payments forced for basic work in Hyderabad.,Corruption Bribe,High
+CMP-1913,Delhi,Dirty drinking water coming from taps in Delhi.,Water Supply,Low
+CMP-1914,Hyderabad,Dirty drinking water coming from taps in Hyderabad.,Water Supply,Low
+CMP-1915,Hyderabad,Huge potholes causing accidents near Hyderabad.,Road Damage,Medium
+CMP-1916,Hyderabad,Harassment incidents reported near Hyderabad. Immediate action needed.,Women Safety,High
+CMP-1917,Mumbai,Harassment incidents reported near Mumbai. Immediate action needed.,Women Safety,High
+CMP-1918,Hyderabad,Overflowing waste bins causing bad smell in Hyderabad.,Garbage Disposal,Low
+CMP-1919,Chennai,Power outage since morning in Chennai.,Electricity Outage,Medium
+CMP-1920,Delhi,"Unsafe area at night in Delhi, police patrolling required.",Women Safety,High
+CMP-1921,Mumbai,Dirty drinking water coming from taps in Mumbai.,Water Supply,Low
+CMP-1922,Mumbai,Frequent voltage fluctuation in Mumbai.,Electricity Outage,Medium
+CMP-1923,Bengaluru,Power outage since morning in Bengaluru.,Electricity Outage,Medium
+CMP-1924,Chennai,"Unsafe area at night in Chennai, police patrolling required.",Women Safety,High
+CMP-1925,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1926,Delhi,Overflowing waste bins causing bad smell in Delhi.,Garbage Disposal,Low
+CMP-1927,Delhi,Overflowing waste bins causing bad smell in Delhi.,Garbage Disposal,Low
+CMP-1928,Delhi,Garbage not collected for days in Delhi.,Garbage Disposal,Low
+CMP-1929,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1930,Mumbai,Overflowing waste bins causing bad smell in Mumbai.,Garbage Disposal,Low
+CMP-1931,Mumbai,Officer demanded bribe for service approval in Mumbai.,Corruption Bribe,High
+CMP-1932,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1933,Delhi,Illegal payments forced for basic work in Delhi.,Corruption Bribe,High
+CMP-1934,Chennai,"Ambulance delayed, urgent help needed in Chennai.",Hospital Emergency,High
+CMP-1935,Bengaluru,Dirty drinking water coming from taps in Bengaluru.,Water Supply,Low
+CMP-1936,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1937,Hyderabad,Patient not treated in emergency ward at Hyderabad.,Hospital Emergency,High
+CMP-1938,Bengaluru,"Unsafe area at night in Bengaluru, police patrolling required.",Women Safety,High
+CMP-1939,Delhi,Huge potholes causing accidents near Delhi.,Road Damage,Medium
+CMP-1940,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1941,Mumbai,"Unsafe area at night in Mumbai, police patrolling required.",Women Safety,High
+CMP-1942,Chennai,Officer demanded bribe for service approval in Chennai.,Corruption Bribe,High
+CMP-1943,Mumbai,Frequent voltage fluctuation in Mumbai.,Electricity Outage,Medium
+CMP-1944,Bengaluru,Dirty drinking water coming from taps in Bengaluru.,Water Supply,Low
+CMP-1945,Hyderabad,Harassment incidents reported near Hyderabad. Immediate action needed.,Women Safety,High
+CMP-1946,Hyderabad,"Unsafe area at night in Hyderabad, police patrolling required.",Women Safety,High
+CMP-1947,Mumbai,Illegal payments forced for basic work in Mumbai.,Corruption Bribe,High
+CMP-1948,Bengaluru,"Unsafe area at night in Bengaluru, police patrolling required.",Women Safety,High
+CMP-1949,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1950,Mumbai,"Unsafe area at night in Mumbai, police patrolling required.",Women Safety,High
+CMP-1951,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1952,Chennai,Power outage since morning in Chennai.,Electricity Outage,Medium
+CMP-1953,Mumbai,Officer demanded bribe for service approval in Mumbai.,Corruption Bribe,High
+CMP-1954,Chennai,Dirty drinking water coming from taps in Chennai.,Water Supply,Low
+CMP-1955,Hyderabad,"Traffic signals not working at Hyderabad, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1956,Delhi,Road repair pending for months in Delhi.,Road Damage,Medium
+CMP-1957,Bengaluru,Harassment incidents reported near Bengaluru. Immediate action needed.,Women Safety,High
+CMP-1958,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1959,Hyderabad,Harassment incidents reported near Hyderabad. Immediate action needed.,Women Safety,High
+CMP-1960,Mumbai,No water supply in Mumbai for 3 days.,Water Supply,Low
+CMP-1961,Hyderabad,Garbage not collected for days in Hyderabad.,Garbage Disposal,Low
+CMP-1962,Mumbai,Road repair pending for months in Mumbai.,Road Damage,Medium
+CMP-1963,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1964,Chennai,"Traffic signals not working at Chennai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1965,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1966,Chennai,Officer demanded bribe for service approval in Chennai.,Corruption Bribe,High
+CMP-1967,Mumbai,Patient not treated in emergency ward at Mumbai.,Hospital Emergency,High
+CMP-1968,Chennai,No water supply in Chennai for 3 days.,Water Supply,Low
+CMP-1969,Chennai,Harassment incidents reported near Chennai. Immediate action needed.,Women Safety,High
+CMP-1970,Delhi,"Traffic signals not working at Delhi, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1971,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1972,Delhi,Illegal payments forced for basic work in Delhi.,Corruption Bribe,High
+CMP-1973,Bengaluru,Broken traffic lights causing congestion in Bengaluru.,Traffic Signal Failure,Medium
+CMP-1974,Chennai,No water supply in Chennai for 3 days.,Water Supply,Low
+CMP-1975,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1976,Hyderabad,Officer demanded bribe for service approval in Hyderabad.,Corruption Bribe,High
+CMP-1977,Hyderabad,Illegal payments forced for basic work in Hyderabad.,Corruption Bribe,High
+CMP-1978,Mumbai,Overflowing waste bins causing bad smell in Mumbai.,Garbage Disposal,Low
+CMP-1979,Hyderabad,No water supply in Hyderabad for 3 days.,Water Supply,Low
+CMP-1980,Hyderabad,Power outage since morning in Hyderabad.,Electricity Outage,Medium
+CMP-1981,Hyderabad,Frequent voltage fluctuation in Hyderabad.,Electricity Outage,Medium
+CMP-1982,Mumbai,Harassment incidents reported near Mumbai. Immediate action needed.,Women Safety,High
+CMP-1983,Bengaluru,Overflowing waste bins causing bad smell in Bengaluru.,Garbage Disposal,Low
+CMP-1984,Chennai,Officer demanded bribe for service approval in Chennai.,Corruption Bribe,High
+CMP-1985,Delhi,Patient not treated in emergency ward at Delhi.,Hospital Emergency,High
+CMP-1986,Chennai,Frequent voltage fluctuation in Chennai.,Electricity Outage,Medium
+CMP-1987,Hyderabad,"Unsafe area at night in Hyderabad, police patrolling required.",Women Safety,High
+CMP-1988,Mumbai,"Traffic signals not working at Mumbai, risk of accidents.",Traffic Signal Failure,Medium
+CMP-1989,Delhi,Dirty drinking water coming from taps in Delhi.,Water Supply,Low
+CMP-1990,Mumbai,Broken traffic lights causing congestion in Mumbai.,Traffic Signal Failure,Medium
+CMP-1991,Bengaluru,Harassment incidents reported near Bengaluru. Immediate action needed.,Women Safety,High
+CMP-1992,Delhi,Patient not treated in emergency ward at Delhi.,Hospital Emergency,High
+CMP-1993,Delhi,No water supply in Delhi for 3 days.,Water Supply,Low
+CMP-1994,Chennai,Illegal payments forced for basic work in Chennai.,Corruption Bribe,High
+CMP-1995,Delhi,Huge potholes causing accidents near Delhi.,Road Damage,Medium
+CMP-1996,Delhi,Harassment incidents reported near Delhi. Immediate action needed.,Women Safety,High
+CMP-1997,Hyderabad,Officer demanded bribe for service approval in Hyderabad.,Corruption Bribe,High
+CMP-1998,Hyderabad,No water supply in Hyderabad for 3 days.,Water Supply,Low
+CMP-1999,Mumbai,Dirty drinking water coming from taps in Mumbai.,Water Supply,Low

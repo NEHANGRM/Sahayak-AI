@@ -39,6 +39,14 @@ class SentenceTransformerWrapper:
             texts = texts.tolist()
         return self._model.encode(texts, show_progress_bar=False)
 
+    def __getstate__(self):
+        # Only serialize the model name configuration, not the loaded weights
+        return {'model_name': self.model_name}
+
+    def __setstate__(self, state):
+        self.model_name = state.get('model_name', 'all-MiniLM-L6-v2')
+        self._model = None
+
 # Category to severity mapping (0.0 to 1.0)
 SEVERITY_MAP = {
     "Health": 1.0,

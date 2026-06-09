@@ -212,6 +212,52 @@ def inject_custom_css():
         font-weight: 500 !important;
     }
     </style>
+    <script>
+    function applyPriorityColors() {
+        const expanders = document.querySelectorAll('div[data-testid="stExpander"]');
+        expanders.forEach(exp => {
+            const header = exp.querySelector('summary') || exp;
+            const headerText = header.textContent || header.innerText;
+            
+            if (headerText.includes("Level: CRITICAL") || headerText.includes("Level: HIGH")) {
+                exp.style.setProperty("background-color", "#fff5f5", "important");
+                exp.style.setProperty("border", "1px solid #feb2b2", "important");
+                exp.style.setProperty("border-left", "8px solid #c53030", "important");
+                
+                const titleText = exp.querySelector('p');
+                if (titleText) {
+                    titleText.style.setProperty("color", "#9b2c2c", "important");
+                    titleText.style.setProperty("font-weight", "bold", "important");
+                }
+            } else if (headerText.includes("Level: MEDIUM")) {
+                exp.style.setProperty("background-color", "#fefbeb", "important");
+                exp.style.setProperty("border", "1px solid #fef3c7", "important");
+                exp.style.setProperty("border-left", "8px solid #d97706", "important");
+                
+                const titleText = exp.querySelector('p');
+                if (titleText) {
+                    titleText.style.setProperty("color", "#b45309", "important");
+                    titleText.style.setProperty("font-weight", "bold", "important");
+                }
+            } else if (headerText.includes("Level: LOW")) {
+                exp.style.setProperty("background-color", "#ffffff", "important");
+                exp.style.setProperty("border", "1px solid #e2e8f0", "important");
+                exp.style.setProperty("border-left", "8px solid #718096", "important");
+                
+                const titleText = exp.querySelector('p');
+                if (titleText) {
+                    titleText.style.setProperty("color", "#2d3748", "important");
+                    titleText.style.setProperty("font-weight", "bold", "important");
+                }
+            }
+        });
+    }
+
+    if (!window.priorityColorsInterval) {
+        applyPriorityColors();
+        window.priorityColorsInterval = setInterval(applyPriorityColors, 400);
+    }
+    </script>
     """
     st.markdown(css, unsafe_allow_html=True)
 

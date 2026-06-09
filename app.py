@@ -28,12 +28,278 @@ def load_models():
             category_model = pickle.load(f)
         with open('priority_classifier.pkl', 'rb') as f:
             priority_model = pickle.load(f)
-        return vectorizer, category_model, priority_model
+        with open('severity_model.pkl', 'rb') as f:
+            severity_model = pickle.load(f)
+        return vectorizer, category_model, priority_model, severity_model
     except FileNotFoundError:
         st.error("⚠️ Models not found! Please run `python model_training.py` first.")
         st.stop()
 
-vectorizer, category_model, priority_model = load_models()
+vectorizer, category_model, priority_model, severity_model = load_models()
+
+def inject_custom_css():
+    """Inject government-themed styling"""
+    css = """
+    <style>
+    /* Reset background colors */
+    .stApp {
+        background-color: #f8f9fa !important;
+    }
+    
+    /* Base typography */
+    h1, h2, h3, h4, h5, h6, p, span, li, label, div, td, th {
+        font-family: Arial, Helvetica, sans-serif !important;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        color: #0f294a !important;
+    }
+    
+    /* Explicitly force dark text color for contrast on the light background */
+    p, li, label, td, th, [data-testid="stMarkdownContainer"] {
+        color: #2d3748 !important;
+    }
+    
+    .stWidgetLabel p, label {
+        color: #2d3748 !important;
+    }
+    
+    /* Captions */
+    small, .stCaptionContainer, div[data-testid="stCaptionContainer"] p {
+        color: #4a5568 !important;
+    }
+    
+    /* Metrics labels and values */
+    div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
+        color: #2d3748 !important;
+    }
+    
+    /* Streamlit tabs text visibility */
+    button[role="tab"] p {
+        color: #2d3748 !important;
+    }
+    button[role="tab"][aria-selected="true"] p {
+        color: #0f294a !important;
+        font-weight: bold !important;
+    }
+    
+    /* Sidebar text colors */
+    section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span, section[data-testid="stSidebar"] label {
+        color: #2d3748 !important;
+    }
+    
+    /* Selectbox selected option text color */
+    div[data-baseweb="select"] span, div[data-baseweb="select"] div {
+        color: #2d3748 !important;
+    }
+    
+    /* Buttons style */
+    .stButton>button {
+        background-color: #0f294a !important;
+        color: white !important;
+        border: 1px solid #0f294a !important;
+        border-radius: 4px !important;
+        padding: 6px 16px !important;
+        font-weight: bold !important;
+        font-size: 14px !important;
+        box-shadow: 0px 1px 3px rgba(0,0,0,0.1) !important;
+        transition: none !important;
+    }
+    
+    .stButton>button:hover {
+        background-color: #1a3d66 !important;
+        border-color: #1a3d66 !important;
+        color: white !important;
+    }
+    
+    /* Protect button text colors */
+    .stButton>button p, .stButton>button span {
+        color: white !important;
+    }
+    
+    /* Text inputs */
+    .stTextArea textarea {
+        border: 1px solid #cbd5e0 !important;
+        border-radius: 4px !important;
+        background-color: #ffffff !important;
+        color: #2d3748 !important;
+        font-size: 14px !important;
+    }
+    
+    .stTextArea textarea:focus {
+        border-color: #0f294a !important;
+        box-shadow: 0 0 0 1px #0f294a !important;
+    }
+    
+    .stTextInput input {
+        border: 1px solid #cbd5e0 !important;
+        border-radius: 4px !important;
+        background-color: #ffffff !important;
+        color: #2d3748 !important;
+        font-size: 14px !important;
+    }
+    
+    .stTextInput input:focus {
+        border-color: #0f294a !important;
+        box-shadow: 0 0 0 1px #0f294a !important;
+    }
+    
+    /* Expanders */
+    div[data-testid="stExpander"] {
+        background-color: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 4px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+        margin-bottom: 15px !important;
+    }
+    
+    /* Sidebar container styling */
+    section[data-testid="stSidebar"] {
+        background-color: #eef2f6 !important;
+        border-right: 1px solid #cbd5e0 !important;
+    }
+    
+    /* Banner overrides to force white/light text on dark navy backgrounds */
+    .gov-banner h1, h1.gov-banner-title {
+        color: #ffffff !important;
+    }
+    .gov-banner p, p.gov-banner-subtitle {
+        color: #e2e8f0 !important;
+    }
+    
+    .sidebar-gov-header h4, h4.sidebar-gov-title {
+        color: #ffffff !important;
+    }
+    
+    /* Stamp overrides to respect inline dynamic colors */
+    .priority-stamp span.priority-stamp-meta {
+        color: #718096 !important;
+    }
+    .priority-stamp h3.priority-stamp-title.critical {
+        color: #9b2c2c !important;
+    }
+    .priority-stamp h3.priority-stamp-title.high {
+        color: #9c4221 !important;
+    }
+    .priority-stamp h3.priority-stamp-title.medium {
+        color: #2b6cb0 !important;
+    }
+    .priority-stamp h3.priority-stamp-title.low {
+        color: #276749 !important;
+    }
+    .priority-stamp p.priority-stamp-body {
+        color: #2d3748 !important;
+    }
+    </style>
+    """
+    st.markdown(css, unsafe_allow_html=True)
+
+def render_government_banner():
+    """Renders a formal government banner at the top of the main area"""
+    html = """
+    <div class="gov-banner" style="background-color: #0f294a; padding: 18px; border-top: 5px solid #ff9933; border-bottom: 5px solid #138808; text-align: center; margin-bottom: 25px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
+        <h1 class="gov-banner-title" style="margin: 0; font-size: 24px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">National Grievance Redressal Portal</h1>
+        <p class="gov-banner-subtitle" style="margin: 5px 0 0 0; font-size: 13px; letter-spacing: 0.5px; font-weight: 500;">
+            SAHAYAK AI &bull; INTEGRATED CIVIC DECISION SUPPORT & TRIAGE MIDDLEWARE
+        </p>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+def render_priority_stamp(priority_label, priority_score, explanation):
+    """Renders a formal triage stamp badge"""
+    colors = {
+        "Critical": {"border": "#c53030", "bg": "#fff5f5", "text": "#9b2c2c"},
+        "High": {"border": "#dd6b20", "bg": "#fffaf0", "text": "#9c4221"},
+        "Medium": {"border": "#3182ce", "bg": "#ebf8ff", "text": "#2b6cb0"},
+        "Low": {"border": "#38a169", "bg": "#f0fff4", "text": "#276749"}
+    }
+    style = colors.get(priority_label, {"border": "#4a5568", "bg": "#f7fafc", "text": "#2d3748"})
+    
+    html = f"""
+    <div class="priority-stamp" style="border: 2px solid {style['border']}; border-left: 8px solid {style['border']}; padding: 15px; margin-bottom: 20px; background-color: {style['bg']}; border-radius: 4px;">
+        <span class="priority-stamp-meta" style="font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">Official Grievance Triage Status</span>
+        <h3 class="priority-stamp-title {priority_label.lower()}" style="margin: 5px 0; font-weight: bold; font-size: 18px; text-transform: uppercase;">Priority Tier: {priority_label} (Score: {priority_score:.3f})</h3>
+        <p class="priority-stamp-body" style="margin: 0; font-size: 13px; line-height: 1.4;"><strong>Rationale:</strong> {explanation}</p>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+def render_metrics_table(result):
+    """Renders an official metrics details matrix table"""
+    sev = result['severity_score']
+    sev_reason = result['severity_reason']
+    sev_level = result['severity_label']
+    pi = result['public_impact_score']
+    vul = result['vulnerability_score']
+    urg = result['urgency_score']
+    dup = result['duplicate_escalation_score']
+    
+    c_sev = sev * 0.30
+    c_pi = pi * 0.25
+    c_urg = urg * 0.20
+    c_vul = vul * 0.15
+    c_dup = dup * 0.10
+    total = c_sev + c_pi + c_urg + c_vul + c_dup
+    
+    html = f"""
+    <table style="width:100%; border-collapse: collapse; font-size: 13px; background-color: #ffffff; border: 1px solid #cbd5e0; margin-bottom: 20px;">
+      <thead>
+        <tr style="background-color: #eef2f6; border-bottom: 2px solid #0f294a; color: #0f294a; font-weight: bold;">
+          <th style="padding: 10px; text-align: left; border: 1px solid #cbd5e0;">Triage Dimension</th>
+          <th style="padding: 10px; text-align: center; border: 1px solid #cbd5e0; width: 110px;">Base Score (0.0-1.0)</th>
+          <th style="padding: 10px; text-align: center; border: 1px solid #cbd5e0; width: 80px;">Weight</th>
+          <th style="padding: 10px; text-align: center; border: 1px solid #cbd5e0; width: 110px;">Weighted Contrib.</th>
+          <th style="padding: 10px; text-align: left; border: 1px solid #cbd5e0;">Governance Rules & Extracted Rationale</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; font-weight: bold; color: #0f294a;">Severity</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 14px;">{sev:.2f}</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center;">30%</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 14px;">{c_sev:.3f}</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; color: #2d3748;">Level: <strong>{sev_level.upper()}</strong> &bull; Reason: {sev_reason}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; font-weight: bold; color: #0f294a;">Public Impact</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 14px;">{pi:.2f}</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center;">25%</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 14px;">{c_pi:.3f}</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; color: #2d3748;">Evaluates number of citizens and public structures affected.</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; font-weight: bold; color: #0f294a;">Urgency</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 14px;">{urg:.2f}</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center;">20%</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 14px;">{c_urg:.3f}</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; color: #2d3748;">Assesses emergency keyword indicators and response categories.</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; font-weight: bold; color: #0f294a;">Vulnerability</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 14px;">{vul:.2f}</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center;">15%</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 14px;">{c_vul:.3f}</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; color: #2d3748;">Detects presence of schools, hospitals, seniors, or disaster-prone areas.</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; font-weight: bold; color: #0f294a;">Duplicate Escalation</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 14px;">{dup:.2f}</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center;">10%</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 14px;">{c_dup:.3f}</td>
+          <td style="padding: 8px 10px; border: 1px solid #cbd5e0; color: #2d3748;">Escalation factor matching frequency of repeat filings.</td>
+        </tr>
+        <tr style="background-color: #f7fafc; font-weight: bold; border-top: 2px solid #0f294a;">
+          <td style="padding: 10px; border: 1px solid #cbd5e0; color: #0f294a;">FINAL PRIORITY SCORE</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 15px; color: #0f294a;">{total:.3f}</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; text-align: center;">100%</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 15px; color: #0f294a;">{total:.3f}</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; color: #0f294a;">Computed Priority Level: {result['priority_label'].upper()}</td>
+        </tr>
+      </tbody>
+    </table>
+    """
+    st.markdown(html, unsafe_allow_html=True)
 
 # Initialize session state for storing complaints
 if 'complaints' not in st.session_state:
@@ -49,51 +315,134 @@ if 'officer_overrides' not in st.session_state:
 
 def predict_complaint(complaint_text):
     """
-    Process complaint through AI pipeline and return predictions with XAI
+    Process complaint through admissibility screening, classification, NER, severity, public impact, vulnerability, duplicate detection, urgency, and explainable priority scoring
     
     Returns:
-        dict: Prediction results including category, priority, explanation, etc.
+        dict: Prediction results including admissibility, category, priority, JSON representation, etc.
     """
-    # Vectorize input
-    complaint_vector = vectorizer.transform([complaint_text])
-    
-    # Predict category
-    predicted_category = category_model.predict(complaint_vector)[0]
-    
-    # Get severity score
-    severity_score = utils.get_severity_score(predicted_category)
-    
-    # Get sentiment score
-    sentiment_score = utils.get_sentiment_score(complaint_text)
-    
-    # Calculate priority score using official formula
-    priority_score = utils.calculate_priority_score(severity_score, sentiment_score)
-    
-    # Get priority label
-    priority_label = utils.get_priority_label(priority_score)
-    
-    # Route to department
-    department = utils.route_to_department(predicted_category)
-    
-    # Generate XAI explanation
-    explanation = utils.generate_explanation(
-        predicted_category, 
-        severity_score, 
-        sentiment_score, 
-        priority_label
-    )
-    
-    # Check for duplicates
-    existing_texts = [c['complaint_text'] for c in st.session_state.complaints]
-    is_duplicate, cluster_id, similarity = utils.detect_duplicate(
+    # 1. Admissibility check
+    is_admissible, rejection_reason, predicted_category = utils.check_admissibility(
         complaint_text, 
-        existing_texts, 
-        threshold=0.7
+        category_model, 
+        vectorizer
     )
+    
+    # 2. Extract NER details and risk keywords
+    ner_details = utils.extract_entities_and_details(complaint_text, predicted_category)
+    risk_kws = utils.extract_risk_keywords(complaint_text)
+    
+    # 3. Predict Severity, Public Impact, and Vulnerability (if admissible)
+    if is_admissible:
+        severity_details = utils.predict_severity(
+            complaint_text, 
+            predicted_category, 
+            severity_model, 
+            vectorizer
+        )
+        severity_score = severity_details["severity"]
+        severity_reason = severity_details["reason"]
+        severity_label = utils.get_severity_level(severity_score)
+        
+        # Temp structured JSON for impact calculators
+        temp_json = {
+            "location": ner_details["location"],
+            "infrastructure": ner_details["infrastructure"]
+        }
+        public_impact_score = utils.calculate_public_impact(complaint_text, predicted_category, temp_json)
+        vulnerability_score = utils.calculate_vulnerability(complaint_text, predicted_category, temp_json)
+        
+        # 4. Duplicate detection (run before priority calculation to get duplicate escalation score)
+        existing_complaints = []
+        try:
+            if 'complaints' in st.session_state:
+                existing_complaints = st.session_state.complaints
+        except Exception:
+            pass
+            
+        existing_texts = [c['complaint_text'] for c in existing_complaints if c.get('admissible', True)]
+        is_duplicate, cluster_id, similarity = utils.detect_duplicate(
+            complaint_text, 
+            existing_texts, 
+            threshold=0.7
+        )
+        duplicate_escalation_score = utils.calculate_duplicate_escalation(
+            is_duplicate, 
+            similarity, 
+            cluster_id, 
+            existing_complaints
+        )
+        
+        # 5. Urgency calculation
+        urgency_score = utils.calculate_urgency(complaint_text, predicted_category, severity_score, temp_json)
+        
+        # 6. Calculate priority using the new governance weighted formula
+        priority_score = utils.calculate_priority_score(
+            severity_score, 
+            public_impact_score, 
+            urgency_score, 
+            vulnerability_score, 
+            duplicate_escalation_score
+        )
+        priority_label = utils.get_priority_label(priority_score)
+        department = utils.route_to_department(predicted_category)
+        explanation = utils.generate_explanation(
+            severity_score,
+            public_impact_score,
+            urgency_score,
+            vulnerability_score,
+            duplicate_escalation_score,
+            priority_label
+        )
+        sentiment_score = utils.get_sentiment_score(complaint_text)
+    else:
+        severity_score = 0.0
+        severity_reason = "Not evaluated due to rejection policy."
+        severity_label = "Low"
+        public_impact_score = 0.0
+        vulnerability_score = 0.0
+        urgency_score = 0.0
+        duplicate_escalation_score = 0.0
+        sentiment_score = 0.0
+        priority_score = 0.0
+        priority_label = "Low"
+        department = "Not Routed"
+        explanation = f"Complaint rejected. Reason: {rejection_reason}"
+        is_duplicate, cluster_id, similarity = False, None, 0.0
+        
+    # 4. Create the final consolidated structured JSON response
+    structured_json = {
+        "category": predicted_category if is_admissible else "Other",
+        "location": ner_details["location"],
+        "infrastructure": ner_details["infrastructure"],
+        "risk_keywords": risk_kws,
+        "entities": ner_details["all_entities"],
+        "severity": {
+            "score": severity_score,
+            "level": severity_label,
+            "reason": severity_reason
+        },
+        "public_impact_score": public_impact_score,
+        "vulnerability_score": vulnerability_score,
+        "urgency_score": urgency_score,
+        "duplicate_escalation_score": duplicate_escalation_score,
+        "priority": {
+            "score": priority_score,
+            "level": priority_label
+        }
+    }
     
     return {
-        'category': predicted_category,
+        'admissible': is_admissible,
+        'rejection_reason': rejection_reason,
+        'category': predicted_category if is_admissible else "Other",
+        'raw_predicted_category': predicted_category,
         'severity_score': severity_score,
+        'severity_reason': severity_reason,
+        'severity_label': severity_label,
+        'public_impact_score': public_impact_score,
+        'vulnerability_score': vulnerability_score,
+        'urgency_score': urgency_score,
+        'duplicate_escalation_score': duplicate_escalation_score,
         'sentiment_score': sentiment_score,
         'priority_score': priority_score,
         'priority_label': priority_label,
@@ -101,34 +450,38 @@ def predict_complaint(complaint_text):
         'explanation': explanation,
         'is_duplicate': is_duplicate,
         'cluster_id': cluster_id,
-        'similarity': similarity
+        'similarity': similarity,
+        'structured_json': structured_json,
+        'ner_breakdown': ner_details['extracted_entities']
     }
 
 
 def citizen_portal():
     """Citizen-facing complaint submission portal"""
-    st.title("🏛️ Sahayak AI - Smart Complaint Triage System")
-    st.markdown("### 📝 Submit Your Grievance")
+    render_government_banner()
+    
+    st.markdown("### Grievance Registration Portal")
+    st.markdown("Use this portal to register public service or civic complaints. The Sahayak AI triage system will automatically classify, verify admissibility, and compute priority metrics.")
     st.markdown("---")
     
     # Complaint input
     complaint_text = st.text_area(
-        "Enter your complaint below:",
+        "Enter grievance description:",
         height=150,
-        placeholder="Example: Patient not treated in emergency ward at Chennai. Urgent help needed.",
-        help="Describe your grievance in detail. Our AI will automatically categorize and prioritize it."
+        placeholder="Provide a detailed description of the incident/issue...",
+        help="Specify the location, what happened, and any public safety risks or affected populations."
     )
     
     col1, col2, col3 = st.columns([1, 1, 3])
     
     with col1:
-        submit_button = st.button("🚀 Submit Complaint", type="primary", use_container_width=True)
+        submit_button = st.button("Submit Grievance", type="primary", use_container_width=True)
     
     if submit_button:
         if not complaint_text.strip():
-            st.error("⚠️ Please enter a complaint before submitting!")
+            st.error("Submission failed: Please enter a grievance description before submitting.")
         else:
-            with st.spinner("🔍 Analyzing complaint with AI..."):
+            with st.spinner("Processing grievance..."):
                 # Get predictions
                 result = predict_complaint(complaint_text)
                 
@@ -141,248 +494,315 @@ def citizen_portal():
                     'id': complaint_id,
                     'complaint_text': complaint_text,
                     'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    'admissible': result['admissible'],
+                    'rejection_reason': result['rejection_reason'],
                     'category': result['category'],
+                    'raw_predicted_category': result['raw_predicted_category'],
                     'priority_label': result['priority_label'],
                     'priority_score': result['priority_score'],
                     'severity_score': result['severity_score'],
+                    'severity_reason': result['severity_reason'],
+                    'severity_label': result['severity_label'],
+                    'public_impact_score': result['public_impact_score'],
+                    'vulnerability_score': result['vulnerability_score'],
+                    'urgency_score': result['urgency_score'],
+                    'duplicate_escalation_score': result['duplicate_escalation_score'],
                     'sentiment_score': result['sentiment_score'],
                     'department': result['department'],
                     'explanation': result['explanation'],
                     'is_duplicate': result['is_duplicate'],
                     'cluster_id': result['cluster_id'],
                     'similarity': result['similarity'],
+                    'structured_json': result['structured_json'],
+                    'ner_breakdown': result['ner_breakdown'],
                     'officer_override': None,
                     'override_reason': None
                 }
                 
                 st.session_state.complaints.append(complaint_record)
                 
-                # Display results
-                st.success(f"✅ Complaint submitted successfully! ID: **{complaint_id}**")
+                # Check Admissibility for UI display
+                if not result['admissible']:
+                    st.error(f"🛑 Grievance Not Admissible for Processing")
+                    st.info(f"Reason for non-admissibility: {result['rejection_reason']}")
+                    
+                    st.markdown("---")
+                    st.markdown("### ⚙️ Parser Output (Structured JSON)")
+                    st.json(result['structured_json'])
+                    
+                    st.markdown("---")
+                    st.warning("Notice: This complaint does not comply with public portal policies and has been locked from routing.")
+                    return
                 
-                st.markdown("### 🎯 AI Analysis Results")
+                # If Admissible:
+                st.success(f"Grievance filed successfully. Reference ID: {complaint_id}")
                 
                 # Duplicate warning
                 if result['is_duplicate']:
-                    st.warning(f"⚠️ **Duplicate Detected!** This complaint is {result['similarity']*100:.1f}% similar to an existing complaint (Cluster #{result['cluster_id']})")
+                    st.warning(f"Duplicate Alert: Similar grievance has already been filed ({result['similarity']*100:.1f}% match found, Cluster #{result['cluster_id']}). Duplicate escalation applied.")
                 
-                # Priority badge
-                emoji = utils.get_priority_emoji(result['priority_label'])
-                st.markdown(f"## {emoji} Priority: **{result['priority_label'].upper()}**")
+                st.markdown("### Triage & Prioritization Report")
                 
-                # XAI Explanation
-                st.info(f"💡 **Explanation:** {result['explanation']}")
+                # Render priority stamp
+                render_priority_stamp(result['priority_label'], result['priority_score'], result['explanation'])
                 
-                # Metrics
-                col1, col2, col3 = st.columns(3)
+                # Render metrics table
+                render_metrics_table(result)
                 
-                with col1:
-                    st.metric("📊 Priority Score", f"{result['priority_score']:.2f}")
-                    st.progress(result['priority_score'])
-                
-                with col2:
-                    st.metric("⚠️ Severity Score", f"{result['severity_score']:.2f}")
-                    st.progress(result['severity_score'])
-                
-                with col3:
-                    st.metric("😟 Sentiment Score", f"{result['sentiment_score']:.2f}")
-                    st.progress(result['sentiment_score'])
-                
-                # Details
+                # Details & NER Entities
                 st.markdown("---")
-                col1, col2 = st.columns(2)
+                col_det, col_ner = st.columns(2)
                 
-                with col1:
-                    st.markdown(f"**📂 Category:** {result['category']}")
-                    st.markdown(f"**🏢 Routed To:** {result['department']}")
+                with col_det:
+                    st.markdown("#### 📂 Triage Metadata")
+                    st.markdown(f"**Grievance Category:** `{result['category']}`")
+                    st.markdown(f"**Assigned Department:** `{result['department']}`")
+                    st.markdown(f"**Identified Location:** `{result['structured_json']['location'] or 'Not Detected'}`")
+                    st.markdown(f"**Identified Infrastructure:** `{result['structured_json']['infrastructure'] or 'Not Detected'}`")
+                    st.markdown(f"**Filing Timestamp:** `{complaint_record['timestamp']}`")
+                    
+                    if result['structured_json']['risk_keywords']:
+                        st.markdown("**Risk Keywords Flagged:**")
+                        kw_badges = " ".join([f"`{kw}`" for kw in result['structured_json']['risk_keywords']])
+                        st.markdown(kw_badges)
                 
-                with col2:
-                    st.markdown(f"**🆔 Complaint ID:** {complaint_id}")
-                    st.markdown(f"**⏰ Submitted:** {complaint_record['timestamp']}")
+                with col_ner:
+                    st.markdown("#### 🔍 Named Entities Identified")
+                    ner = result['ner_breakdown']
+                    for ent_type, ent_list in ner.items():
+                        if ent_list:
+                            st.markdown(f"**{ent_type}:** {', '.join([f'`{e}`' for e in ent_list])}")
+                    if not any(ner.values()):
+                        st.markdown("*No specific named entities extracted.*")
+                
+                # Structured JSON Box
+                st.markdown("---")
+                with st.expander("⚙️ View Structured Engine Output (JSON)", expanded=True):
+                    st.json(result['structured_json'])
                 
                 st.markdown("---")
-                st.info("ℹ️ Your complaint has been routed to the appropriate department. Officers will review it based on priority.")
+                st.info("The grievance record has been synchronized. Triage analysis is complete.")
 
 
 def officer_dashboard():
-    """Officer dashboard with ranked complaints and override functionality"""
-    st.title("👮 Officer Dashboard - Complaint Triage Queue")
-    st.markdown("### 📋 View and manage complaints ranked by urgency")
+    """Officer dashboard with triage queue, filter, and override functionality"""
+    render_government_banner()
+    
+    st.markdown("### Officer Triage Dashboard")
+    st.markdown("Monitor and process active grievances. Complaints are automatically prioritized using the 5-factor governance formula.")
     st.markdown("---")
     
     if not st.session_state.complaints:
-        st.info("📭 No complaints submitted yet. Switch to Citizen Portal to submit test complaints.")
+        st.info("No complaints registered in the system yet. Active submissions will appear here.")
         return
     
-    # Statistics
-    total_complaints = len(st.session_state.complaints)
-    high_priority = len([c for c in st.session_state.complaints if c['priority_label'] == 'High'])
-    medium_priority = len([c for c in st.session_state.complaints if c['priority_label'] == 'Medium'])
-    low_priority = len([c for c in st.session_state.complaints if c['priority_label'] == 'Low'])
+    # Filter admissible vs rejected
+    admissible_complaints = [c for c in st.session_state.complaints if c.get('admissible', True)]
+    rejected_complaints = [c for c in st.session_state.complaints if not c.get('admissible', True)]
     
-    col1, col2, col3, col4 = st.columns(4)
+    total_admissible = len(admissible_complaints)
+    total_rejected = len(rejected_complaints)
+    critical_priority = len([c for c in admissible_complaints if c['priority_label'] == 'Critical'])
+    high_priority = len([c for c in admissible_complaints if c['priority_label'] == 'High'])
+    medium_priority = len([c for c in admissible_complaints if c['priority_label'] == 'Medium'])
+    low_priority = len([c for c in admissible_complaints if c['priority_label'] == 'Low'])
     
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
     with col1:
-        st.metric("📊 Total Complaints", total_complaints)
+        st.metric("Total Active", total_admissible)
     with col2:
-        st.metric("🔴 High Priority", high_priority)
+        st.metric("Critical Priority", critical_priority)
     with col3:
-        st.metric("🟡 Medium Priority", medium_priority)
+        st.metric("High Priority", high_priority)
     with col4:
-        st.metric("🟢 Low Priority", low_priority)
-    
+        st.metric("Medium Priority", medium_priority)
+    with col5:
+        st.metric("Low Priority", low_priority)
+    with col6:
+        st.metric("Restricted / Reject", total_rejected)
+        
     st.markdown("---")
     
-    # Sort complaints by priority score (descending)
-    sorted_complaints = sorted(
-        st.session_state.complaints, 
-        key=lambda x: x['priority_score'], 
-        reverse=True
-    )
+    tab_queue, tab_rejected = st.tabs(["Active Triage Queue", "Restricted / Non-Admissible Logs"])
     
-    # Display complaints
-    st.markdown("### 🎯 Complaint Queue (Sorted by Priority)")
-    
-    for idx, complaint in enumerate(sorted_complaints, 1):
-        emoji = utils.get_priority_emoji(complaint['priority_label'])
-        
-        # Determine if override has been applied
-        has_override = complaint.get('officer_override') is not None
-        
-        with st.expander(
-            f"{emoji} #{idx} - {complaint['id']} | {complaint['priority_label']} Priority | {complaint['category']}",
-            expanded=(idx <= 3)  # Expand top 3
-        ):
-            # Show complaint text
-            st.markdown(f"**Complaint Text:**")
-            st.info(complaint['complaint_text'])
+    with tab_queue:
+        if not admissible_complaints:
+            st.info("No active complaints in the queue.")
+        else:
+            # Sort admissible complaints by priority score (descending)
+            sorted_complaints = sorted(
+                admissible_complaints, 
+                key=lambda x: x['priority_score'], 
+                reverse=True
+            )
             
-            # Show AI analysis
-            col1, col2 = st.columns(2)
+            st.markdown("#### Active Grievance Queue (Ranked by Governance Priority)")
             
-            with col1:
-                st.markdown(f"**🎯 AI Priority:** {emoji} **{complaint['priority_label']}** (Score: {complaint['priority_score']:.2f})")
-                st.markdown(f"**📂 Category:** {complaint['category']}")
-                st.markdown(f"**🏢 Department:** {complaint['department']}")
-                st.markdown(f"**⏰ Submitted:** {complaint['timestamp']}")
-            
-            with col2:
-                st.markdown(f"**⚠️ Severity:** {complaint['severity_score']:.2f}")
-                st.markdown(f"**😟 Sentiment:** {complaint['sentiment_score']:.2f}")
-                if complaint['is_duplicate']:
-                    st.warning(f"⚠️ Duplicate detected ({complaint['similarity']*100:.0f}% similar)")
-            
-            # XAI Explanation
-            st.markdown("**💡 AI Explanation:**")
-            st.markdown(f"> {complaint['explanation']}")
-            
-            st.markdown("---")
-            
-            # Officer Override Section
-            st.markdown("**👮 Officer Override & Feedback**")
-            
-            if has_override:
-                # Show existing override
-                override_emoji = utils.get_priority_emoji(complaint['officer_override'])
-                st.success(f"✅ **Officer Override Applied:** {override_emoji} **{complaint['officer_override']}**")
-                if complaint.get('override_reason'):
-                    st.markdown(f"*Reason:* {complaint['override_reason']}")
-            else:
-                # Allow officer to override
-                st.markdown("*Override AI priority if needed (for model retraining):*")
+            for idx, complaint in enumerate(sorted_complaints, 1):
+                has_override = complaint.get('officer_override') is not None
+                display_label = complaint['officer_override'] if has_override else complaint['priority_label']
+                label_color = "red" if display_label in ["Critical", "High"] else "blue" if display_label == "Medium" else "green"
                 
-                col1, col2, col3 = st.columns([2, 2, 3])
-                
-                with col1:
-                    override_priority = st.selectbox(
-                        "New Priority:",
-                        ["High", "Medium", "Low"],
-                        key=f"override_select_{complaint['id']}"
-                    )
-                
-                with col2:
-                    override_reason = st.text_input(
-                        "Reason (optional):",
-                        key=f"reason_{complaint['id']}",
-                        placeholder="Why override?"
-                    )
-                
-                with col3:
-                    if st.button("Apply Override", key=f"apply_{complaint['id']}", type="secondary"):
-                        # Store override
-                        complaint['officer_override'] = override_priority
-                        complaint['override_reason'] = override_reason if override_reason else "No reason provided"
-                        
-                        # Log for model retraining
-                        override_record = {
-                            'complaint_id': complaint['id'],
-                            'complaint_text': complaint['complaint_text'],
-                            'ai_priority': complaint['priority_label'],
-                            'officer_priority': override_priority,
-                            'reason': complaint['override_reason'],
-                            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        }
-                        st.session_state.officer_overrides.append(override_record)
-                        
-                        st.rerun()
-    
+                with st.expander(
+                    f"Ref: {complaint['id']} | Level: {display_label.upper()} (Score: {complaint['priority_score']:.3f}) | Category: {complaint['category']}",
+                    expanded=(idx <= 3)
+                ):
+                    st.markdown("**Grievance Description:**")
+                    st.info(complaint['complaint_text'])
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown(f"**🎯 AI Computed Priority:** **{complaint['priority_label']}** (Score: `{complaint['priority_score']:.3f}`)")
+                        st.markdown(f"**📂 Grievance Category:** `{complaint['category']}`")
+                        st.markdown(f"**🏢 Target Department:** `{complaint['department']}`")
+                        st.markdown(f"**⏰ Registered Timestamp:** `{complaint['timestamp']}`")
+                    with col2:
+                        st.markdown(f"**⚠️ Severity Score:** `{complaint.get('severity_score', 0.0):.2f}` (Tier: **{complaint.get('severity_label', 'Low')}**)")
+                        st.markdown(f"   *Rationale:* {complaint.get('severity_reason', 'N/A')}")
+                        st.markdown(f"**📊 Public Impact Score:** `{complaint.get('public_impact_score', 0.0):.2f}`")
+                        st.markdown(f"**😟 Vulnerability Score:** `{complaint.get('vulnerability_score', 0.0):.2f}`")
+                        st.markdown(f"**⚡ Urgency Score:** `{complaint.get('urgency_score', 0.0):.2f}`")
+                        st.markdown(f"**🔄 Duplicate Escalation Score:** `{complaint.get('duplicate_escalation_score', 0.0):.2f}`")
+                    
+                    st.markdown("**💡 System Explanation:**")
+                    st.markdown(f"> {complaint['explanation']}")
+                    
+                    st.markdown("---")
+                    st.markdown("**⚙️ Structured Parser Output (JSON)**")
+                    st.json(complaint['structured_json'])
+                    
+                    st.markdown("---")
+                    st.markdown("**👮 Officer Feedback & Priority Override**")
+                    if has_override:
+                        st.success(f"✅ Priority overridden by officer to: **{complaint['officer_override']}**")
+                        if complaint.get('override_reason'):
+                            st.markdown(f"*Override Reason:* {complaint['override_reason']}")
+                    else:
+                        st.markdown("*Override AI priority level (logged for framework refinement):*")
+                        col_o1, col_o2, col_o3 = st.columns([2, 2, 3])
+                        with col_o1:
+                            override_priority = st.selectbox(
+                                "Override Priority Level:",
+                                ["Critical", "High", "Medium", "Low"],
+                                key=f"override_select_{complaint['id']}"
+                            )
+                        with col_o2:
+                            override_reason = st.text_input(
+                                "Provide override justification:",
+                                key=f"reason_{complaint['id']}",
+                                placeholder="Why override this priority?"
+                            )
+                        with col_o3:
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            if st.button("Submit Override", key=f"apply_{complaint['id']}", type="secondary"):
+                                complaint['officer_override'] = override_priority
+                                complaint['override_reason'] = override_reason if override_reason else "No justification provided"
+                                
+                                # Log override
+                                override_record = {
+                                    'complaint_id': complaint['id'],
+                                    'complaint_text': complaint['complaint_text'],
+                                    'ai_priority': complaint['priority_label'],
+                                    'officer_priority': override_priority,
+                                    'reason': complaint['override_reason'],
+                                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                }
+                                st.session_state.officer_overrides.append(override_record)
+                                st.rerun()
+                                
+    with tab_rejected:
+        if not rejected_complaints:
+            st.info("No restricted complaints logged in system.")
+        else:
+            st.markdown("#### Log of Non-Admissible / Restricted Issues")
+            
+            for idx, complaint in enumerate(rejected_complaints, 1):
+                with st.expander(f"Locked Ref: {complaint['id']} | Reason: {complaint['raw_predicted_category'].replace('Prohibited_', '')}", expanded=True):
+                    st.markdown("**Complaint Text:**")
+                    st.warning(complaint['complaint_text'])
+                    
+                    st.markdown(f"**Policy Violation Reason:** `{complaint['rejection_reason']}`")
+                    st.markdown(f"**Timestamp:** `{complaint['timestamp']}`")
+                    
+                    st.markdown("---")
+                    st.markdown("**⚙️ Parser Output (JSON)**")
+                    st.json(complaint['structured_json'])
+                    
     # Export override feedback
     st.markdown("---")
     if st.session_state.officer_overrides:
-        st.markdown(f"### 📊 Officer Feedback Log ({len(st.session_state.officer_overrides)} overrides)")
+        st.markdown(f"### Framework Training Data Log ({len(st.session_state.officer_overrides)} overrides)")
         
-        if st.button("💾 Export Feedback for Model Retraining"):
+        if st.button("Compile & Export Override Log"):
             override_df = pd.DataFrame(st.session_state.officer_overrides)
             csv = override_df.to_csv(index=False)
             
             st.download_button(
-                label="⬇️ Download Override Feedback (CSV)",
+                label="Download Override Dataset (CSV)",
                 data=csv,
                 file_name=f"officer_feedback_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                 mime="text/csv"
             )
-            
-            st.success("✅ Feedback ready for download! This can be used to retrain and improve the model.")
-
+            st.success("Override feedback compiled. Dataset ready for download.")
 
 # Main App
 def main():
+    inject_custom_css()
+    
     # Sidebar navigation
-    st.sidebar.title("🏛️ Sahayak AI")
-    st.sidebar.markdown("**Intelligent Complaint Triage**")
-    st.sidebar.markdown("---")
+    st.sidebar.markdown("""
+    <div class="sidebar-gov-header" style="background-color: #0f294a; padding: 10px; border-bottom: 3px solid #ff9933; text-align: center; margin-bottom: 20px; border-radius: 4px;">
+        <h4 class="sidebar-gov-title" style="margin: 0; font-size: 13px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase;">Portal Navigation</h4>
+    </div>
+    """, unsafe_allow_html=True)
     
     page = st.sidebar.radio(
         "Navigate:",
-        ["👤 Citizen Portal", "👮 Officer Dashboard"],
+        ["Submit Grievance (Citizen Portal)", "Triage Queue (Officer Dashboard)"],
         label_visibility="collapsed"
     )
     
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📊 System Info")
-    st.sidebar.info(f"""
-    **Total Complaints:** {len(st.session_state.complaints)}  
-    **Officer Overrides:** {len(st.session_state.officer_overrides)}
-    """)
+    admissible_count = len([c for c in st.session_state.complaints if c.get('admissible', True)])
+    rejected_count = len([c for c in st.session_state.complaints if not c.get('admissible', True)])
     
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🎯 Priority Formula")
-    st.sidebar.code("""
-Priority Score = 
-  (Severity × 0.6) + 
-  (Sentiment × 0.4)
-
-High:   [0.8 - 1.0]
-Medium: [0.4 - 0.79]
-Low:    [0.0 - 0.39]
-    """)
+    st.sidebar.markdown("<br>", unsafe_allow_html=True)
     
-    # Route to appropriate page
-    if page == "👤 Citizen Portal":
+    st.sidebar.markdown(f"""
+    <div style="border: 1px solid #cbd5e0; padding: 12px; background-color: #ffffff; border-radius: 4px; margin-bottom: 15px; font-family: Arial, sans-serif;">
+        <span style="font-size: 10px; font-weight: bold; color: #718096; text-transform: uppercase; letter-spacing: 0.5px;">Portal Registry Stats</span>
+        <div style="margin-top: 5px; font-size: 12.5px; color: #2d3748; line-height: 1.5;">
+            &bull; <strong>Active Grievances:</strong> {admissible_count}<br>
+            &bull; <strong>Restricted Logs:</strong> {rejected_count}<br>
+            &bull; <strong>Officer Overrides:</strong> {len(st.session_state.officer_overrides)}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.sidebar.markdown(f"""
+    <div style="border: 1px solid #cbd5e0; padding: 12px; background-color: #ffffff; border-radius: 4px; font-family: Arial, sans-serif;">
+        <span style="font-size: 10px; font-weight: bold; color: #718096; text-transform: uppercase; letter-spacing: 0.5px;">Triage Formula Model</span>
+        <div style="margin-top: 5px; font-size: 11px; font-family: monospace; color: #2d3748; line-height: 1.4;">
+            Priority Score =<br>
+            &nbsp;&nbsp;0.30 * Severity +<br>
+            &nbsp;&nbsp;0.25 * Public Impact +<br>
+            &nbsp;&nbsp;0.20 * Urgency +<br>
+            &nbsp;&nbsp;0.15 * Vulnerability +<br>
+            &nbsp;&nbsp;0.10 * Duplicates<br>
+            <br>
+            <strong>Tiers:</strong><br>
+            &bull; Critical: >= 0.75<br>
+            &bull; High: &nbsp;&nbsp;&nbsp;&nbsp;0.50 - 0.74<br>
+            &bull; Medium: &nbsp;&nbsp;0.30 - 0.49<br>
+            &bull; Low: &nbsp;&nbsp;&nbsp;&nbsp;< 0.30
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Route to page
+    if page == "Submit Grievance (Citizen Portal)":
         citizen_portal()
     else:
         officer_dashboard()
-
 
 if __name__ == "__main__":
     main()

@@ -46,30 +46,31 @@ def inject_custom_css():
         background-color: #f8f9fa !important;
     }
     
-    /* Base typography */
-    h1, h2, h3, h4, h5, h6, p, span, li, label, div, td, th {
-        font-family: Arial, Helvetica, sans-serif !important;
+    /* Base typography (excluding .stApp to protect icon fonts from inheriting Arial) */
+    p, label, li, td, th, h1, h2, h3, h4, h5, h6, input, textarea, button, select {
+        font-family: Arial, Helvetica, sans-serif;
     }
     
+    /* Default dark headings color (no !important so inline styles override it) */
     h1, h2, h3, h4, h5, h6 {
-        color: #0f294a !important;
+        color: #0f294a;
     }
     
-    /* Explicitly force dark text color for contrast on the light background */
+    /* Default dark text color for contrast on the light background (no !important) */
     p, li, label, td, th, [data-testid="stMarkdownContainer"] {
-        color: #2d3748 !important;
+        color: #2d3748;
     }
     
     .stWidgetLabel p, label {
-        color: #2d3748 !important;
+        color: #2d3748;
     }
     
     /* Captions */
     small, .stCaptionContainer, div[data-testid="stCaptionContainer"] p {
-        color: #4a5568 !important;
+        color: #4a5568;
     }
     
-    /* Metrics labels and values */
+    /* Metrics labels and values visibility */
     div[data-testid="stMetricLabel"] > div, div[data-testid="stMetricValue"] > div {
         color: #2d3748 !important;
     }
@@ -85,7 +86,7 @@ def inject_custom_css():
     
     /* Sidebar text colors */
     section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span, section[data-testid="stSidebar"] label {
-        color: #2d3748 !important;
+        color: #2d3748;
     }
     
     /* Selectbox selected option text color */
@@ -189,6 +190,26 @@ def inject_custom_css():
     }
     .priority-stamp p.priority-stamp-body {
         color: #2d3748 !important;
+    }
+    
+    /* Streamlit Alert/Notification box styling overrides */
+    div[data-testid="stNotification"], div[data-testid="stAlert"], div[class*="stAlert"] {
+        background-color: #ffffff !important;
+        border: 1px solid #cbd5e0 !important;
+        border-left: 6px solid #0f294a !important; /* Left border accent */
+        border-radius: 4px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+    }
+    
+    /* Force high-contrast text color inside all alert/notification boxes */
+    div[data-testid="stNotification"] p,
+    div[data-testid="stNotification"] li,
+    div[data-testid="stAlert"] p,
+    div[data-testid="stAlert"] li,
+    div[class*="stAlert"] p,
+    div[class*="stAlert"] li {
+        color: #1a202c !important;
+        font-weight: 500 !important;
     }
     </style>
     """

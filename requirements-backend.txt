@@ -1,19 +1,18 @@
 # Sahayak AI - Backend (api.py) Dependencies
 # Install these on the server that runs the FastAPI backend.
 # Usage: pip install -r requirements-backend.txt
+# IMPORTANT: Set PYTHON_VERSION=3.11.9 in Render environment variables
 
-streamlit>=1.30.0
-scikit-learn>=1.5.0
-pandas>=2.0.0
-numpy>=1.24.0,<2.0.0
-vaderSentiment>=3.3.2
-sentence-transformers>=2.2.2
-spacy>=3.6.0
-https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.6.0/en_core_web_sm-3.6.0-py3-none-any.whl
-faiss-cpu
-fastapi
-uvicorn
-sqlalchemy
-psycopg2-binary
-groq
-requests>=2.31.0
+scikit-learn==1.5.2
+pandas==2.2.3
+numpy==1.26.4
+vaderSentiment==3.3.2
+sentence-transformers==2.7.0
+spacy==3.7.6
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
+faiss-cpu==1.8.0
+fastapi==0.115.6
+uvicorn==0.34.0
+sqlalchemy==2.0.36
+groq==0.15.0
+requests==2.32.3

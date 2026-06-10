@@ -122,7 +122,7 @@ Building and deploying NLP applications with PyTorch and spaCy on resource-const
 ### 4. Lazy-Load Dependency Crashing (torchvision ModuleNotFoundError Fix)
 * **Problem**: When deploying on Streamlit Cloud (using Python 3.14), Streamlit's internal `local_sources_watcher` scans all imported package modules to find their path. When it encounters a lazy-loaded module structure inside Hugging Face `transformers` (used by `sentence-transformers`), accessing its namespace triggers lazy-loading checks. One of the models (ZoeDepth) attempts to dynamically import `torchvision`, which throws `ModuleNotFoundError: No module named 'torchvision'` and crashes the app daemon startup.
 * **Solution**: 
-  1. Disabled the file system watcher by setting `watchFileSystem = false` under the `[server]` block in `.streamlit/config.toml`. This is highly recommended for production environments as it saves server resources.
+  1. Disabled the file system watcher by setting `fileWatcherType = "none"` under the `[server]` block in `.streamlit/config.toml`. This is highly recommended for production environments as it saves server resources.
   2. Added `torchvision` directly to `requirements.txt` to satisfy any lazy imports if the watcher is triggered elsewhere.
 
 ---

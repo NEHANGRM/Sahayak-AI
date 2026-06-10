@@ -8,7 +8,8 @@ import pandas as pd
 from datetime import datetime
 import requests
 
-API_URL = "http://localhost:8000"
+import os
+API_URL = os.environ.get("SAHAYAK_API_URL", "http://localhost:8000")
 
 # Page configuration
 st.set_page_config(

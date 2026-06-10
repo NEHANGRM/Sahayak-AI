@@ -1,0 +1,19 @@
+# Sahayak AI - Backend (api.py) Dependencies
+# Install these on the server that runs the FastAPI backend.
+# Usage: pip install -r requirements-backend.txt
+
+streamlit>=1.30.0
+scikit-learn>=1.5.0
+pandas>=2.0.0
+numpy>=1.24.0,<2.0.0
+vaderSentiment>=3.3.2
+sentence-transformers>=2.2.2
+spacy>=3.6.0
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.6.0/en_core_web_sm-3.6.0-py3-none-any.whl
+faiss-cpu
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+groq
+requests>=2.31.0

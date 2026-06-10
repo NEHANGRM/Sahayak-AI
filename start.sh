@@ -10,7 +10,7 @@ echo ""
 
 # Step 1: Install dependencies
 echo "[1/3] Installing dependencies..."
-pip install -r requirements.txt
+pip install -r requirements-backend.txt
 
 if [ $? -ne 0 ]; then
     echo "❌ Installation failed. Please check your Python environment."

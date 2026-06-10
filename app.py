@@ -264,11 +264,10 @@ def inject_custom_css():
 def render_government_banner():
     """Renders a formal government banner at the top of the main area"""
     html = """
-    <div class="gov-banner" style="background-color: #0f294a; padding: 18px; border-top: 5px solid #ff9933; border-bottom: 5px solid #138808; text-align: center; margin-bottom: 25px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-        <h1 class="gov-banner-title" style="margin: 0; font-size: 24px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">National Grievance Redressal Portal</h1>
-        <p class="gov-banner-subtitle" style="margin: 5px 0 0 0; font-size: 13px; letter-spacing: 0.5px; font-weight: 500;">
-            SAHAYAK AI &bull; INTEGRATED CIVIC DECISION SUPPORT & TRIAGE MIDDLEWARE
-        </p>
+    <div class="gov-banner" style="background-color: #0f294a; padding: 22px; border-top: 5px solid #ff9933; border-bottom: 5px solid #138808; text-align: center; margin-bottom: 25px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
+        <div style="font-size: 11px; color: #ff9933; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px;">Government of India Middleware Platform</div>
+        <h1 class="gov-banner-title" style="margin: 0; font-size: 32px; font-weight: 900; letter-spacing: 1.5px; color: #ffffff; text-transform: uppercase;">SAHAYAK AI</h1>
+        <div style="font-size: 13px; color: #cbd5e0; font-weight: 500; letter-spacing: 0.8px; margin-top: 6px; text-transform: uppercase;">National Grievance Triage & Redressal Board</div>
     </div>
     """
     st.markdown(html, unsafe_allow_html=True)
@@ -610,6 +609,10 @@ def predict_complaint(complaint_text):
             vectorizer=vectorizer,
             threshold=0.7
         )
+        if is_duplicate and cluster_id is not None and cluster_id < len(existing_complaints):
+            lead_id = existing_complaints[cluster_id]['id']
+        else:
+            lead_id = None
         duplicate_escalation_score = utils.calculate_duplicate_escalation(
             is_duplicate, 
             similarity, 
@@ -674,6 +677,7 @@ def predict_complaint(complaint_text):
         duplicate_count = 0
         duplicate_ids = []
         similar_cases = []
+        lead_id = None
         
     # 4. Create the final consolidated structured JSON response
     structured_json = {
@@ -721,7 +725,8 @@ def predict_complaint(complaint_text):
         'ner_breakdown': ner_details['extracted_entities'],
         'duplicate_count': duplicate_count,
         'duplicate_ids': duplicate_ids,
-        'similar_cases': similar_cases
+        'similar_cases': similar_cases,
+        'lead_id': lead_id
     }
 
 
@@ -786,6 +791,7 @@ def citizen_portal():
                     'ner_breakdown': result['ner_breakdown'],
                     'officer_override': None,
                     'override_reason': None,
+                    'lead_id': result.get('lead_id') if result.get('lead_id') else complaint_id,
                     'duplicate_count': result.get('duplicate_count', 0),
                     'duplicate_ids': result.get('duplicate_ids', []),
                     'similar_cases': result.get('similar_cases', []),
@@ -815,79 +821,19 @@ def citizen_portal():
                 # If Admissible:
                 st.success(f"Grievance filed successfully. Reference ID: {complaint_id}")
                 
-                # Duplicate warning
-                if result['is_duplicate']:
-                    st.warning(f"Duplicate Alert: Similar grievance has already been filed ({result['similarity']*100:.1f}% match found, Cluster #{result['cluster_id']}). Duplicate escalation applied.")
+                # Details
+                st.markdown("### 📋 Filed Grievance Record")
+                st.markdown(f"**Grievance Reference ID:** `{complaint_id}`")
+                st.markdown(f"**Grievance Category:** `{result['category']}`")
+                st.markdown(f"**Assigned Department:** `{result['department']}`")
+                st.markdown(f"**Identified Location:** `{result['structured_json']['location'] or 'Not Detected'}`")
+                st.markdown(f"**Identified Infrastructure:** `{result['structured_json']['infrastructure'] or 'Not Detected'}`")
+                st.markdown(f"**Filing Timestamp:** `{complaint_record['timestamp']}`")
                 
-                st.markdown("### Triage & Prioritization Report")
-                
-                # Render priority stamp
-                render_priority_stamp(result['priority_label'], result['priority_score'], result['explanation'])
-                
-                # Render metrics table
-                render_metrics_table(result)
-                
-                # Details & NER Entities
-                st.markdown("---")
-                col_det, col_ner = st.columns(2)
-                
-                with col_det:
-                    st.markdown("#### 📂 Triage Metadata")
-                    st.markdown(f"**Grievance Category:** `{result['category']}`")
-                    st.markdown(f"**Assigned Department:** `{result['department']}`")
-                    st.markdown(f"**Identified Location:** `{result['structured_json']['location'] or 'Not Detected'}`")
-                    st.markdown(f"**Identified Infrastructure:** `{result['structured_json']['infrastructure'] or 'Not Detected'}`")
-                    st.markdown(f"**Filing Timestamp:** `{complaint_record['timestamp']}`")
-                    
-                    if result['structured_json']['risk_keywords']:
-                        st.markdown("**Risk Keywords Flagged:**")
-                        kw_badges = " ".join([f"`{kw}`" for kw in result['structured_json']['risk_keywords']])
-                        st.markdown(kw_badges)
-                
-                with col_ner:
-                    st.markdown("#### 🔍 Named Entities Identified")
-                    ner = result['ner_breakdown']
-                    for ent_type, ent_list in ner.items():
-                        if ent_list:
-                            st.markdown(f"**{ent_type}:** {', '.join([f'`{e}`' for e in ent_list])}")
-                    if not any(ner.values()):
-                        st.markdown("*No specific named entities extracted.*")
-                
-                # Phase 5: RAG Context Retrieval & Phase 6: Duplicate Registry
-                st.markdown("---")
-                st.markdown("### 🔍 RAG Context & Similar Historical Grievances (Phase 5)")
-                if result.get('similar_cases'):
-                    for sc in result['similar_cases']:
-                        with st.container():
-                            st.markdown(f"**Grievance ID:** `{sc['id']}` (Category: `{sc['category']}`, Priority: `{sc['priority_label']}`) | **Similarity Score:** `{sc['similarity']*100:.1f}%`")
-                            st.markdown(f"**Location:** `{sc['location']}`")
-                            st.markdown(f"**Description:** *\"{sc['complaint_text']}\"*")
-                            
-                            col_res, col_esc = st.columns(2)
-                            with col_res:
-                                st.markdown("**Resolution History:**")
-                                for r in sc.get('resolution_history', []):
-                                    st.markdown(f"- `{r['date']}`: **{r['status']}** - *{r.get('notes', '')}*")
-                            with col_esc:
-                                st.markdown("**Escalation History:**")
-                                for e in sc.get('escalation_history', []):
-                                    st.markdown(f"- `{e['date']}`: **{e['level']}**")
-                            st.markdown("<div style='border-bottom: 1px dashed #cbd5e0; margin: 10px 0;'></div>", unsafe_allow_html=True)
-                else:
-                    st.info("No past similar grievances found in context search.")
-
-                st.markdown("---")
-                st.markdown("### 📋 Duplicate Registry (Phase 6)")
-                if result.get('duplicate_count', 0) > 0:
-                    st.warning(f"**Duplicate Count:** `{result['duplicate_count']}` recurring reports detected.")
-                    st.markdown(f"**Duplicate Complaint IDs:** {', '.join([f'`{did}`' for did in result['duplicate_ids']])}")
-                else:
-                    st.success("No recurring reports detected for this issue. This is a unique complaint.")
-
-                # Structured JSON Box
-                st.markdown("---")
-                with st.expander("⚙️ View Structured Engine Output (JSON)", expanded=True):
-                    st.json(result['structured_json'])
+                if result['structured_json']['risk_keywords']:
+                    st.markdown("**Risk Keywords Flagged:**")
+                    kw_badges = " ".join([f"`{kw}`" for kw in result['structured_json']['risk_keywords']])
+                    st.markdown(kw_badges)
                 
                 st.markdown("---")
                 st.info("The grievance record has been synchronized. Triage analysis is complete.")
@@ -938,9 +884,57 @@ def officer_dashboard():
         if not admissible_complaints:
             st.info("No active complaints in the queue.")
         else:
+            # Group duplicate complaints by lead_id (representing all duplicates on the dashboard)
+            groups = {}
+            for c in admissible_complaints:
+                lid = c.get('lead_id') or c['id']
+                if lid not in groups:
+                    groups[lid] = []
+                groups[lid].append(c)
+                
+            grouped_admissible = []
+            for lid, group_list in groups.items():
+                # Sort group by timestamp to find the lead (oldest one)
+                sorted_group = sorted(group_list, key=lambda x: x.get('timestamp', ''))
+                lead_complaint = sorted_group[0]
+                
+                # Recalculate duplicate escalation dynamically for the lead complaint
+                dup_count = len(sorted_group) - 1
+                if dup_count == 0:
+                    dup_esc = 0.0
+                elif dup_count == 1:
+                    dup_esc = 0.60
+                elif dup_count == 2:
+                    dup_esc = 0.85
+                else:
+                    dup_esc = 1.00
+                
+                # Recalculate priority dynamically to reflect escalations
+                lead_complaint['duplicate_escalation_score'] = dup_esc
+                lead_complaint['priority_score'] = utils.calculate_priority_score(
+                    lead_complaint['severity_score'],
+                    lead_complaint['public_impact_score'],
+                    lead_complaint['urgency_score'],
+                    lead_complaint['vulnerability_score'],
+                    dup_esc
+                )
+                lead_complaint['priority_label'] = utils.get_priority_label(lead_complaint['priority_score'])
+                lead_complaint['explanation'] = utils.generate_explanation(
+                    lead_complaint['severity_score'],
+                    lead_complaint['public_impact_score'],
+                    lead_complaint['urgency_score'],
+                    lead_complaint['vulnerability_score'],
+                    dup_esc,
+                    lead_complaint['priority_label']
+                )
+                
+                lead_complaint['duplicate_reports'] = sorted_group[1:]
+                lead_complaint['duplicate_count'] = dup_count
+                grouped_admissible.append(lead_complaint)
+
             # Sort admissible complaints by priority score (descending)
             sorted_complaints = sorted(
-                admissible_complaints, 
+                grouped_admissible, 
                 key=lambda x: x['priority_score'], 
                 reverse=True
             )
@@ -952,8 +946,9 @@ def officer_dashboard():
                 display_label = complaint['officer_override'] if has_override else complaint['priority_label']
                 label_color = "red" if display_label in ["Critical", "High"] else "blue" if display_label == "Medium" else "green"
                 
+                dup_suffix = f" [🔗 Grouped: {complaint['duplicate_count'] + 1} Reports]" if complaint.get('duplicate_count', 0) > 0 else ""
                 with st.expander(
-                    f"Ref: {complaint['id']} | Level: {display_label.upper()} (Score: {complaint['priority_score']:.3f}) | Category: {complaint['category']}",
+                    f"Ref: {complaint['id']}{dup_suffix} | Level: {display_label.upper()} (Score: {complaint['priority_score']:.3f}) | Category: {complaint['category']}",
                     expanded=(idx <= 3)
                 ):
                     st.markdown("**Grievance Description:**")
@@ -1014,6 +1009,15 @@ def officer_dashboard():
                     st.markdown("---")
                     st.markdown("**⚙️ Structured Parser Output (JSON)**")
                     st.json(complaint['structured_json'])
+                    
+                    if complaint.get('duplicate_count', 0) > 0:
+                        st.markdown("---")
+                        st.markdown(f"**🔗 Grouped Duplicate Reports ({complaint['duplicate_count']} duplicates)**")
+                        for d_idx, dc in enumerate(complaint['duplicate_reports'], 1):
+                            with st.container():
+                                st.markdown(f"**Duplicate #{d_idx}:** Reference ID: `{dc['id']}` | Filed: `{dc['timestamp']}`")
+                                st.markdown(f"**Description:** *\"{dc['complaint_text']}\"*")
+                                st.markdown("<div style='border-bottom: 1px dotted #e2e8f0; margin: 5px 0;'></div>", unsafe_allow_html=True)
                     
                     st.markdown("---")
                     st.markdown("**👮 Officer Feedback & Priority Override**")

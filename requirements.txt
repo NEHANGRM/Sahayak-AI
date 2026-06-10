@@ -6,7 +6,7 @@ vaderSentiment>=3.3.2
 sentence-transformers>=2.2.2
 spacy>=3.6.0
 https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.6.0/en_core_web_sm-3.6.0-py3-none-any.whl
-torchvision
 faiss-cpu
+
 
 

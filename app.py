@@ -622,7 +622,8 @@ def officer_dashboard():
                         st.markdown("**📋 Duplicate Registry (Phase 6)**")
                         if complaint.get('duplicate_count', 0) > 0:
                             st.warning(f"**Duplicate Count:** `{complaint['duplicate_count']}` recurring reports.")
-                            st.markdown(f"**Duplicate IDs:** {', '.join([f'`{dc[\'id\']}`' for dc in complaint['duplicate_reports']])}")
+                            dup_ids = ", ".join([f"`{dc['id']}`" for dc in complaint['duplicate_reports']])
+                            st.markdown(f"**Duplicate IDs:** {dup_ids}")
                         else:
                             st.success("No duplicates detected in queue.")
  

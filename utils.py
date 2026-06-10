@@ -515,7 +515,7 @@ def detect_duplicate(new_complaint_text, existing_complaints, threshold=0.7):
         most_similar_idx = similarities.argmax()
         
         if max_similarity >= threshold:
-            return True, most_similar_idx, round(float(max_similarity), 3)
+            return True, int(most_similar_idx), round(float(max_similarity), 3)
         else:
             return False, None, round(float(max_similarity), 3)
             

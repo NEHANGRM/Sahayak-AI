@@ -395,6 +395,7 @@ if 'complaints' not in st.session_state:
             'similarity': 0.0,
             'structured_json': {"category": "Water", "location": "Anna Nagar", "infrastructure": "Water Pipeline", "risk_keywords": [], "entities": [], "severity": {"score": 0.40, "level": "Medium", "reason": "Infrastructure failure"}},
             'ner_breakdown': {"Locations": ["Anna Nagar"]},
+            'status': 'Open',
             'officer_override': None,
             'override_reason': None,
             'resolution_history': [
@@ -432,6 +433,7 @@ if 'complaints' not in st.session_state:
             'similarity': 0.0,
             'structured_json': {"category": "Roads", "location": "City General Hospital", "infrastructure": "Bridge", "risk_keywords": ["accident", "danger"], "entities": [], "severity": {"score": 0.85, "level": "Critical", "reason": "Critical infrastructure + public safety risk"}},
             'ner_breakdown': {"Locations": ["City General Hospital"]},
+            'status': 'Resolved',
             'officer_override': None,
             'override_reason': None,
             'resolution_history': [
@@ -468,6 +470,7 @@ if 'complaints' not in st.session_state:
             'similarity': 0.0,
             'structured_json': {"category": "Electricity", "location": "T-Nagar", "infrastructure": "School", "risk_keywords": ["unsafe"], "entities": [], "severity": {"score": 0.60, "level": "High", "reason": "Public safety risk + vulnerable setting"}},
             'ner_breakdown': {"Locations": ["T-Nagar"]},
+            'status': 'Open',
             'officer_override': None,
             'override_reason': None,
             'resolution_history': [
@@ -503,6 +506,7 @@ if 'complaints' not in st.session_state:
             'similarity': 0.0,
             'structured_json': {"category": "Sanitation", "location": "Sector 4", "infrastructure": "Waste Bin", "risk_keywords": [], "entities": [], "severity": {"score": 0.45, "level": "Medium", "reason": "Infrastructure failure"}},
             'ner_breakdown': {"Locations": ["Sector 4", "Chennai"]},
+            'status': 'Open',
             'officer_override': None,
             'override_reason': None,
             'resolution_history': [
@@ -538,6 +542,7 @@ if 'complaints' not in st.session_state:
             'similarity': 0.0,
             'structured_json': {"category": "Corruption", "location": "Municipal Corporation Office", "infrastructure": "Government Office", "risk_keywords": ["bribe", "corruption"], "entities": [], "severity": {"score": 0.90, "level": "High", "reason": "Integrity violation / corruption bribe"}},
             'ner_breakdown': {"Locations": ["Municipal Corporation Office"]},
+            'status': 'Open',
             'officer_override': None,
             'override_reason': None,
             'resolution_history': [
@@ -789,6 +794,7 @@ def citizen_portal():
                     'similarity': result['similarity'],
                     'structured_json': result['structured_json'],
                     'ner_breakdown': result['ner_breakdown'],
+                    'status': 'Open',
                     'officer_override': None,
                     'override_reason': None,
                     'lead_id': result.get('lead_id') if result.get('lead_id') else complaint_id,
@@ -851,8 +857,9 @@ def officer_dashboard():
         st.info("No complaints registered in the system yet. Active submissions will appear here.")
         return
     
-    # Filter admissible vs rejected
-    admissible_complaints = [c for c in st.session_state.complaints if c.get('admissible', True)]
+    # Filter admissible vs resolved vs rejected
+    admissible_complaints = [c for c in st.session_state.complaints if c.get('admissible', True) and c.get('status', 'Open') != 'Resolved']
+    resolved_complaints = [c for c in st.session_state.complaints if c.get('admissible', True) and c.get('status', 'Open') == 'Resolved']
     rejected_complaints = [c for c in st.session_state.complaints if not c.get('admissible', True)]
     
     total_admissible = len(admissible_complaints)
@@ -877,8 +884,11 @@ def officer_dashboard():
         st.metric("Restricted / Reject", total_rejected)
         
     st.markdown("---")
-    
-    tab_queue, tab_rejected = st.tabs(["Active Triage Queue", "Restricted / Non-Admissible Logs"])
+    tab_queue, tab_resolved, tab_rejected = st.tabs([
+        "Active Triage Queue", 
+        "Resolved Grievances", 
+        "Restricted / Non-Admissible Logs"
+    ])
     
     with tab_queue:
         if not admissible_complaints:
@@ -987,8 +997,8 @@ def officer_dashboard():
                         if similar_cases:
                             for sc in similar_cases[:2]:
                                 st.markdown(f"- **{sc['id']}** ({sc['category']}, Priority: **{sc['priority_label']}**) | Score: `{sc['similarity']*100:.1f}%`\n"
-                                            f"  *Text:* \"{sc['complaint_text'][:80]}...\"\n"
-                                            f"  *Status:* **{sc['resolution_history'][-1]['status']}** ({sc['resolution_history'][-1]['date']})")
+                                             f"  *Text:* \"{sc['complaint_text'][:80]}...\"\n"
+                                             f"  *Status:* **{sc['resolution_history'][-1]['status']}** ({sc['resolution_history'][-1]['date']})")
                         else:
                             st.info("No past similar cases found in database.")
                             
@@ -1005,7 +1015,7 @@ def officer_dashboard():
                             st.markdown(f"**Duplicate IDs:** {', '.join([f'`{did}`' for did in dup_info['duplicate_ids']])}")
                         else:
                             st.success("No duplicates detected in queue.")
-
+ 
                     st.markdown("---")
                     st.markdown("**⚙️ Structured Parser Output (JSON)**")
                     st.json(complaint['structured_json'])
@@ -1020,29 +1030,54 @@ def officer_dashboard():
                                 st.markdown("<div style='border-bottom: 1px dotted #e2e8f0; margin: 5px 0;'></div>", unsafe_allow_html=True)
                     
                     st.markdown("---")
-                    st.markdown("**👮 Officer Feedback & Priority Override**")
-                    if has_override:
-                        st.success(f"✅ Priority overridden by officer to: **{complaint['officer_override']}**")
-                        if complaint.get('override_reason'):
-                            st.markdown(f"*Override Reason:* {complaint['override_reason']}")
-                    else:
-                        st.markdown("*Override AI priority level (logged for framework refinement):*")
-                        col_o1, col_o2, col_o3 = st.columns([2, 2, 3])
-                        with col_o1:
+                    st.markdown("**👮 Officer Actions**")
+                    action_col1, action_col2 = st.columns(2)
+                    
+                    with action_col1:
+                        st.markdown("**Resolve Grievance**")
+                        resolution_notes = st.text_input(
+                            "Resolution Notes:",
+                            key=f"resolve_notes_{complaint['id']}",
+                            placeholder="Describe action taken to resolve..."
+                        )
+                        if st.button("Mark as Solved", key=f"solve_{complaint['id']}", type="primary", use_container_width=True):
+                            complaint['status'] = 'Resolved'
+                            notes = resolution_notes if resolution_notes.strip() else "Marked as resolved by officer."
+                            complaint['resolution_history'].append({
+                                "status": "Resolved",
+                                "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "notes": notes
+                            })
+                            # Also resolve any duplicate complaints grouped under this lead complaint
+                            if complaint.get('duplicate_reports'):
+                                for dup in complaint['duplicate_reports']:
+                                    dup['status'] = 'Resolved'
+                                    dup['resolution_history'].append({
+                                        "status": "Resolved",
+                                        "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                        "notes": f"Resolved automatically (grouped with lead complaint {complaint['id']}). Notes: {notes}"
+                                    })
+                            st.success(f"Grievance {complaint['id']} marked as solved!")
+                            st.rerun()
+                            
+                    with action_col2:
+                        st.markdown("**Priority Override**")
+                        if has_override:
+                            st.success(f"✅ Priority overridden to: **{complaint['officer_override']}**")
+                            if complaint.get('override_reason'):
+                                st.markdown(f"*Reason:* {complaint['override_reason']}")
+                        else:
                             override_priority = st.selectbox(
                                 "Override Priority Level:",
                                 ["Critical", "High", "Medium", "Low"],
                                 key=f"override_select_{complaint['id']}"
                             )
-                        with col_o2:
                             override_reason = st.text_input(
                                 "Provide override justification:",
                                 key=f"reason_{complaint['id']}",
                                 placeholder="Why override this priority?"
                             )
-                        with col_o3:
-                            st.markdown("<br>", unsafe_allow_html=True)
-                            if st.button("Submit Override", key=f"apply_{complaint['id']}", type="secondary"):
+                            if st.button("Submit Override", key=f"apply_{complaint['id']}", type="secondary", use_container_width=True):
                                 complaint['officer_override'] = override_priority
                                 complaint['override_reason'] = override_reason if override_reason else "No justification provided"
                                 
@@ -1057,6 +1092,32 @@ def officer_dashboard():
                                 }
                                 st.session_state.officer_overrides.append(override_record)
                                 st.rerun()
+
+    with tab_resolved:
+        if not resolved_complaints:
+            st.info("No resolved grievances yet.")
+        else:
+            st.markdown("#### Resolved Grievances Log")
+            for idx, complaint in enumerate(resolved_complaints, 1):
+                # Check for override priority if exists
+                display_label = complaint.get('officer_override') or complaint['priority_label']
+                with st.expander(f"Ref: {complaint['id']} | Status: RESOLVED | Priority: {display_label.upper()} | Category: {complaint['category']}", expanded=False):
+                    st.markdown("**Grievance Description:**")
+                    st.info(complaint['complaint_text'])
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown(f"**🎯 Final Priority Level:** **{display_label}**")
+                        st.markdown(f"**📂 Category:** `{complaint['category']}`")
+                        st.markdown(f"**🏢 Department:** `{complaint['department']}`")
+                    with col2:
+                        st.markdown(f"**⏰ Registered:** `{complaint['timestamp']}`")
+                        if complaint.get('officer_override'):
+                            st.markdown(f"👮 *Priority overridden by officer from: {complaint['priority_label']}*")
+                        
+                    st.markdown("**📋 Resolution & Audit History:**")
+                    for hist in complaint.get('resolution_history', []):
+                        st.markdown(f"- **{hist['status']}** ({hist['date']}): {hist.get('notes', '')}")
                                 
     with tab_rejected:
         if not rejected_complaints:

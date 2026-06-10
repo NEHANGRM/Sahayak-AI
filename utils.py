@@ -119,21 +119,32 @@ def check_admissibility_keywords(text):
 def check_admissibility(text, category_model, vectorizer):
     """
     Check if a complaint is admissible under the portal policies.
-    Returns: (is_admissible: bool, reason: str or None, category: str)
+    Returns: (is_admissible: bool, reason: str or None, category: str, confidence_score: float)
     """
     # 1. First run the quick keyword interception
     admissible, reason, category = check_admissibility_keywords(text)
     if not admissible:
-        return False, reason, category
+        return False, reason, category, 1.0
         
     # 2. If it passes keywords, use the trained ML model classification
     vector = vectorizer.transform([text])
     predicted_category = category_model.predict(vector)[0]
     
-    if predicted_category in REJECTION_REASONS:
-        return False, REJECTION_REASONS[predicted_category], predicted_category
+    # Calculate confidence score
+    confidence_score = 1.0
+    try:
+        if hasattr(category_model, "predict_proba"):
+            probs = category_model.predict_proba(vector)[0]
+            classes = list(category_model.classes_)
+            if predicted_category in classes:
+                confidence_score = float(probs[classes.index(predicted_category)])
+    except Exception as e:
+        print(f"Error calculating confidence: {e}")
         
-    return True, None, predicted_category
+    if predicted_category in REJECTION_REASONS:
+        return False, REJECTION_REASONS[predicted_category], predicted_category, confidence_score
+        
+    return True, None, predicted_category, confidence_score
 
 def extract_entities_and_details(text, category):
     """
@@ -988,3 +999,181 @@ def calculate_vulnerability(text, category, structured_json):
             
     # Cap between 0.0 and 1.0
     return round(min(1.0, max(0.0, score)), 2)
+
+def check_llm_triggers(complaint_data):
+    """
+    Check the 5 triggers to see if LLM Governance Review is required.
+    Returns: list of triggered reasons (empty if no review required)
+    """
+    reasons = []
+    text = complaint_data.get("complaint_text", "").lower()
+    
+    # Trigger 1: Low Confidence
+    conf = complaint_data.get("confidence_score", 1.0)
+    if conf < 0.65:
+        reasons.append(f"Low confidence score ({conf:.2f} < 0.65)")
+        
+    # Trigger 2: Conflicting Signals
+    severity = complaint_data.get("severity_score", 0.0)
+    public_impact = complaint_data.get("public_impact_score", 0.0)
+    urgency = complaint_data.get("urgency_score", 0.0)
+    vulnerability = complaint_data.get("vulnerability_score", 0.0)
+    scores = [severity, public_impact, urgency, vulnerability]
+    if (max(scores) - min(scores)) >= 0.50:
+        reasons.append(f"Conflicting signals detected (variance: max={max(scores):.2f}, min={min(scores):.2f})")
+        
+    # Trigger 3: Priority Near Threshold
+    pri = complaint_data.get("priority_score", 0.0)
+    thresholds = [0.30, 0.50, 0.75]
+    for t in thresholds:
+        if abs(pri - t) <= 0.03:
+            reasons.append(f"Priority score near boundary threshold ({pri:.3f} is near {t})")
+            break
+            
+    # Trigger 4: Critical Infrastructure Mentioned
+    infra_keywords = ["hospital", "school", "railway station", "airport", "dam", "government secretariat", "secretariat", "emergency services", "police station", "fire station"]
+    if any(w in text for w in infra_keywords):
+        reasons.append("Critical infrastructure mentioned in complaint")
+        
+    # Trigger 5: Potential Disaster Indicators
+    disaster_keywords = ["flood", "bridge collapse", "gas leak", "fire", "contamination", "building collapse"]
+    if any(w in text for w in disaster_keywords):
+        reasons.append("Potential disaster indicator keyword flagged")
+        
+    return reasons
+
+import os
+
+class LLMClientBase:
+    def review_complaint(self, complaint_data, retrieved_context):
+        raise NotImplementedError
+
+class GroqClient(LLMClientBase):
+    def __init__(self, api_key, model="llama3-8b-8192"):
+        self.api_key = api_key
+        self.model = model
+        self.client = None
+        
+    def review_complaint(self, complaint_data, retrieved_context):
+        try:
+            from groq import Groq
+            if self.client is None:
+                self.client = Groq(api_key=self.api_key)
+                
+            prompt = self._build_prompt(complaint_data, retrieved_context)
+            
+            completion = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are a senior public governance auditor. Analyze the complaint and provide a structured review in JSON format. Do not recommend priority labels like Critical/High directly, but recommend a priority_adjustment between -0.15 and +0.15 based on public safety, infrastructure, and vulnerability risk assessment. Return ONLY a valid JSON object."},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_object"}
+            )
+            
+            import json
+            result = json.loads(completion.choices[0].message.content)
+            return self._parse_result(result)
+        except Exception as e:
+            print(f"Error in Groq LLM review: {e}. Falling back to MockLLMClient.")
+            mock = MockLLMClient()
+            return mock.review_complaint(complaint_data, retrieved_context)
+
+    def _build_prompt(self, complaint_data, retrieved_context):
+        import json
+        prompt = f"""
+        Analyze the following civic complaint for governance review.
+        
+        Complaint Details:
+        {json.dumps(complaint_data, indent=2)}
+        
+        Retrieved Historical Context:
+        {json.dumps(retrieved_context, indent=2)}
+        
+        Provide your analysis in JSON format with the following keys:
+        - "risk_summary": A summary of the risks identified (string).
+        - "public_safety_risk": "Low", "Medium", "High", or "Critical".
+        - "vulnerable_population_risk": "Low", "Medium", "High", or "Critical".
+        - "infrastructure_risk": "Low", "Medium", "High", or "Critical".
+        - "recommended_adjustment": A float value between -0.15 and +0.15 (recommend + for increased risk, - for decreased risk, or 0.00).
+        - "reasoning": A detailed explanation of why the adjustment is recommended.
+        
+        Return ONLY the JSON object.
+        """
+        return prompt
+
+    def _parse_result(self, result):
+        try:
+            adj = float(result.get("recommended_adjustment", 0.0))
+        except (ValueError, TypeError):
+            adj = 0.0
+        return {
+            "risk_summary": str(result.get("risk_summary", "")),
+            "public_safety_risk": str(result.get("public_safety_risk", "Medium")),
+            "vulnerable_population_risk": str(result.get("vulnerable_population_risk", "Medium")),
+            "infrastructure_risk": str(result.get("infrastructure_risk", "Medium")),
+            "recommended_adjustment": round(max(-0.15, min(0.15, adj)), 2),
+            "reasoning": str(result.get("reasoning", "LLM review completed."))
+        }
+
+class MockLLMClient(LLMClientBase):
+    def review_complaint(self, complaint_data, retrieved_context):
+        text = complaint_data.get("complaint_text", "").lower()
+        
+        risk_summary = "Advisory review conducted via local governance rules."
+        pub_risk = "Medium"
+        vuln_risk = "Medium"
+        infra_risk = "Medium"
+        adjustment = 0.0
+        reasoning = "Governance parameters checked. No major deviations detected."
+        
+        if "gas leak" in text or "fire" in text:
+            risk_summary = "High risk of hazardous emergency event."
+            pub_risk = "Critical"
+            vuln_risk = "High"
+            infra_risk = "High"
+            adjustment = 0.12
+            reasoning = "Hazard indicators trigger public safety and immediate local area warnings."
+        elif "flood" in text or "flooding" in text:
+            risk_summary = "Water accumulation impacting transport and buildings."
+            pub_risk = "High"
+            vuln_risk = "High"
+            infra_risk = "High"
+            adjustment = 0.10
+            reasoning = "Waterlogging presents immediate access barriers and localized vector risk."
+        elif "bribe" in text or "corruption" in text:
+            risk_summary = "Report of official integrity violation."
+            pub_risk = "Low"
+            vuln_risk = "Low"
+            infra_risk = "High"
+            adjustment = 0.05
+            reasoning = "Integrity review recommended to audit local zonal permissions."
+        elif "hospital" in text:
+            risk_summary = "Civic grievance near healthcare facility."
+            pub_risk = "High"
+            vuln_risk = "High"
+            infra_risk = "Critical"
+            adjustment = 0.10
+            reasoning = "Proximity to critical hospital infrastructure impacts patient transfer routes."
+        elif "school" in text:
+            risk_summary = "Civic grievance near primary or secondary educational institution."
+            pub_risk = "Medium"
+            vuln_risk = "High"
+            infra_risk = "Medium"
+            adjustment = 0.08
+            reasoning = "School zone proximity requires expedited triage to safeguard students."
+            
+        return {
+            "risk_summary": risk_summary,
+            "public_safety_risk": pub_risk,
+            "vulnerable_population_risk": vuln_risk,
+            "infrastructure_risk": infra_risk,
+            "recommended_adjustment": adjustment,
+            "reasoning": reasoning
+        }
+
+def get_llm_client():
+    api_key = os.environ.get("GROQ_API_KEY")
+    if api_key:
+        return GroqClient(api_key=api_key)
+    return MockLLMClient()

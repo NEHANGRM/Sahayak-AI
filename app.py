@@ -4,10 +4,11 @@ Streamlit Application with Citizen Portal and Officer Dashboard
 """
 
 import streamlit as st
-import pickle
 import pandas as pd
 from datetime import datetime
-import utils
+import requests
+
+API_URL = "http://localhost:8000"
 
 # Page configuration
 st.set_page_config(
@@ -17,25 +18,41 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Load models
-@st.cache_resource
-def load_models():
-    """Load trained ML models"""
+def get_stats():
     try:
-        with open('tfidf_vectorizer.pkl', 'rb') as f:
-            vectorizer = pickle.load(f)
-        with open('category_classifier.pkl', 'rb') as f:
-            category_model = pickle.load(f)
-        with open('priority_classifier.pkl', 'rb') as f:
-            priority_model = pickle.load(f)
-        with open('severity_model.pkl', 'rb') as f:
-            severity_model = pickle.load(f)
-        return vectorizer, category_model, priority_model, severity_model
-    except FileNotFoundError:
-        st.error("⚠️ Models not found! Please run `python model_training.py` first.")
-        st.stop()
+        r = requests.get(f"{API_URL}/stats")
+        if r.status_code == 200:
+            return r.json()
+    except Exception as e:
+        pass
+    return {"active_count": 0, "rejected_count": 0, "overrides_count": 0}
 
-vectorizer, category_model, priority_model, severity_model = load_models()
+def get_complaints():
+    try:
+        r = requests.get(f"{API_URL}/complaints")
+        if r.status_code == 200:
+            return r.json()
+    except Exception as e:
+        st.warning("⚠️ Cannot connect to backend server. Make sure api.py is running.")
+    return []
+
+def get_resolved_complaints():
+    try:
+        r = requests.get(f"{API_URL}/complaints/resolved")
+        if r.status_code == 200:
+            return r.json()
+    except Exception as e:
+        pass
+    return []
+
+def get_rejected_complaints():
+    try:
+        r = requests.get(f"{API_URL}/complaints/rejected")
+        if r.status_code == 200:
+            return r.json()
+    except Exception as e:
+        pass
+    return []
 
 def inject_custom_css():
     """Inject government-themed styling"""
@@ -308,6 +325,11 @@ def render_metrics_table(result):
     c_dup = dup * 0.10
     total = c_sev + c_pi + c_urg + c_vul + c_dup
     
+    # Check if LLM reviewed
+    is_llm = result.get('llm_reviewed', False)
+    llm_adj = result.get('llm_adjustment', 0.0)
+    final_score = result.get('final_priority_score', total)
+    
     html = f"""
     <table style="width:100%; border-collapse: collapse; font-size: 13px; background-color: #ffffff; border: 1px solid #cbd5e0; margin-bottom: 20px;">
       <thead>
@@ -355,6 +377,34 @@ def render_metrics_table(result):
           <td style="padding: 8px 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 14px;">{c_dup:.3f}</td>
           <td style="padding: 8px 10px; border: 1px solid #cbd5e0; color: #2d3748;">Escalation factor matching frequency of repeat filings.</td>
         </tr>
+    """
+    
+    if is_llm:
+        html += f"""
+        <tr style="background-color: #f7fafc; font-weight: bold; border-top: 2px solid #0f294a;">
+          <td style="padding: 10px; border: 1px solid #cbd5e0; color: #0f294a;">BASE GOVERNANCE SCORE</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 15px; color: #0f294a;">{total:.3f}</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; text-align: center;">-</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 15px; color: #0f294a;">{total:.3f}</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; color: #0f294a;">Standard weighted baseline computed by deterministic rules.</td>
+        </tr>
+        <tr style="background-color: #ebf8ff; font-weight: bold; border-top: 1px solid #cbd5e0;">
+          <td style="padding: 10px; border: 1px solid #cbd5e0; color: #2b6cb0;">LLM ADVISORY ADJUSTMENT</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 15px; color: #2b6cb0;">{llm_adj:+.2f}</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; text-align: center;">-</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 15px; color: #2b6cb0;">{llm_adj:+.2f}</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; color: #2b6cb0;">Reason: {result.get('llm_reasoning', 'Advisory adjustment applied.')}</td>
+        </tr>
+        <tr style="background-color: #f7fafc; font-weight: bold; border-top: 2px solid #0f294a;">
+          <td style="padding: 10px; border: 1px solid #cbd5e0; color: #0f294a;">FINAL PRIORITY SCORE</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 15px; color: #0f294a;">{final_score:.3f}</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; text-align: center;">100%</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 15px; color: #0f294a;">{final_score:.3f}</td>
+          <td style="padding: 10px; border: 1px solid #cbd5e0; color: #0f294a;">Computed Priority Level: {result['priority_label'].upper()}</td>
+        </tr>
+        """
+    else:
+        html += f"""
         <tr style="background-color: #f7fafc; font-weight: bold; border-top: 2px solid #0f294a;">
           <td style="padding: 10px; border: 1px solid #cbd5e0; color: #0f294a;">FINAL PRIORITY SCORE</td>
           <td style="padding: 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 15px; color: #0f294a;">{total:.3f}</td>
@@ -362,200 +412,13 @@ def render_metrics_table(result):
           <td style="padding: 10px; border: 1px solid #cbd5e0; text-align: center; font-family: monospace; font-size: 15px; color: #0f294a;">{total:.3f}</td>
           <td style="padding: 10px; border: 1px solid #cbd5e0; color: #0f294a;">Computed Priority Level: {result['priority_label'].upper()}</td>
         </tr>
+        """
+        
+    html += """
       </tbody>
     </table>
     """
     st.markdown(html, unsafe_allow_html=True)
-
-# Initialize session state for storing complaints
-if 'complaints' not in st.session_state:
-    st.session_state.complaints = [
-        {
-            'id': 'CMP-2001',
-            'complaint_text': "Water supply is completely cut off in Anna Nagar for the past 4 days. The local water board is not responding to calls.",
-            'timestamp': "2026-06-05 09:12:00",
-            'admissible': True,
-            'rejection_reason': None,
-            'category': "Water",
-            'raw_predicted_category': "Water",
-            'priority_label': "Medium",
-            'priority_score': 0.385,
-            'severity_score': 0.40,
-            'severity_reason': "Infrastructure failure",
-            'severity_label': "Medium",
-            'public_impact_score': 0.50,
-            'vulnerability_score': 0.20,
-            'urgency_score': 0.35,
-            'duplicate_escalation_score': 0.0,
-            'sentiment_score': 0.75,
-            'department': "Water & Sewerage Board",
-            'explanation': "Marked MEDIUM based on governance factors.",
-            'is_duplicate': False,
-            'cluster_id': None,
-            'similarity': 0.0,
-            'structured_json': {"category": "Water", "location": "Anna Nagar", "infrastructure": "Water Pipeline", "risk_keywords": [], "entities": [], "severity": {"score": 0.40, "level": "Medium", "reason": "Infrastructure failure"}},
-            'ner_breakdown': {"Locations": ["Anna Nagar"]},
-            'status': 'Open',
-            'officer_override': None,
-            'override_reason': None,
-            'resolution_history': [
-                {"status": "Registered", "date": "2026-06-05 09:12:00", "notes": "Registered automatically."},
-                {"status": "Assigned", "date": "2026-06-05 10:00:00", "notes": "Assigned to Water Board Engineer."},
-                {"status": "In Progress", "date": "2026-06-06 14:00:00", "notes": "Leak detected in the main inlet pipeline."}
-            ],
-            'escalation_history': [
-                {"level": "L1 - Junior Engineer", "date": "2026-06-05 10:00:00"},
-                {"level": "L2 - Assistant Executive Engineer", "date": "2026-06-07 09:00:00"}
-            ]
-        },
-        {
-            'id': 'CMP-2002',
-            'complaint_text': "Huge pothole on the main flyover near City General Hospital. Vehicles are swerving to avoid it, causing severe accident risk.",
-            'timestamp': "2026-06-06 11:20:00",
-            'admissible': True,
-            'rejection_reason': None,
-            'category': "Roads",
-            'raw_predicted_category': "Roads",
-            'priority_label': "Critical",
-            'priority_score': 0.815,
-            'severity_score': 0.85,
-            'severity_reason': "Critical infrastructure + public safety risk",
-            'severity_label': "Critical",
-            'public_impact_score': 0.80,
-            'vulnerability_score': 0.90,
-            'urgency_score': 0.90,
-            'duplicate_escalation_score': 0.0,
-            'sentiment_score': 0.85,
-            'department': "Public Works Department (PWD)",
-            'explanation': "Marked CRITICAL based on governance factors.",
-            'is_duplicate': False,
-            'cluster_id': None,
-            'similarity': 0.0,
-            'structured_json': {"category": "Roads", "location": "City General Hospital", "infrastructure": "Bridge", "risk_keywords": ["accident", "danger"], "entities": [], "severity": {"score": 0.85, "level": "Critical", "reason": "Critical infrastructure + public safety risk"}},
-            'ner_breakdown': {"Locations": ["City General Hospital"]},
-            'status': 'Resolved',
-            'officer_override': None,
-            'override_reason': None,
-            'resolution_history': [
-                {"status": "Registered", "date": "2026-06-06 11:20:00", "notes": "Registered via portal."},
-                {"status": "Assigned", "date": "2026-06-06 12:15:00", "notes": "Assigned to PWD Road Safety Division."},
-                {"status": "Resolved", "date": "2026-06-07 17:30:00", "notes": "Pothole filled with cold mix asphalt. Temporary repair completed."}
-            ],
-            'escalation_history': [
-                {"level": "L1 - PWD Engineer", "date": "2026-06-06 12:15:00"}
-            ]
-        },
-        {
-            'id': 'CMP-2003',
-            'complaint_text': "Street lights are not functioning in T-Nagar near the girls high school, making the road unsafe for walking at night.",
-            'timestamp': "2026-06-07 19:40:00",
-            'admissible': True,
-            'rejection_reason': None,
-            'category': "Electricity",
-            'raw_predicted_category': "Electricity",
-            'priority_label': "High",
-            'priority_score': 0.615,
-            'severity_score': 0.60,
-            'severity_reason': "Public safety risk + vulnerable setting",
-            'severity_label': "High",
-            'public_impact_score': 0.65,
-            'vulnerability_score': 0.70,
-            'urgency_score': 0.60,
-            'duplicate_escalation_score': 0.0,
-            'sentiment_score': 0.70,
-            'department': "Electricity Utilities Board",
-            'explanation': "Marked HIGH based on governance factors.",
-            'is_duplicate': False,
-            'cluster_id': None,
-            'similarity': 0.0,
-            'structured_json': {"category": "Electricity", "location": "T-Nagar", "infrastructure": "School", "risk_keywords": ["unsafe"], "entities": [], "severity": {"score": 0.60, "level": "High", "reason": "Public safety risk + vulnerable setting"}},
-            'ner_breakdown': {"Locations": ["T-Nagar"]},
-            'status': 'Open',
-            'officer_override': None,
-            'override_reason': None,
-            'resolution_history': [
-                {"status": "Registered", "date": "2026-06-07 19:40:00", "notes": "Registered via web app."},
-                {"status": "Assigned", "date": "2026-06-08 08:30:00", "notes": "Assigned to Electricity Board Inspector."}
-            ],
-            'escalation_history': [
-                {"level": "L1 - Line Inspector", "date": "2026-06-08 08:30:00"}
-            ]
-        },
-        {
-            'id': 'CMP-2004',
-            'complaint_text': "Garbage has not been collected for two weeks in Sector 4, Chennai. The dumpster is overflowing onto the street, attracting stray dogs.",
-            'timestamp': "2026-06-08 10:15:00",
-            'admissible': True,
-            'rejection_reason': None,
-            'category': "Sanitation",
-            'raw_predicted_category': "Sanitation",
-            'priority_label': "Medium",
-            'priority_score': 0.415,
-            'severity_score': 0.45,
-            'severity_reason': "Infrastructure failure",
-            'severity_label': "Medium",
-            'public_impact_score': 0.50,
-            'vulnerability_score': 0.30,
-            'urgency_score': 0.40,
-            'duplicate_escalation_score': 0.0,
-            'sentiment_score': 0.60,
-            'department': "Municipal Sanitation Department",
-            'explanation': "Marked MEDIUM based on governance factors.",
-            'is_duplicate': False,
-            'cluster_id': None,
-            'similarity': 0.0,
-            'structured_json': {"category": "Sanitation", "location": "Sector 4", "infrastructure": "Waste Bin", "risk_keywords": [], "entities": [], "severity": {"score": 0.45, "level": "Medium", "reason": "Infrastructure failure"}},
-            'ner_breakdown': {"Locations": ["Sector 4", "Chennai"]},
-            'status': 'Open',
-            'officer_override': None,
-            'override_reason': None,
-            'resolution_history': [
-                {"status": "Registered", "date": "2026-06-08 10:15:00", "notes": "Registered."},
-                {"status": "Assigned", "date": "2026-06-08 11:30:00", "notes": "Assigned to Zonal Sanitation Officer."}
-            ],
-            'escalation_history': [
-                {"level": "L1 - Sanitary Inspector", "date": "2026-06-08 11:30:00"}
-            ]
-        },
-        {
-            'id': 'CMP-2005',
-            'complaint_text': "A local official is demanding a bribe of 5000 rupees to process my business license application at the Municipal Corporation Office.",
-            'timestamp': "2026-06-09 14:30:00",
-            'admissible': True,
-            'rejection_reason': None,
-            'category': "Corruption",
-            'raw_predicted_category': "Corruption",
-            'priority_label': "High",
-            'priority_score': 0.595,
-            'severity_score': 0.90,
-            'severity_reason': "Integrity violation / corruption bribe",
-            'severity_label': "High",
-            'public_impact_score': 0.30,
-            'vulnerability_score': 0.20,
-            'urgency_score': 0.70,
-            'duplicate_escalation_score': 0.0,
-            'sentiment_score': 0.80,
-            'department': "Vigilance Bureau",
-            'explanation': "Marked HIGH based on governance factors.",
-            'is_duplicate': False,
-            'cluster_id': None,
-            'similarity': 0.0,
-            'structured_json': {"category": "Corruption", "location": "Municipal Corporation Office", "infrastructure": "Government Office", "risk_keywords": ["bribe", "corruption"], "entities": [], "severity": {"score": 0.90, "level": "High", "reason": "Integrity violation / corruption bribe"}},
-            'ner_breakdown': {"Locations": ["Municipal Corporation Office"]},
-            'status': 'Open',
-            'officer_override': None,
-            'override_reason': None,
-            'resolution_history': [
-                {"status": "Registered", "date": "2026-06-09 14:30:00", "notes": "Under review by anti-corruption cell."}
-            ],
-            'escalation_history': [
-                {"level": "L1 - Vigilance Officer", "date": "2026-06-09 15:00:00"}
-            ]
-        }
-    ]
-
-if 'complaint_counter' not in st.session_state:
-    st.session_state.complaint_counter = 6
 
 # Initialize feedback storage
 if 'officer_overrides' not in st.session_state:
@@ -563,177 +426,16 @@ if 'officer_overrides' not in st.session_state:
 
 
 def predict_complaint(complaint_text):
-    """
-    Process complaint through admissibility screening, classification, NER, severity, public impact, vulnerability, duplicate detection, urgency, and explainable priority scoring
-    
-    Returns:
-        dict: Prediction results including admissibility, category, priority, JSON representation, etc.
-    """
-    # 1. Admissibility check
-    is_admissible, rejection_reason, predicted_category = utils.check_admissibility(
-        complaint_text, 
-        category_model, 
-        vectorizer
-    )
-    
-    # 2. Extract NER details and risk keywords
-    ner_details = utils.extract_entities_and_details(complaint_text, predicted_category)
-    risk_kws = utils.extract_risk_keywords(complaint_text)
-    
-    # 3. Predict Severity, Public Impact, and Vulnerability (if admissible)
-    if is_admissible:
-        severity_details = utils.predict_severity(
-            complaint_text, 
-            predicted_category, 
-            severity_model, 
-            vectorizer
-        )
-        severity_score = severity_details["severity"]
-        severity_reason = severity_details["reason"]
-        severity_label = utils.get_severity_level(severity_score)
-        
-        # Temp structured JSON for impact calculators
-        temp_json = {
-            "location": ner_details["location"],
-            "infrastructure": ner_details["infrastructure"]
-        }
-        public_impact_score = utils.calculate_public_impact(complaint_text, predicted_category, temp_json)
-        vulnerability_score = utils.calculate_vulnerability(complaint_text, predicted_category, temp_json)
-        
-        # 4. Duplicate detection (run before priority calculation to get duplicate escalation score)
-        existing_complaints = []
-        try:
-            if 'complaints' in st.session_state:
-                existing_complaints = st.session_state.complaints
-        except Exception:
-            pass
-            
-        is_duplicate, cluster_id, similarity = utils.detect_duplicate(
-            complaint_text, 
-            existing_complaints, 
-            vectorizer=vectorizer,
-            threshold=0.7
-        )
-        if is_duplicate and cluster_id is not None and cluster_id < len(existing_complaints):
-            lead_id = existing_complaints[cluster_id]['id']
+    try:
+        r = requests.post(f"{API_URL}/triage", json={"complaint_text": complaint_text})
+        if r.status_code == 200:
+            return r.json()
         else:
-            lead_id = None
-        duplicate_escalation_score = utils.calculate_duplicate_escalation(
-            is_duplicate, 
-            similarity, 
-            cluster_id, 
-            existing_complaints
-        )
-        
-        # Phase 5: RAG Context Retrieval
-        similar_cases = utils.search_similar_complaints(
-            complaint_text,
-            existing_complaints,
-            vectorizer,
-            k=3
-        )
-        
-        # Phase 6: Duplicate detection API
-        dup_info = utils.get_duplicate_info(
-            complaint_text,
-            existing_complaints,
-            vectorizer,
-            threshold=0.7
-        )
-        duplicate_count = dup_info["duplicate_count"]
-        duplicate_ids = dup_info["duplicate_ids"]
-        
-        # 5. Urgency calculation
-        urgency_score = utils.calculate_urgency(complaint_text, predicted_category, severity_score, temp_json)
-        
-        # 6. Calculate priority using the new governance weighted formula
-        priority_score = utils.calculate_priority_score(
-            severity_score, 
-            public_impact_score, 
-            urgency_score, 
-            vulnerability_score, 
-            duplicate_escalation_score
-        )
-        priority_label = utils.get_priority_label(priority_score)
-        department = utils.route_to_department(predicted_category)
-        explanation = utils.generate_explanation(
-            severity_score,
-            public_impact_score,
-            urgency_score,
-            vulnerability_score,
-            duplicate_escalation_score,
-            priority_label
-        )
-        sentiment_score = utils.get_sentiment_score(complaint_text)
-    else:
-        severity_score = 0.0
-        severity_reason = "Not evaluated due to rejection policy."
-        severity_label = "Low"
-        public_impact_score = 0.0
-        vulnerability_score = 0.0
-        urgency_score = 0.0
-        duplicate_escalation_score = 0.0
-        sentiment_score = 0.0
-        priority_score = 0.0
-        priority_label = "Low"
-        department = "Not Routed"
-        explanation = f"Complaint rejected. Reason: {rejection_reason}"
-        is_duplicate, cluster_id, similarity = False, None, 0.0
-        duplicate_count = 0
-        duplicate_ids = []
-        similar_cases = []
-        lead_id = None
-        
-    # 4. Create the final consolidated structured JSON response
-    structured_json = {
-        "category": predicted_category if is_admissible else "Other",
-        "location": ner_details["location"],
-        "infrastructure": ner_details["infrastructure"],
-        "risk_keywords": risk_kws,
-        "entities": ner_details["all_entities"],
-        "severity": {
-            "score": severity_score,
-            "level": severity_label,
-            "reason": severity_reason
-        },
-        "public_impact_score": public_impact_score,
-        "vulnerability_score": vulnerability_score,
-        "urgency_score": urgency_score,
-        "duplicate_escalation_score": duplicate_escalation_score,
-        "priority": {
-            "score": priority_score,
-            "level": priority_label
-        }
-    }
-    
-    return {
-        'admissible': is_admissible,
-        'rejection_reason': rejection_reason,
-        'category': predicted_category if is_admissible else "Other",
-        'raw_predicted_category': predicted_category,
-        'severity_score': severity_score,
-        'severity_reason': severity_reason,
-        'severity_label': severity_label,
-        'public_impact_score': public_impact_score,
-        'vulnerability_score': vulnerability_score,
-        'urgency_score': urgency_score,
-        'duplicate_escalation_score': duplicate_escalation_score,
-        'sentiment_score': sentiment_score,
-        'priority_score': priority_score,
-        'priority_label': priority_label,
-        'department': department,
-        'explanation': explanation,
-        'is_duplicate': is_duplicate,
-        'cluster_id': cluster_id,
-        'similarity': similarity,
-        'structured_json': structured_json,
-        'ner_breakdown': ner_details['extracted_entities'],
-        'duplicate_count': duplicate_count,
-        'duplicate_ids': duplicate_ids,
-        'similar_cases': similar_cases,
-        'lead_id': lead_id
-    }
-
+            st.error(f"Error processing grievance: {r.text}")
+            return None
+    except Exception as e:
+        st.error(f"Failed to connect to triage API server: {e}")
+        return None
 
 def citizen_portal():
     """Citizen-facing complaint submission portal"""
@@ -761,55 +463,11 @@ def citizen_portal():
             st.error("Submission failed: Please enter a grievance description before submitting.")
         else:
             with st.spinner("Processing grievance..."):
-                # Get predictions
+                # Get predictions from API
                 result = predict_complaint(complaint_text)
                 
-                # Generate complaint ID
-                complaint_id = f"CMP-{2000 + st.session_state.complaint_counter}"
-                st.session_state.complaint_counter += 1
-                
-                # Store complaint
-                complaint_record = {
-                    'id': complaint_id,
-                    'complaint_text': complaint_text,
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    'admissible': result['admissible'],
-                    'rejection_reason': result['rejection_reason'],
-                    'category': result['category'],
-                    'raw_predicted_category': result['raw_predicted_category'],
-                    'priority_label': result['priority_label'],
-                    'priority_score': result['priority_score'],
-                    'severity_score': result['severity_score'],
-                    'severity_reason': result['severity_reason'],
-                    'severity_label': result['severity_label'],
-                    'public_impact_score': result['public_impact_score'],
-                    'vulnerability_score': result['vulnerability_score'],
-                    'urgency_score': result['urgency_score'],
-                    'duplicate_escalation_score': result['duplicate_escalation_score'],
-                    'sentiment_score': result['sentiment_score'],
-                    'department': result['department'],
-                    'explanation': result['explanation'],
-                    'is_duplicate': result['is_duplicate'],
-                    'cluster_id': result['cluster_id'],
-                    'similarity': result['similarity'],
-                    'structured_json': result['structured_json'],
-                    'ner_breakdown': result['ner_breakdown'],
-                    'status': 'Open',
-                    'officer_override': None,
-                    'override_reason': None,
-                    'lead_id': result.get('lead_id') if result.get('lead_id') else complaint_id,
-                    'duplicate_count': result.get('duplicate_count', 0),
-                    'duplicate_ids': result.get('duplicate_ids', []),
-                    'similar_cases': result.get('similar_cases', []),
-                    'resolution_history': [
-                        {"status": "Submitted", "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "notes": "Grievance received and registered."}
-                    ],
-                    'escalation_history': [
-                        {"level": "L1 Officer", "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-                    ]
-                }
-                
-                st.session_state.complaints.append(complaint_record)
+                if result is None:
+                    st.stop()
                 
                 # Check Admissibility for UI display
                 if not result['admissible']:
@@ -825,6 +483,7 @@ def citizen_portal():
                     return
                 
                 # If Admissible:
+                complaint_id = result['id']
                 st.success(f"Grievance filed successfully. Reference ID: {complaint_id}")
                 
                 # Details
@@ -834,9 +493,9 @@ def citizen_portal():
                 st.markdown(f"**Assigned Department:** `{result['department']}`")
                 st.markdown(f"**Identified Location:** `{result['structured_json']['location'] or 'Not Detected'}`")
                 st.markdown(f"**Identified Infrastructure:** `{result['structured_json']['infrastructure'] or 'Not Detected'}`")
-                st.markdown(f"**Filing Timestamp:** `{complaint_record['timestamp']}`")
+                st.markdown(f"**Filing Timestamp:** `{result['timestamp']}`")
                 
-                if result['structured_json']['risk_keywords']:
+                if result['structured_json'].get('risk_keywords'):
                     st.markdown("**Risk Keywords Flagged:**")
                     kw_badges = " ".join([f"`{kw}`" for kw in result['structured_json']['risk_keywords']])
                     st.markdown(kw_badges)
@@ -853,14 +512,10 @@ def officer_dashboard():
     st.markdown("Monitor and process active grievances. Complaints are automatically prioritized using the 5-factor governance formula.")
     st.markdown("---")
     
-    if not st.session_state.complaints:
-        st.info("No complaints registered in the system yet. Active submissions will appear here.")
-        return
-    
-    # Filter admissible vs resolved vs rejected
-    admissible_complaints = [c for c in st.session_state.complaints if c.get('admissible', True) and c.get('status', 'Open') != 'Resolved']
-    resolved_complaints = [c for c in st.session_state.complaints if c.get('admissible', True) and c.get('status', 'Open') == 'Resolved']
-    rejected_complaints = [c for c in st.session_state.complaints if not c.get('admissible', True)]
+    # Filter admissible vs resolved vs rejected from API
+    admissible_complaints = get_complaints()
+    resolved_complaints = get_resolved_complaints()
+    rejected_complaints = get_rejected_complaints()
     
     total_admissible = len(admissible_complaints)
     total_rejected = len(rejected_complaints)
@@ -871,7 +526,7 @@ def officer_dashboard():
     
     col1, col2, col3, col4, col5, col6 = st.columns(6)
     with col1:
-        st.metric("Total Active", total_admissible)
+        st.metric("Total Active Groups", total_admissible)
     with col2:
         st.metric("Critical Priority", critical_priority)
     with col3:
@@ -894,60 +549,7 @@ def officer_dashboard():
         if not admissible_complaints:
             st.info("No active complaints in the queue.")
         else:
-            # Group duplicate complaints by lead_id (representing all duplicates on the dashboard)
-            groups = {}
-            for c in admissible_complaints:
-                lid = c.get('lead_id') or c['id']
-                if lid not in groups:
-                    groups[lid] = []
-                groups[lid].append(c)
-                
-            grouped_admissible = []
-            for lid, group_list in groups.items():
-                # Sort group by timestamp to find the lead (oldest one)
-                sorted_group = sorted(group_list, key=lambda x: x.get('timestamp', ''))
-                lead_complaint = sorted_group[0]
-                
-                # Recalculate duplicate escalation dynamically for the lead complaint
-                dup_count = len(sorted_group) - 1
-                if dup_count == 0:
-                    dup_esc = 0.0
-                elif dup_count == 1:
-                    dup_esc = 0.60
-                elif dup_count == 2:
-                    dup_esc = 0.85
-                else:
-                    dup_esc = 1.00
-                
-                # Recalculate priority dynamically to reflect escalations
-                lead_complaint['duplicate_escalation_score'] = dup_esc
-                lead_complaint['priority_score'] = utils.calculate_priority_score(
-                    lead_complaint['severity_score'],
-                    lead_complaint['public_impact_score'],
-                    lead_complaint['urgency_score'],
-                    lead_complaint['vulnerability_score'],
-                    dup_esc
-                )
-                lead_complaint['priority_label'] = utils.get_priority_label(lead_complaint['priority_score'])
-                lead_complaint['explanation'] = utils.generate_explanation(
-                    lead_complaint['severity_score'],
-                    lead_complaint['public_impact_score'],
-                    lead_complaint['urgency_score'],
-                    lead_complaint['vulnerability_score'],
-                    dup_esc,
-                    lead_complaint['priority_label']
-                )
-                
-                lead_complaint['duplicate_reports'] = sorted_group[1:]
-                lead_complaint['duplicate_count'] = dup_count
-                grouped_admissible.append(lead_complaint)
-
-            # Sort admissible complaints by priority score (descending)
-            sorted_complaints = sorted(
-                grouped_admissible, 
-                key=lambda x: x['priority_score'], 
-                reverse=True
-            )
+            sorted_complaints = admissible_complaints
             
             st.markdown("#### Active Grievance Queue (Ranked by Governance Priority)")
             
@@ -958,7 +560,7 @@ def officer_dashboard():
                 
                 dup_suffix = f" [🔗 Grouped: {complaint['duplicate_count'] + 1} Reports]" if complaint.get('duplicate_count', 0) > 0 else ""
                 with st.expander(
-                    f"Ref: {complaint['id']}{dup_suffix} | Level: {display_label.upper()} (Score: {complaint['priority_score']:.3f}) | Category: {complaint['category']}",
+                    f"Ref: {complaint['id']}{dup_suffix} | Level: {display_label.upper()} (Score: {complaint['final_priority_score']:.3f}) | Category: {complaint['category']}",
                     expanded=(idx <= 3)
                 ):
                     st.markdown("**Grievance Description:**")
@@ -966,7 +568,12 @@ def officer_dashboard():
                     
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.markdown(f"**🎯 AI Computed Priority:** **{complaint['priority_label']}** (Score: `{complaint['priority_score']:.3f}`)")
+                        if complaint.get('llm_reviewed', False):
+                            st.markdown(f"**🎯 AI Final Priority:** **{complaint['priority_label']}** (Score: `{complaint['final_priority_score']:.3f}`)")
+                            st.markdown(f"**⚖️ Base Governance Score:** `{complaint['priority_score']:.3f}`")
+                            st.markdown(f"**🤖 LLM Advisory Adjustment:** `{complaint['llm_adjustment']:+.2f}`")
+                        else:
+                            st.markdown(f"**🎯 AI Computed Priority:** **{complaint['priority_label']}** (Score: `{complaint['priority_score']:.3f}`)")
                         st.markdown(f"**📂 Grievance Category:** `{complaint['category']}`")
                         st.markdown(f"**🏢 Target Department:** `{complaint['department']}`")
                         st.markdown(f"**⏰ Registered Timestamp:** `{complaint['timestamp']}`")
@@ -981,38 +588,41 @@ def officer_dashboard():
                     st.markdown("**💡 System Explanation:**")
                     st.markdown(f"> {complaint['explanation']}")
                     
+                    # Display LLM reasoning details if available
+                    if complaint.get('llm_reviewed', False):
+                        st.markdown("---")
+                        st.markdown("**🤖 LLM Governance Advisory Review (Explainability)**")
+                        llm_col1, llm_col2 = st.columns(2)
+                        with llm_col1:
+                            st.markdown(f"**Adjustment:** `{complaint['llm_adjustment']:+.2f}`")
+                            st.markdown(f"**Trigger Reasons:**")
+                            for reason in complaint.get('llm_trigger_reasons', []):
+                                st.markdown(f"- {reason}")
+                        with llm_col2:
+                            st.markdown(f"**Public Safety Risk:** `{complaint['llm_public_safety_risk']}`")
+                            st.markdown(f"**Vulnerable Population Risk:** `{complaint['llm_vulnerable_population_risk']}`")
+                            st.markdown(f"**Infrastructure Risk:** `{complaint['llm_infrastructure_risk']}`")
+                        st.markdown(f"**Risk Summary:** *{complaint['llm_risk_summary']}*")
+                        st.markdown(f"**Review Reasoning:** *{complaint['llm_reasoning']}*")
+
                     st.markdown("---")
                     col_rag, col_dup = st.columns(2)
                     with col_rag:
                         st.markdown("**🔍 RAG Context & Similar Grievances (Phase 5)**")
                         similar_cases = complaint.get('similar_cases')
-                        if not similar_cases:
-                            # Try to run it dynamically if not stored (e.g. for mock complaints)
-                            similar_cases = utils.search_similar_complaints(
-                                complaint['complaint_text'],
-                                [c for c in st.session_state.complaints if c['id'] != complaint['id'] and c.get('admissible', True)],
-                                vectorizer,
-                                k=2
-                            )
                         if similar_cases:
                             for sc in similar_cases[:2]:
                                 st.markdown(f"- **{sc['id']}** ({sc['category']}, Priority: **{sc['priority_label']}**) | Score: `{sc['similarity']*100:.1f}%`\n"
                                              f"  *Text:* \"{sc['complaint_text'][:80]}...\"\n"
-                                             f"  *Status:* **{sc['resolution_history'][-1]['status']}** ({sc['resolution_history'][-1]['date']})")
+                                             f"  *Status:* **{sc['resolution_history'][-1]['status'] if sc.get('resolution_history') else 'Submitted'}** ({sc['resolution_history'][-1]['date'] if sc.get('resolution_history') else sc.get('timestamp', '')})")
                         else:
                             st.info("No past similar cases found in database.")
                             
                     with col_dup:
                         st.markdown("**📋 Duplicate Registry (Phase 6)**")
-                        dup_info = utils.get_duplicate_info(
-                            complaint['complaint_text'],
-                            [c for c in st.session_state.complaints if c['id'] != complaint['id'] and c.get('admissible', True)],
-                            vectorizer,
-                            threshold=0.7
-                        )
-                        if dup_info['duplicate_count'] > 0:
-                            st.warning(f"**Duplicate Count:** `{dup_info['duplicate_count']}` recurring reports.")
-                            st.markdown(f"**Duplicate IDs:** {', '.join([f'`{did}`' for did in dup_info['duplicate_ids']])}")
+                        if complaint.get('duplicate_count', 0) > 0:
+                            st.warning(f"**Duplicate Count:** `{complaint['duplicate_count']}` recurring reports.")
+                            st.markdown(f"**Duplicate IDs:** {', '.join([f'`{dc[\'id\']}`' for dc in complaint['duplicate_reports']])}")
                         else:
                             st.success("No duplicates detected in queue.")
  
@@ -1041,24 +651,16 @@ def officer_dashboard():
                             placeholder="Describe action taken to resolve..."
                         )
                         if st.button("Mark as Solved", key=f"solve_{complaint['id']}", type="primary", use_container_width=True):
-                            complaint['status'] = 'Resolved'
                             notes = resolution_notes if resolution_notes.strip() else "Marked as resolved by officer."
-                            complaint['resolution_history'].append({
-                                "status": "Resolved",
-                                "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                "notes": notes
-                            })
-                            # Also resolve any duplicate complaints grouped under this lead complaint
-                            if complaint.get('duplicate_reports'):
-                                for dup in complaint['duplicate_reports']:
-                                    dup['status'] = 'Resolved'
-                                    dup['resolution_history'].append({
-                                        "status": "Resolved",
-                                        "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                        "notes": f"Resolved automatically (grouped with lead complaint {complaint['id']}). Notes: {notes}"
-                                    })
-                            st.success(f"Grievance {complaint['id']} marked as solved!")
-                            st.rerun()
+                            try:
+                                r = requests.post(f"{API_URL}/complaints/{complaint['id']}/resolve", json={"notes": notes})
+                                if r.status_code == 200:
+                                    st.success(f"Grievance {complaint['id']} and its duplicates marked as solved!")
+                                    st.rerun()
+                                else:
+                                    st.error(f"Failed to resolve complaint: {r.text}")
+                            except Exception as e:
+                                st.error(f"Failed to connect to API server: {e}")
                             
                     with action_col2:
                         st.markdown("**Priority Override**")
@@ -1078,20 +680,28 @@ def officer_dashboard():
                                 placeholder="Why override this priority?"
                             )
                             if st.button("Submit Override", key=f"apply_{complaint['id']}", type="secondary", use_container_width=True):
-                                complaint['officer_override'] = override_priority
-                                complaint['override_reason'] = override_reason if override_reason else "No justification provided"
-                                
-                                # Log override
-                                override_record = {
-                                    'complaint_id': complaint['id'],
-                                    'complaint_text': complaint['complaint_text'],
-                                    'ai_priority': complaint['priority_label'],
-                                    'officer_priority': override_priority,
-                                    'reason': complaint['override_reason'],
-                                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                                }
-                                st.session_state.officer_overrides.append(override_record)
-                                st.rerun()
+                                o_reason = override_reason if override_reason else "No justification provided"
+                                try:
+                                    r = requests.post(
+                                        f"{API_URL}/complaints/{complaint['id']}/override",
+                                        json={"priority_label": override_priority, "reason": o_reason}
+                                    )
+                                    if r.status_code == 200:
+                                        # Log override locally for dataset export
+                                        override_record = {
+                                            'complaint_id': complaint['id'],
+                                            'complaint_text': complaint['complaint_text'],
+                                            'ai_priority': complaint['priority_label'],
+                                            'officer_priority': override_priority,
+                                            'reason': o_reason,
+                                            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                        }
+                                        st.session_state.officer_overrides.append(override_record)
+                                        st.rerun()
+                                    else:
+                                        st.error(f"Failed to override priority: {r.text}")
+                                except Exception as e:
+                                    st.error(f"Failed to connect to API server: {e}")
 
     with tab_resolved:
         if not resolved_complaints:
@@ -1099,7 +709,6 @@ def officer_dashboard():
         else:
             st.markdown("#### Resolved Grievances Log")
             for idx, complaint in enumerate(resolved_complaints, 1):
-                # Check for override priority if exists
                 display_label = complaint.get('officer_override') or complaint['priority_label']
                 with st.expander(f"Ref: {complaint['id']} | Status: RESOLVED | Priority: {display_label.upper()} | Category: {complaint['category']}", expanded=False):
                     st.markdown("**Grievance Description:**")
@@ -1171,8 +780,8 @@ def main():
         label_visibility="collapsed"
     )
     
-    admissible_count = len([c for c in st.session_state.complaints if c.get('admissible', True)])
-    rejected_count = len([c for c in st.session_state.complaints if not c.get('admissible', True)])
+    # Get stats from API
+    stats = get_stats()
     
     st.sidebar.markdown("<br>", unsafe_allow_html=True)
     
@@ -1180,9 +789,9 @@ def main():
     <div style="border: 1px solid #cbd5e0; padding: 12px; background-color: #ffffff; border-radius: 4px; margin-bottom: 15px; font-family: Arial, sans-serif;">
         <span style="font-size: 10px; font-weight: bold; color: #718096; text-transform: uppercase; letter-spacing: 0.5px;">Portal Registry Stats</span>
         <div style="margin-top: 5px; font-size: 12.5px; color: #2d3748; line-height: 1.5;">
-            &bull; <strong>Active Grievances:</strong> {admissible_count}<br>
-            &bull; <strong>Restricted Logs:</strong> {rejected_count}<br>
-            &bull; <strong>Officer Overrides:</strong> {len(st.session_state.officer_overrides)}
+            &bull; <strong>Active Grievances:</strong> {stats['active_count']}<br>
+            &bull; <strong>Restricted Logs:</strong> {stats['rejected_count']}<br>
+            &bull; <strong>Officer Overrides:</strong> {stats['overrides_count']}
         </div>
     </div>
     """, unsafe_allow_html=True)

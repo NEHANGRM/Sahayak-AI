@@ -33,16 +33,27 @@ echo "✅ Models trained successfully"
 echo ""
 
 # Step 3: Launch application
-echo "[3/3] Launching Streamlit application..."
+echo "[3/3] Launching FastAPI backend and Streamlit application..."
 echo ""
 echo "============================================================"
 echo "🚀 Starting Sahayak AI..."
 echo "============================================================"
 echo ""
+
+# Start FastAPI backend in the background
+uvicorn api:app --port 8000 --host 0.0.0.0 &
+backend_pid=$!
+
+echo "Waiting for API server to initialize..."
+sleep 3
+
 echo "The app will open in your browser automatically."
 echo "If not, navigate to: http://localhost:8501"
 echo ""
-echo "Press Ctrl+C to stop the server."
+echo "Press Ctrl+C to stop the servers."
 echo ""
 
 streamlit run app.py
+
+# Clean up background process on exit
+kill $backend_pid

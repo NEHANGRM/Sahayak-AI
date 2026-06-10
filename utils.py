@@ -498,23 +498,49 @@ def generate_explanation(severity, public_impact, urgency, vulnerability, duplic
     )
     return explanation
 
-def detect_duplicate(new_complaint_text, existing_complaints, threshold=0.7):
+def load_fallback_vectorizer():
+    try:
+        import pickle
+        with open('tfidf_vectorizer.pkl', 'rb') as f:
+            return pickle.load(f)
+    except Exception as e:
+        print(f"Error loading fallback vectorizer: {e}")
+        return None
+
+def detect_duplicate(new_complaint_text, existing_complaints, vectorizer=None, threshold=0.7):
     """
-    Detect duplicate complaints using TF-IDF and cosine similarity.
+    Detect duplicate complaints using Sentence Transformers embeddings and cosine similarity.
     """
     if not existing_complaints:
         return False, None, 0.0
-    
-    vectorizer = TfidfVectorizer(stop_words='english', max_features=100)
-    
+        
     try:
-        all_complaints = existing_complaints + [new_complaint_text]
-        tfidf_matrix = vectorizer.fit_transform(all_complaints)
+        if vectorizer is None:
+            vectorizer = load_fallback_vectorizer()
+        if vectorizer is None:
+            return False, None, 0.0
+            
+        new_emb = vectorizer.transform([new_complaint_text])
+        new_norm = np.linalg.norm(new_emb, axis=1, keepdims=True)
+        if np.any(new_norm == 0):
+            return False, None, 0.0
+        new_emb = new_emb / new_norm
         
-        new_vector = tfidf_matrix[-1]
-        existing_vectors = tfidf_matrix[:-1]
+        existing_texts = []
+        for c in existing_complaints:
+            if isinstance(c, dict):
+                existing_texts.append(c.get('complaint_text', ''))
+            elif isinstance(c, str):
+                existing_texts.append(c)
+            else:
+                existing_texts.append(str(c))
+                
+        existing_embs = vectorizer.transform(existing_texts)
+        existing_norms = np.linalg.norm(existing_embs, axis=1, keepdims=True)
+        existing_norms[existing_norms == 0] = 1.0
+        existing_embs = existing_embs / existing_norms
         
-        similarities = cosine_similarity(new_vector, existing_vectors).flatten()
+        similarities = np.dot(new_emb, existing_embs.T).flatten()
         max_similarity = similarities.max()
         most_similar_idx = similarities.argmax()
         
@@ -523,8 +549,172 @@ def detect_duplicate(new_complaint_text, existing_complaints, threshold=0.7):
         else:
             return False, None, round(float(max_similarity), 3)
             
-    except Exception:
+    except Exception as e:
+        print(f"Error in detect_duplicate: {e}")
         return False, None, 0.0
+
+def search_similar_complaints(query_text, complaints, vectorizer=None, k=3):
+    """
+    Phase 5 RAG Context Retrieval service using Sentence Transformers and FAISS.
+    Returns: list of dicts of top-k relevant complaints with similarity, resolution history,
+             escalation history, and location history.
+    """
+    if not complaints:
+        return []
+        
+    try:
+        if vectorizer is None:
+            vectorizer = load_fallback_vectorizer()
+        if vectorizer is None:
+            return []
+            
+        import faiss
+        
+        # 1. Extract embeddings for all existing complaints
+        texts = [c.get('complaint_text', '') for c in complaints]
+        embeddings = vectorizer.transform(texts)
+        embeddings = np.array(embeddings).astype('float32')
+        
+        # 2. Normalize embeddings for Cosine Similarity (Inner Product on normalized vectors)
+        faiss.normalize_L2(embeddings)
+        
+        # 3. Create FAISS index
+        dimension = embeddings.shape[1]
+        index = faiss.IndexFlatIP(dimension)
+        index.add(embeddings)
+        
+        # 4. Get query embedding and normalize
+        query_emb = vectorizer.transform([query_text])
+        query_emb = np.array(query_emb).astype('float32')
+        faiss.normalize_L2(query_emb)
+        
+        # 5. Search
+        k = min(k, len(complaints))
+        similarities, indices = index.search(query_emb, k)
+        
+        results = []
+        for sim, idx in zip(similarities[0], indices[0]):
+            if idx < 0 or idx >= len(complaints):
+                continue
+            c = complaints[idx]
+            results.append({
+                "id": c.get('id'),
+                "complaint_text": c.get('complaint_text'),
+                "category": c.get('category'),
+                "priority_label": c.get('priority_label'),
+                "priority_score": c.get('priority_score'),
+                "similarity": round(float(sim), 3),
+                "resolution_history": c.get('resolution_history', [
+                    {"status": "Submitted", "date": c.get('timestamp', ''), "notes": "Grievance received and registered."}
+                ]),
+                "escalation_history": c.get('escalation_history', [
+                    {"level": "L1 Officer", "date": c.get('timestamp', '')}
+                ]),
+                "location": c.get('structured_json', {}).get('location') or c.get('location') or "Unknown Location"
+            })
+        return results
+    except Exception as e:
+        print(f"Error in FAISS RAG Context Retrieval: {e}. Falling back to NumPy similarity.")
+        # Fallback to simple numpy-based cosine similarity if FAISS fails
+        try:
+            if vectorizer is None:
+                vectorizer = load_fallback_vectorizer()
+            if vectorizer is None:
+                return []
+                
+            texts = [c.get('complaint_text', '') for c in complaints]
+            embeddings = vectorizer.transform(texts)
+            embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
+            
+            query_emb = vectorizer.transform([query_text])
+            query_emb = query_emb / np.linalg.norm(query_emb, axis=1, keepdims=True)
+            
+            similarities = np.dot(query_emb, embeddings.T).flatten()
+            top_k_indices = np.argsort(similarities)[::-1][:k]
+            
+            results = []
+            for idx in top_k_indices:
+                c = complaints[idx]
+                results.append({
+                    "id": c.get('id'),
+                    "complaint_text": c.get('complaint_text'),
+                    "category": c.get('category'),
+                    "priority_label": c.get('priority_label'),
+                    "priority_score": c.get('priority_score'),
+                    "similarity": round(float(similarities[idx]), 3),
+                    "resolution_history": c.get('resolution_history', [
+                        {"status": "Submitted", "date": c.get('timestamp', ''), "notes": "Grievance received and registered."}
+                    ]),
+                    "escalation_history": c.get('escalation_history', [
+                        {"level": "L1 Officer", "date": c.get('timestamp', '')}
+                    ]),
+                    "location": c.get('structured_json', {}).get('location') or c.get('location') or "Unknown Location"
+                })
+            return results
+        except Exception as ex:
+            print(f"Fallback RAG failed: {ex}")
+            return []
+
+def get_duplicate_info(new_complaint_text, existing_complaints, vectorizer=None, threshold=0.7):
+    """
+    Phase 6 Duplicate detection API: returns duplicate_count, list of duplicate complaint IDs.
+    """
+    if not existing_complaints:
+        return {
+            "duplicate_count": 0,
+            "duplicate_ids": [],
+            "max_similarity": 0.0
+        }
+        
+    try:
+        if vectorizer is None:
+            vectorizer = load_fallback_vectorizer()
+        if vectorizer is None:
+            return {
+                "duplicate_count": 0,
+                "duplicate_ids": [],
+                "max_similarity": 0.0
+            }
+            
+        new_emb = vectorizer.transform([new_complaint_text])
+        new_norm = np.linalg.norm(new_emb, axis=1, keepdims=True)
+        if np.any(new_norm == 0):
+            return {"duplicate_count": 0, "duplicate_ids": [], "max_similarity": 0.0}
+        new_emb = new_emb / new_norm
+        
+        existing_texts = []
+        existing_ids = []
+        for c in existing_complaints:
+            if isinstance(c, dict):
+                existing_texts.append(c.get('complaint_text', ''))
+                existing_ids.append(c.get('id', 'Unknown'))
+            else:
+                existing_texts.append(str(c))
+                existing_ids.append(f"CMP-{1000 + len(existing_ids)}")
+                
+        existing_embs = vectorizer.transform(existing_texts)
+        existing_norms = np.linalg.norm(existing_embs, axis=1, keepdims=True)
+        existing_norms[existing_norms == 0] = 1.0
+        existing_embs = existing_embs / existing_norms
+        
+        similarities = np.dot(new_emb, existing_embs.T).flatten()
+        
+        duplicate_indices = np.where(similarities >= threshold)[0]
+        duplicate_ids = [existing_ids[idx] for idx in duplicate_indices]
+        max_similarity = similarities.max() if len(similarities) > 0 else 0.0
+        
+        return {
+            "duplicate_count": len(duplicate_ids),
+            "duplicate_ids": duplicate_ids,
+            "max_similarity": round(float(max_similarity), 3)
+        }
+    except Exception as e:
+        print(f"Error in get_duplicate_info: {e}")
+        return {
+            "duplicate_count": 0,
+            "duplicate_ids": [],
+            "max_similarity": 0.0
+        }
 
 def get_priority_color(priority_label):
     colors = {

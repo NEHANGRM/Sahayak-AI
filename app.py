@@ -370,10 +370,188 @@ def render_metrics_table(result):
 
 # Initialize session state for storing complaints
 if 'complaints' not in st.session_state:
-    st.session_state.complaints = []
+    st.session_state.complaints = [
+        {
+            'id': 'CMP-2001',
+            'complaint_text': "Water supply is completely cut off in Anna Nagar for the past 4 days. The local water board is not responding to calls.",
+            'timestamp': "2026-06-05 09:12:00",
+            'admissible': True,
+            'rejection_reason': None,
+            'category': "Water",
+            'raw_predicted_category': "Water",
+            'priority_label': "Medium",
+            'priority_score': 0.385,
+            'severity_score': 0.40,
+            'severity_reason': "Infrastructure failure",
+            'severity_label': "Medium",
+            'public_impact_score': 0.50,
+            'vulnerability_score': 0.20,
+            'urgency_score': 0.35,
+            'duplicate_escalation_score': 0.0,
+            'sentiment_score': 0.75,
+            'department': "Water & Sewerage Board",
+            'explanation': "Marked MEDIUM based on governance factors.",
+            'is_duplicate': False,
+            'cluster_id': None,
+            'similarity': 0.0,
+            'structured_json': {"category": "Water", "location": "Anna Nagar", "infrastructure": "Water Pipeline", "risk_keywords": [], "entities": [], "severity": {"score": 0.40, "level": "Medium", "reason": "Infrastructure failure"}},
+            'ner_breakdown': {"Locations": ["Anna Nagar"]},
+            'officer_override': None,
+            'override_reason': None,
+            'resolution_history': [
+                {"status": "Registered", "date": "2026-06-05 09:12:00", "notes": "Registered automatically."},
+                {"status": "Assigned", "date": "2026-06-05 10:00:00", "notes": "Assigned to Water Board Engineer."},
+                {"status": "In Progress", "date": "2026-06-06 14:00:00", "notes": "Leak detected in the main inlet pipeline."}
+            ],
+            'escalation_history': [
+                {"level": "L1 - Junior Engineer", "date": "2026-06-05 10:00:00"},
+                {"level": "L2 - Assistant Executive Engineer", "date": "2026-06-07 09:00:00"}
+            ]
+        },
+        {
+            'id': 'CMP-2002',
+            'complaint_text': "Huge pothole on the main flyover near City General Hospital. Vehicles are swerving to avoid it, causing severe accident risk.",
+            'timestamp': "2026-06-06 11:20:00",
+            'admissible': True,
+            'rejection_reason': None,
+            'category': "Roads",
+            'raw_predicted_category': "Roads",
+            'priority_label': "Critical",
+            'priority_score': 0.815,
+            'severity_score': 0.85,
+            'severity_reason': "Critical infrastructure + public safety risk",
+            'severity_label': "Critical",
+            'public_impact_score': 0.80,
+            'vulnerability_score': 0.90,
+            'urgency_score': 0.90,
+            'duplicate_escalation_score': 0.0,
+            'sentiment_score': 0.85,
+            'department': "Public Works Department (PWD)",
+            'explanation': "Marked CRITICAL based on governance factors.",
+            'is_duplicate': False,
+            'cluster_id': None,
+            'similarity': 0.0,
+            'structured_json': {"category": "Roads", "location": "City General Hospital", "infrastructure": "Bridge", "risk_keywords": ["accident", "danger"], "entities": [], "severity": {"score": 0.85, "level": "Critical", "reason": "Critical infrastructure + public safety risk"}},
+            'ner_breakdown': {"Locations": ["City General Hospital"]},
+            'officer_override': None,
+            'override_reason': None,
+            'resolution_history': [
+                {"status": "Registered", "date": "2026-06-06 11:20:00", "notes": "Registered via portal."},
+                {"status": "Assigned", "date": "2026-06-06 12:15:00", "notes": "Assigned to PWD Road Safety Division."},
+                {"status": "Resolved", "date": "2026-06-07 17:30:00", "notes": "Pothole filled with cold mix asphalt. Temporary repair completed."}
+            ],
+            'escalation_history': [
+                {"level": "L1 - PWD Engineer", "date": "2026-06-06 12:15:00"}
+            ]
+        },
+        {
+            'id': 'CMP-2003',
+            'complaint_text': "Street lights are not functioning in T-Nagar near the girls high school, making the road unsafe for walking at night.",
+            'timestamp': "2026-06-07 19:40:00",
+            'admissible': True,
+            'rejection_reason': None,
+            'category': "Electricity",
+            'raw_predicted_category': "Electricity",
+            'priority_label': "High",
+            'priority_score': 0.615,
+            'severity_score': 0.60,
+            'severity_reason': "Public safety risk + vulnerable setting",
+            'severity_label': "High",
+            'public_impact_score': 0.65,
+            'vulnerability_score': 0.70,
+            'urgency_score': 0.60,
+            'duplicate_escalation_score': 0.0,
+            'sentiment_score': 0.70,
+            'department': "Electricity Utilities Board",
+            'explanation': "Marked HIGH based on governance factors.",
+            'is_duplicate': False,
+            'cluster_id': None,
+            'similarity': 0.0,
+            'structured_json': {"category": "Electricity", "location": "T-Nagar", "infrastructure": "School", "risk_keywords": ["unsafe"], "entities": [], "severity": {"score": 0.60, "level": "High", "reason": "Public safety risk + vulnerable setting"}},
+            'ner_breakdown': {"Locations": ["T-Nagar"]},
+            'officer_override': None,
+            'override_reason': None,
+            'resolution_history': [
+                {"status": "Registered", "date": "2026-06-07 19:40:00", "notes": "Registered via web app."},
+                {"status": "Assigned", "date": "2026-06-08 08:30:00", "notes": "Assigned to Electricity Board Inspector."}
+            ],
+            'escalation_history': [
+                {"level": "L1 - Line Inspector", "date": "2026-06-08 08:30:00"}
+            ]
+        },
+        {
+            'id': 'CMP-2004',
+            'complaint_text': "Garbage has not been collected for two weeks in Sector 4, Chennai. The dumpster is overflowing onto the street, attracting stray dogs.",
+            'timestamp': "2026-06-08 10:15:00",
+            'admissible': True,
+            'rejection_reason': None,
+            'category': "Sanitation",
+            'raw_predicted_category': "Sanitation",
+            'priority_label': "Medium",
+            'priority_score': 0.415,
+            'severity_score': 0.45,
+            'severity_reason': "Infrastructure failure",
+            'severity_label': "Medium",
+            'public_impact_score': 0.50,
+            'vulnerability_score': 0.30,
+            'urgency_score': 0.40,
+            'duplicate_escalation_score': 0.0,
+            'sentiment_score': 0.60,
+            'department': "Municipal Sanitation Department",
+            'explanation': "Marked MEDIUM based on governance factors.",
+            'is_duplicate': False,
+            'cluster_id': None,
+            'similarity': 0.0,
+            'structured_json': {"category": "Sanitation", "location": "Sector 4", "infrastructure": "Waste Bin", "risk_keywords": [], "entities": [], "severity": {"score": 0.45, "level": "Medium", "reason": "Infrastructure failure"}},
+            'ner_breakdown': {"Locations": ["Sector 4", "Chennai"]},
+            'officer_override': None,
+            'override_reason': None,
+            'resolution_history': [
+                {"status": "Registered", "date": "2026-06-08 10:15:00", "notes": "Registered."},
+                {"status": "Assigned", "date": "2026-06-08 11:30:00", "notes": "Assigned to Zonal Sanitation Officer."}
+            ],
+            'escalation_history': [
+                {"level": "L1 - Sanitary Inspector", "date": "2026-06-08 11:30:00"}
+            ]
+        },
+        {
+            'id': 'CMP-2005',
+            'complaint_text': "A local official is demanding a bribe of 5000 rupees to process my business license application at the Municipal Corporation Office.",
+            'timestamp': "2026-06-09 14:30:00",
+            'admissible': True,
+            'rejection_reason': None,
+            'category': "Corruption",
+            'raw_predicted_category': "Corruption",
+            'priority_label': "High",
+            'priority_score': 0.595,
+            'severity_score': 0.90,
+            'severity_reason': "Integrity violation / corruption bribe",
+            'severity_label': "High",
+            'public_impact_score': 0.30,
+            'vulnerability_score': 0.20,
+            'urgency_score': 0.70,
+            'duplicate_escalation_score': 0.0,
+            'sentiment_score': 0.80,
+            'department': "Vigilance Bureau",
+            'explanation': "Marked HIGH based on governance factors.",
+            'is_duplicate': False,
+            'cluster_id': None,
+            'similarity': 0.0,
+            'structured_json': {"category": "Corruption", "location": "Municipal Corporation Office", "infrastructure": "Government Office", "risk_keywords": ["bribe", "corruption"], "entities": [], "severity": {"score": 0.90, "level": "High", "reason": "Integrity violation / corruption bribe"}},
+            'ner_breakdown': {"Locations": ["Municipal Corporation Office"]},
+            'officer_override': None,
+            'override_reason': None,
+            'resolution_history': [
+                {"status": "Registered", "date": "2026-06-09 14:30:00", "notes": "Under review by anti-corruption cell."}
+            ],
+            'escalation_history': [
+                {"level": "L1 - Vigilance Officer", "date": "2026-06-09 15:00:00"}
+            ]
+        }
+    ]
 
 if 'complaint_counter' not in st.session_state:
-    st.session_state.complaint_counter = 1
+    st.session_state.complaint_counter = 6
 
 # Initialize feedback storage
 if 'officer_overrides' not in st.session_state:
@@ -426,10 +604,10 @@ def predict_complaint(complaint_text):
         except Exception:
             pass
             
-        existing_texts = [c['complaint_text'] for c in existing_complaints if c.get('admissible', True)]
         is_duplicate, cluster_id, similarity = utils.detect_duplicate(
             complaint_text, 
-            existing_texts, 
+            existing_complaints, 
+            vectorizer=vectorizer,
             threshold=0.7
         )
         duplicate_escalation_score = utils.calculate_duplicate_escalation(
@@ -438,6 +616,24 @@ def predict_complaint(complaint_text):
             cluster_id, 
             existing_complaints
         )
+        
+        # Phase 5: RAG Context Retrieval
+        similar_cases = utils.search_similar_complaints(
+            complaint_text,
+            existing_complaints,
+            vectorizer,
+            k=3
+        )
+        
+        # Phase 6: Duplicate detection API
+        dup_info = utils.get_duplicate_info(
+            complaint_text,
+            existing_complaints,
+            vectorizer,
+            threshold=0.7
+        )
+        duplicate_count = dup_info["duplicate_count"]
+        duplicate_ids = dup_info["duplicate_ids"]
         
         # 5. Urgency calculation
         urgency_score = utils.calculate_urgency(complaint_text, predicted_category, severity_score, temp_json)
@@ -475,6 +671,9 @@ def predict_complaint(complaint_text):
         department = "Not Routed"
         explanation = f"Complaint rejected. Reason: {rejection_reason}"
         is_duplicate, cluster_id, similarity = False, None, 0.0
+        duplicate_count = 0
+        duplicate_ids = []
+        similar_cases = []
         
     # 4. Create the final consolidated structured JSON response
     structured_json = {
@@ -519,7 +718,10 @@ def predict_complaint(complaint_text):
         'cluster_id': cluster_id,
         'similarity': similarity,
         'structured_json': structured_json,
-        'ner_breakdown': ner_details['extracted_entities']
+        'ner_breakdown': ner_details['extracted_entities'],
+        'duplicate_count': duplicate_count,
+        'duplicate_ids': duplicate_ids,
+        'similar_cases': similar_cases
     }
 
 
@@ -583,7 +785,16 @@ def citizen_portal():
                     'structured_json': result['structured_json'],
                     'ner_breakdown': result['ner_breakdown'],
                     'officer_override': None,
-                    'override_reason': None
+                    'override_reason': None,
+                    'duplicate_count': result.get('duplicate_count', 0),
+                    'duplicate_ids': result.get('duplicate_ids', []),
+                    'similar_cases': result.get('similar_cases', []),
+                    'resolution_history': [
+                        {"status": "Submitted", "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "notes": "Grievance received and registered."}
+                    ],
+                    'escalation_history': [
+                        {"level": "L1 Officer", "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+                    ]
                 }
                 
                 st.session_state.complaints.append(complaint_record)
@@ -642,6 +853,37 @@ def citizen_portal():
                     if not any(ner.values()):
                         st.markdown("*No specific named entities extracted.*")
                 
+                # Phase 5: RAG Context Retrieval & Phase 6: Duplicate Registry
+                st.markdown("---")
+                st.markdown("### 🔍 RAG Context & Similar Historical Grievances (Phase 5)")
+                if result.get('similar_cases'):
+                    for sc in result['similar_cases']:
+                        with st.container():
+                            st.markdown(f"**Grievance ID:** `{sc['id']}` (Category: `{sc['category']}`, Priority: `{sc['priority_label']}`) | **Similarity Score:** `{sc['similarity']*100:.1f}%`")
+                            st.markdown(f"**Location:** `{sc['location']}`")
+                            st.markdown(f"**Description:** *\"{sc['complaint_text']}\"*")
+                            
+                            col_res, col_esc = st.columns(2)
+                            with col_res:
+                                st.markdown("**Resolution History:**")
+                                for r in sc.get('resolution_history', []):
+                                    st.markdown(f"- `{r['date']}`: **{r['status']}** - *{r.get('notes', '')}*")
+                            with col_esc:
+                                st.markdown("**Escalation History:**")
+                                for e in sc.get('escalation_history', []):
+                                    st.markdown(f"- `{e['date']}`: **{e['level']}**")
+                            st.markdown("<div style='border-bottom: 1px dashed #cbd5e0; margin: 10px 0;'></div>", unsafe_allow_html=True)
+                else:
+                    st.info("No past similar grievances found in context search.")
+
+                st.markdown("---")
+                st.markdown("### 📋 Duplicate Registry (Phase 6)")
+                if result.get('duplicate_count', 0) > 0:
+                    st.warning(f"**Duplicate Count:** `{result['duplicate_count']}` recurring reports detected.")
+                    st.markdown(f"**Duplicate Complaint IDs:** {', '.join([f'`{did}`' for did in result['duplicate_ids']])}")
+                else:
+                    st.success("No recurring reports detected for this issue. This is a unique complaint.")
+
                 # Structured JSON Box
                 st.markdown("---")
                 with st.expander("⚙️ View Structured Engine Output (JSON)", expanded=True):
@@ -734,6 +976,41 @@ def officer_dashboard():
                     st.markdown("**💡 System Explanation:**")
                     st.markdown(f"> {complaint['explanation']}")
                     
+                    st.markdown("---")
+                    col_rag, col_dup = st.columns(2)
+                    with col_rag:
+                        st.markdown("**🔍 RAG Context & Similar Grievances (Phase 5)**")
+                        similar_cases = complaint.get('similar_cases')
+                        if not similar_cases:
+                            # Try to run it dynamically if not stored (e.g. for mock complaints)
+                            similar_cases = utils.search_similar_complaints(
+                                complaint['complaint_text'],
+                                [c for c in st.session_state.complaints if c['id'] != complaint['id'] and c.get('admissible', True)],
+                                vectorizer,
+                                k=2
+                            )
+                        if similar_cases:
+                            for sc in similar_cases[:2]:
+                                st.markdown(f"- **{sc['id']}** ({sc['category']}, Priority: **{sc['priority_label']}**) | Score: `{sc['similarity']*100:.1f}%`\n"
+                                            f"  *Text:* \"{sc['complaint_text'][:80]}...\"\n"
+                                            f"  *Status:* **{sc['resolution_history'][-1]['status']}** ({sc['resolution_history'][-1]['date']})")
+                        else:
+                            st.info("No past similar cases found in database.")
+                            
+                    with col_dup:
+                        st.markdown("**📋 Duplicate Registry (Phase 6)**")
+                        dup_info = utils.get_duplicate_info(
+                            complaint['complaint_text'],
+                            [c for c in st.session_state.complaints if c['id'] != complaint['id'] and c.get('admissible', True)],
+                            vectorizer,
+                            threshold=0.7
+                        )
+                        if dup_info['duplicate_count'] > 0:
+                            st.warning(f"**Duplicate Count:** `{dup_info['duplicate_count']}` recurring reports.")
+                            st.markdown(f"**Duplicate IDs:** {', '.join([f'`{did}`' for did in dup_info['duplicate_ids']])}")
+                        else:
+                            st.success("No duplicates detected in queue.")
+
                     st.markdown("---")
                     st.markdown("**⚙️ Structured Parser Output (JSON)**")
                     st.json(complaint['structured_json'])

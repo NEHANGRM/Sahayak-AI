@@ -21,7 +21,11 @@ _nlp = None
 def get_spacy_nlp():
     global _nlp
     if _nlp is None:
-        _nlp = spacy.load("en_core_web_sm")
+        try:
+            import en_core_web_sm
+            _nlp = en_core_web_sm.load()
+        except Exception:
+            _nlp = spacy.load("en_core_web_sm")
     return _nlp
 
 # Wrapper for SentenceTransformer to maintain compatibility with vectorizer.transform()

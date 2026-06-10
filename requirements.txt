@@ -1,7 +1,3 @@
-# Sahayak AI - Streamlit Frontend Dependencies
-# These are the ONLY dependencies needed for the Streamlit Cloud deployment.
-# For backend (api.py) dependencies, see requirements-backend.txt
-
-streamlit>=1.30.0
-pandas>=2.0.0
-requests>=2.31.0
+streamlit
+pandas
+requests

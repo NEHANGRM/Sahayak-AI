@@ -478,6 +478,7 @@ def triage_complaint(req: TriageRequest, db: Session = Depends(get_db)):
     duplicate_escalation_score = 0.0
     sentiment_score = 0.0
     priority_score = 0.0
+    final_priority_score = 0.0
     priority_label = "Low"
     department = "Not Routed"
     explanation = f"Complaint rejected. Reason: {rejection_reason}"

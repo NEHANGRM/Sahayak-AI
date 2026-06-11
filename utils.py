@@ -144,6 +144,26 @@ def check_admissibility(text, category_model, vectorizer):
     if predicted_category in REJECTION_REASONS:
         return False, REJECTION_REASONS[predicted_category], predicted_category, confidence_score
         
+    # 3. Rule-based heuristic overrides for high-confidence keyword matches
+    text_lower = text.lower()
+    electricity_kws = ["street light", "streetlight", "street-light", "power cut", "power outage", "electricity outage", "voltage fluctuation", "electric wire", "electric pole"]
+    roads_kws = ["pothole", "manhole", "road damage", "road condition", "flyover crack"]
+    sanitation_kws = ["garbage", "trash", "dumpster", "overflowing bin", "sewage leak", "sewer line"]
+    water_kws = ["water supply", "drinking water", "water pipeline", "water leakage", "no water"]
+    
+    if any(kw in text_lower for kw in electricity_kws):
+        predicted_category = "Electricity"
+        confidence_score = 1.0
+    elif any(kw in text_lower for kw in roads_kws):
+        predicted_category = "Roads"
+        confidence_score = 1.0
+    elif any(kw in text_lower for kw in sanitation_kws):
+        predicted_category = "Sanitation"
+        confidence_score = 1.0
+    elif any(kw in text_lower for kw in water_kws):
+        predicted_category = "Water"
+        confidence_score = 1.0
+        
     return True, None, predicted_category, confidence_score
 
 def extract_entities_and_details(text, category):

@@ -3,6 +3,8 @@
 # Usage: pip install -r requirements-backend.txt
 # IMPORTANT: Set PYTHON_VERSION=3.11.9 in Render environment variables
 
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.2.2+cpu
 scikit-learn==1.5.2
 pandas==2.2.3
 numpy==1.26.4

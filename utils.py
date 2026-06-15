@@ -6,6 +6,7 @@ priority calculation, XAI, duplicate detection, and admissibility filter.
 
 import numpy as np
 import re
+import json
 import spacy
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -637,9 +638,101 @@ def load_fallback_vectorizer():
         print(f"Error loading fallback vectorizer: {e}")
         return None
 
-def detect_duplicate(new_complaint_text, existing_complaints, vectorizer=None, threshold=0.7):
+def _normalize_location(loc_str):
     """
-    Detect duplicate complaints using Sentence Transformers embeddings and cosine similarity.
+    Normalize a location string for comparison.
+    Handles variations like "T-Nagar", "T Nagar", "t nagar", "T-nagar" etc.
+    Returns a lowercase, stripped, de-punctuated string.
+    """
+    if not loc_str:
+        return ""
+    loc = loc_str.lower().strip()
+    # Remove common punctuation and normalize separators
+    loc = re.sub(r'[,.\-_/\\]', ' ', loc)
+    # Collapse whitespace
+    loc = re.sub(r'\s+', ' ', loc).strip()
+    return loc
+
+def _locations_match(loc_a, loc_b):
+    """
+    Check if two location strings refer to the same area.
+    Returns True only if there is meaningful overlap.
+    If either location is empty/unknown, we return False (no match = not a duplicate).
+    """
+    norm_a = _normalize_location(loc_a)
+    norm_b = _normalize_location(loc_b)
+    
+    # If either location is unknown/empty, we CANNOT confirm they are the same place
+    if not norm_a or not norm_b:
+        return False
+    
+    # Exact match after normalization
+    if norm_a == norm_b:
+        return True
+    
+    # Check if one is contained in the other (e.g., "anna nagar" in "anna nagar west")
+    if norm_a in norm_b or norm_b in norm_a:
+        return True
+    
+    # Token-level overlap: if they share significant tokens, likely same area
+    stop_words = {"near", "area", "road", "street", "lane", "nagar", "colony", "sector",
+                  "phase", "block", "ward", "zone", "district", "village", "city", "town",
+                  "in", "at", "the", "of", "and", "north", "south", "east", "west"}
+    tokens_a = set(norm_a.split()) - stop_words
+    tokens_b = set(norm_b.split()) - stop_words
+    
+    if not tokens_a or not tokens_b:
+        # Only stop words remain; compare including stop words
+        tokens_a = set(norm_a.split())
+        tokens_b = set(norm_b.split())
+    
+    overlap = tokens_a & tokens_b
+    smaller_set = min(len(tokens_a), len(tokens_b))
+    if smaller_set > 0 and len(overlap) / smaller_set >= 0.5:
+        return True
+    
+    return False
+
+def _extract_location_from_complaint(complaint):
+    """
+    Extract the location string from a complaint dict.
+    Looks in structured_json -> location first, then ner_breakdown.
+    """
+    if isinstance(complaint, dict):
+        # Try structured_json
+        sj = complaint.get('structured_json', {})
+        if isinstance(sj, str):
+            try:
+                sj = json.loads(sj)
+            except Exception:
+                sj = {}
+        loc = sj.get('location', '')
+        if loc:
+            return loc
+        
+        # Try ner_breakdown
+        ner = complaint.get('ner_breakdown', {})
+        if isinstance(ner, str):
+            try:
+                ner = json.loads(ner)
+            except Exception:
+                ner = {}
+        locations_list = ner.get('locations', [])
+        if locations_list:
+            return ', '.join(locations_list)
+    
+    return ""
+
+def detect_duplicate(new_complaint_text, existing_complaints, vectorizer=None, threshold=0.7, new_location="", new_category=""):
+    """
+    Detect duplicate complaints using Sentence Transformers embeddings + location matching.
+    A complaint is a duplicate only if:
+      1. Text similarity >= threshold (same type of issue)
+      2. Category matches (same problem domain)
+      3. Location matches (same geographic area)
+    
+    This prevents clustering "broken street light in T-Nagar" with 
+    "broken street light in Anna Nagar" — they are different problems needing separate fixes.
     """
     if not existing_complaints:
         return False, None, 0.0
@@ -671,13 +764,33 @@ def detect_duplicate(new_complaint_text, existing_complaints, vectorizer=None, t
         existing_embs = existing_embs / existing_norms
         
         similarities = np.dot(new_emb, existing_embs.T).flatten()
-        max_similarity = similarities.max()
-        most_similar_idx = similarities.argmax()
         
-        if max_similarity >= threshold:
-            return True, int(most_similar_idx), round(float(max_similarity), 3)
-        else:
-            return False, None, round(float(max_similarity), 3)
+        # Sort candidates by similarity descending
+        sorted_indices = np.argsort(similarities)[::-1]
+        
+        for idx in sorted_indices:
+            sim = similarities[idx]
+            if sim < threshold:
+                break  # No more candidates above threshold
+            
+            candidate = existing_complaints[idx] if isinstance(existing_complaints[idx], dict) else {}
+            
+            # Check 1: Category must match (if available)
+            if new_category and candidate.get('category', ''):
+                if new_category.lower() != candidate.get('category', '').lower():
+                    continue  # Different category, skip
+            
+            # Check 2: Location must match
+            candidate_location = _extract_location_from_complaint(candidate)
+            if not _locations_match(new_location, candidate_location):
+                continue  # Different location, skip
+            
+            # Both checks passed — this is a genuine duplicate
+            return True, int(idx), round(float(sim), 3)
+        
+        # No candidate passed all checks
+        best_sim = float(similarities.max()) if len(similarities) > 0 else 0.0
+        return False, None, round(best_sim, 3)
             
     except Exception as e:
         print(f"Error in detect_duplicate: {e}")

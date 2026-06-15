@@ -536,12 +536,15 @@ def triage_complaint(req: TriageRequest, db: Session = Depends(get_db)):
         ).all()
         existing_list = [to_dict(c) for c in open_db_complaints]
         
-        # Duplicate detection
+        # Duplicate detection (location-aware: same issue + same area only)
+        new_location = ner_details.get("location", "")
         is_duplicate, cluster_idx, similarity = utils.detect_duplicate(
             text, 
             existing_list, 
             vectorizer=VECTORIZER,
-            threshold=0.7
+            threshold=0.7,
+            new_location=new_location,
+            new_category=predicted_category
         )
         if is_duplicate and cluster_idx is not None and cluster_idx < len(existing_list):
             lead_id = existing_list[cluster_idx]['id']

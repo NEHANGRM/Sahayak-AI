@@ -79,14 +79,16 @@ DEPARTMENT_MAP = {
     "Other": "General Administration Department"
 }
 
-# Prohibited Categories map
+# Prohibited Categories map (aligned to CPGRAMS exclusion policies)
 REJECTION_REASONS = {
-    "Prohibited_RTI": "RTI (Right to Information) request. Please file RTI requests through the official RTI portal.",
-    "Prohibited_Court": "Court or Subjudice matter. Matters currently pending in court cannot be processed by this portal.",
-    "Prohibited_Family": "Personal family dispute. Private domestic disputes should be settled through family court or police.",
-    "Prohibited_Religion": "Religious matter. Disputes regarding religious affairs cannot be processed by this portal.",
-    "Prohibited_Service": "Government employee service matter (e.g. transfer, pension, promotion). These should be routed through departmental channels.",
-    "Prohibited_National": "Matter affecting national integrity or sovereignty. These must be reported directly to national security agencies."
+    "Prohibited_RTI": "RTI (Right to Information) request. Please file RTI requests through the official RTI portal (rtionline.gov.in).",
+    "Prohibited_Court": "Court or Sub Judice matter. Matters currently pending in or decided by a court/tribunal cannot be processed by this portal. CPGRAMS cannot interfere with the judiciary.",
+    "Prohibited_Family": "Personal or family dispute. Private domestic disputes (property partition, inheritance, neighbour quarrels, matrimonial issues) are civil/legal matters and not public service grievances.",
+    "Prohibited_Religion": "Religious matter. Disputes involving religious beliefs, practices, or inter-community religious conflicts are outside CPGRAMS scope.",
+    "Prohibited_Service": "Government employee service matter (e.g. transfer, promotion, salary fixation, pension, disciplinary proceedings). These should be routed through prescribed departmental grievance mechanisms first.",
+    "Prohibited_National": "Matter affecting national integrity, territorial sovereignty, or foreign relations. These must be reported directly to national security agencies.",
+    "Prohibited_Caste": "Caste-based or SC/ST discrimination complaint. Complaints involving caste distinctions, SC/ST atrocities, or reservation disputes must be filed with the National Commission for Scheduled Castes (NCSC) or under the SC/ST (Prevention of Atrocities) Act through the police.",
+    "Prohibited_Suggestion": "Policy suggestion or general advice. CPGRAMS is for actionable public service grievances, not policy suggestions, opinions, or general advice to the government."
 }
 
 # Risk Keywords
@@ -99,20 +101,117 @@ RISK_KEYWORDS = [
 def check_admissibility_keywords(text):
     """
     Check admissibility using quick keyword matching.
+    Aligned with CPGRAMS exclusion policies.
     """
     text_lower = text.lower()
     
-    # RTI keywords
-    if "rti application" in text_lower or "right to information act" in text_lower or "under rti" in text_lower:
+    # 1. RTI Matters
+    rti_keywords = [
+        "rti application", "right to information act", "under rti", "rti act",
+        "rti request", "file rti", "rti query", "rti appeal", "section 6 of rti",
+        "provide information under", "seeking information under",
+        "copies of government records", "certified copies of",
+        "details of funds spent", "copy of tender documents"
+    ]
+    if any(kw in text_lower for kw in rti_keywords):
         return False, REJECTION_REASONS["Prohibited_RTI"], "Prohibited_RTI"
         
-    # Court keywords
-    if "subjudice" in text_lower or "sub-judice" in text_lower or "pending in court" in text_lower or "pending court case" in text_lower:
+    # 2. Court / Sub Judice Matters
+    court_keywords = [
+        "subjudice", "sub-judice", "sub judice", "pending in court",
+        "pending court case", "before the court", "court judgment",
+        "court verdict", "court order", "court hearing", "court stay",
+        "stay order", "high court", "supreme court", "district court",
+        "session court", "tribunal", "under trial", "court dispute",
+        "disagree with the judgment", "decided by a court",
+        "civil suit", "filed a case", "legal proceedings",
+        "scheduled for hearing", "court's final"
+    ]
+    if any(kw in text_lower for kw in court_keywords):
         return False, REJECTION_REASONS["Prohibited_Court"], "Prohibited_Court"
-        
-    # Service matters
-    if ("my promotion" in text_lower or "my transfer" in text_lower or "my pension" in text_lower) and ("department" in text_lower or "government employee" in text_lower or "office" in text_lower):
+    
+    # 3. Personal / Family Disputes
+    family_keywords = [
+        "family dispute", "family fight", "family conflict",
+        "property dispute between", "property partition",
+        "ancestral property", "inheritance dispute",
+        "domestic dispute", "divorce case", "custody battle",
+        "husband and wife", "spouse", "matrimonial",
+        "sibling dispute", "between siblings", "between brothers",
+        "neighbour quarrel", "neighbor dispute", "neighbourhood fight",
+        "personal dispute", "private dispute", "wedding expenses",
+        "land division between", "between uncles",
+        "between relatives", "my relatives are harassing"
+    ]
+    if any(kw in text_lower for kw in family_keywords):
+        return False, REJECTION_REASONS["Prohibited_Family"], "Prohibited_Family"
+    
+    # 4. Religious Matters
+    religion_keywords = [
+        "religious dispute", "religious conflict", "religious conversion",
+        "temple vs mosque", "temple near mosque", "mosque near temple",
+        "religious procession", "religious flag", "religious practice",
+        "religious belief", "desecration", "religious monument",
+        "inter-community religious", "religious group",
+        "hate speech targeting religious", "communal tension",
+        "religious shrine", "place of worship dispute"
+    ]
+    if any(kw in text_lower for kw in religion_keywords):
+        return False, REJECTION_REASONS["Prohibited_Religion"], "Prohibited_Religion"
+    
+    # 5. National Integrity / Foreign Relations
+    national_keywords = [
+        "national integrity", "national security", "sovereignty",
+        "secession", "separatist", "anti-national", "anti national",
+        "seditious", "sedition", "espionage", "spying",
+        "territorial integrity", "foreign relations", "diplomatic",
+        "border dispute", "cross-border"
+    ]
+    if any(kw in text_lower for kw in national_keywords):
+        return False, REJECTION_REASONS["Prohibited_National"], "Prohibited_National"
+    
+    # 6. Government Employee Service Matters
+    service_keywords = [
+        "my promotion", "my transfer", "my pension", "my salary",
+        "my posting", "my suspension", "my reinstatement",
+        "transfer request", "promotion dispute", "salary fixation",
+        "salary deduction", "gratuity payment", "pension benefits",
+        "disciplinary proceedings", "departmental inquiry",
+        "service matter", "government employee service",
+        "regularisation of temporary", "seniority dispute"
+    ]
+    if any(kw in text_lower for kw in service_keywords):
         return False, REJECTION_REASONS["Prohibited_Service"], "Prohibited_Service"
+    
+    # 7. Caste / SC-ST Matters
+    caste_keywords = [
+        "sc/st", "sc / st", "scheduled caste", "scheduled tribe",
+        "caste discrimination", "caste atrocity", "caste violence",
+        "caste abuse", "caste slur", "casteist", "caste-based",
+        "caste based", "dalit atrocity", "dalit discrimination",
+        "untouchability", "upper caste", "lower caste",
+        "obc reservation", "sc reservation", "st reservation",
+        "reservation dispute", "caste certificate",
+        "prevention of atrocities act", "poa act",
+        "caste name", "caste distinction"
+    ]
+    if any(kw in text_lower for kw in caste_keywords):
+        return False, REJECTION_REASONS["Prohibited_Caste"], "Prohibited_Caste"
+    
+    # 8. Suggestions / Policy Advice
+    suggestion_keywords = [
+        "government should", "the government should",
+        "should build more", "should reduce", "should increase",
+        "please reduce gst", "reduce tax", "reduce gst",
+        "policy suggestion", "i suggest", "my suggestion",
+        "please consider building", "why not build",
+        "the government must introduce", "government must",
+        "please introduce a scheme", "request new policy",
+        "suggest the government", "advise the government",
+        "opinion on policy", "policy advice"
+    ]
+    if any(kw in text_lower for kw in suggestion_keywords):
+        return False, REJECTION_REASONS["Prohibited_Suggestion"], "Prohibited_Suggestion"
         
     return True, None, None
 

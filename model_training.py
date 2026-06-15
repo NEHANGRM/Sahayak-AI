@@ -259,6 +259,38 @@ def train_models():
     for text in national_texts:
         synthetic_samples.append({'Complaint_Text': text, 'Mapped_Category': 'Prohibited_National', 'Priority_Label': 'Low'})
         
+    # Prohibited Caste / SC-ST Matters
+    caste_texts = [
+        "Caste-based discrimination against SC/ST students in the government school.",
+        "Dalit family denied entry into the village temple due to caste.",
+        "Upper caste people are practicing untouchability in our village.",
+        "Complaint regarding caste atrocity and violence against scheduled caste family.",
+        "Scheduled tribe community members are being harassed by dominant caste groups.",
+        "Caste slur and abuse used against a dalit worker by the supervisor.",
+        "OBC reservation quota not being implemented properly in recruitment.",
+        "Caste discrimination in government office, SC employees treated differently.",
+        "Seeking action under SC/ST Prevention of Atrocities Act for caste violence.",
+        "Caste certificate verification is being delayed intentionally for scheduled tribe applicants."
+    ]
+    for text in caste_texts:
+        synthetic_samples.append({'Complaint_Text': text, 'Mapped_Category': 'Prohibited_Caste', 'Priority_Label': 'Low'})
+    
+    # Prohibited Suggestions / Policy Advice
+    suggestion_texts = [
+        "The government should build more parks in residential areas.",
+        "Please reduce GST rates on essential food items.",
+        "I suggest the government introduce free WiFi in all public spaces.",
+        "Why not build a metro rail line connecting the suburbs to downtown?",
+        "The government should increase the budget for rural healthcare.",
+        "Policy suggestion: introduce cashback incentives for digital payments.",
+        "I advise the government to plant more trees along national highways.",
+        "The government must introduce stricter pollution control norms.",
+        "Request new policy for solar panel subsidies in rural homes.",
+        "My suggestion is to reduce income tax for middle class families."
+    ]
+    for text in suggestion_texts:
+        synthetic_samples.append({'Complaint_Text': text, 'Mapped_Category': 'Prohibited_Suggestion', 'Priority_Label': 'Low'})
+        
     # Append synthetic samples to dataframe
     df_synthetic = pd.DataFrame(synthetic_samples)
     df_extended = pd.concat([

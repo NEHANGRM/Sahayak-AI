@@ -471,9 +471,15 @@ def seed_database(db: Session):
     db.commit()
     print("✅ Seed complaints inserted successfully.")
 
-# Run seeding
+# Run seeding and cleanups
 db = SessionLocal()
 seed_database(db)
+try:
+    deleted = db.query(Complaint).filter(Complaint.id.in_(["CMP-2006", "CMP-2007"])).delete(synchronize_session=False)
+    db.commit()
+    print(f"🧹 Database cleanup: deleted {deleted} complaints (CMP-2006, CMP-2007)")
+except Exception as e:
+    print(f"Error during db cleanup: {e}")
 db.close()
 
 

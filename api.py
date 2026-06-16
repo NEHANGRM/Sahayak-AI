@@ -539,6 +539,8 @@ def triage_complaint(req: TriageRequest, db: Session = Depends(get_db)):
     llm_vulnerable_population_risk = "Medium"
     llm_infrastructure_risk = "Medium"
     llm_trigger_reasons = []
+    suggested_response = ""
+    suggested_action = ""
     
     if is_admissible:
         department = utils.route_to_department(predicted_category)
@@ -647,12 +649,18 @@ def triage_complaint(req: TriageRequest, db: Session = Depends(get_db)):
                 llm_public_safety_risk = review_result.get("public_safety_risk", "Medium")
                 llm_vulnerable_population_risk = review_result.get("vulnerable_population_risk", "Medium")
                 llm_infrastructure_risk = review_result.get("infrastructure_risk", "Medium")
+                suggested_response = review_result.get("suggested_response", "")
+                suggested_action = review_result.get("suggested_action", "")
             except Exception as e:
                 print(f"Error calling LLM Client: {e}")
                 llm_reviewed = False
                 llm_adjustment = 0.0
                 llm_reasoning = f"Failed to run LLM review: {str(e)}"
                 
+        # Fallback to routine template suggestions if empty or LLM was not triggered
+        if not suggested_response:
+            suggested_response, suggested_action = utils.get_routine_suggestions(predicted_category, text)
+            
         final_priority_score = round(min(1.0, max(0.0, priority_score + llm_adjustment)), 3)
         priority_label = utils.get_priority_label(final_priority_score)
         
@@ -695,7 +703,9 @@ def triage_complaint(req: TriageRequest, db: Session = Depends(get_db)):
         "priority": {
             "score": final_priority_score,
             "level": priority_label
-        }
+        },
+        "suggested_response": suggested_response,
+        "suggested_action": suggested_action
     }
     
     comp = Complaint(
@@ -776,8 +786,8 @@ def get_complaints(db: Session = Depends(get_db)):
         
     grouped_result = []
     for lid, group_list in groups.items():
-        # Sort by timestamp (oldest first) to find the lead
-        sorted_group = sorted(group_list, key=lambda x: x.timestamp)
+        # Sort by text length descending (longest first to get the most detailed complaint), then by timestamp ascending (oldest first)
+        sorted_group = sorted(group_list, key=lambda x: (-len(x.complaint_text or ""), x.timestamp))
         lead = sorted_group[0]
         lead_dict = to_dict(lead)
         
@@ -861,35 +871,44 @@ def resolve_complaint(id: str, req: ResolveRequest, db: Session = Depends(get_db
         
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    # Resolve this complaint
-    comp.status = "Resolved"
+    # Resolve all complaints in this cluster (the lead itself plus all duplicates)
+    actual_lead_id = comp.lead_id or comp.id
+    cluster_complaints = db.query(Complaint).filter(
+        (Complaint.id == actual_lead_id) | (Complaint.lead_id == actual_lead_id)
+    ).all()
     
-    hist = json.loads(comp.resolution_history or "[]")
-    hist.append({"status": "Resolved", "date": timestamp, "notes": req.notes})
-    comp.resolution_history = json.dumps(hist)
-    
-    # Also resolve all its duplicates (where lead_id is this ID or they share the same lead_id if this is a lead)
-    # The lead_id column for duplicates points to the lead's ID.
-    duplicates = db.query(Complaint).filter(Complaint.lead_id == id).all()
-    for dup in duplicates:
-        dup.status = "Resolved"
-        dup_hist = json.loads(dup.resolution_history or "[]")
-        dup_hist.append({"status": "Resolved", "date": timestamp, "notes": f"Resolved automatically with lead complaint: {req.notes}"})
-        dup.resolution_history = json.dumps(dup_hist)
+    for c_item in cluster_complaints:
+        if c_item.status != "Resolved":
+            c_item.status = "Resolved"
+            c_hist = json.loads(c_item.resolution_history or "[]")
+            if c_item.id == id:
+                c_hist.append({"status": "Resolved", "date": timestamp, "notes": req.notes})
+            else:
+                c_hist.append({"status": "Resolved", "date": timestamp, "notes": f"Resolved automatically with lead complaint {id}: {req.notes}"})
+            c_item.resolution_history = json.dumps(c_hist)
         
     db.commit()
     return {"message": "Complaint and duplicates marked as resolved."}
-
+ 
 @app.post("/complaints/{id}/override")
 def override_priority(id: str, req: OverrideRequest, db: Session = Depends(get_db)):
     comp = db.query(Complaint).filter(Complaint.id == id).first()
     if not comp:
         raise HTTPException(status_code=404, detail="Complaint not found")
         
-    comp.officer_override = req.priority_label
-    comp.override_reason = req.reason
+    actual_lead_id = comp.lead_id or comp.id
+    
+    # Update override on all complaints in the same cluster
+    cluster_complaints = db.query(Complaint).filter(
+        (Complaint.id == actual_lead_id) | (Complaint.lead_id == actual_lead_id)
+    ).all()
+    
+    for c_item in cluster_complaints:
+        c_item.officer_override = req.priority_label
+        c_item.override_reason = req.reason
+        
     db.commit()
-    return {"message": "Override applied successfully."}
+    return {"message": "Override applied successfully for complaint and duplicates."}
 
 @app.get("/complaints/rejected")
 def get_rejected_complaints(db: Session = Depends(get_db)):

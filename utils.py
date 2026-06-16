@@ -1351,6 +1351,8 @@ class GroqClient(LLMClientBase):
         - "infrastructure_risk": "Low", "Medium", "High", or "Critical".
         - "recommended_adjustment": A float value between -0.15 and +0.15 (recommend + for increased risk, - for decreased risk, or 0.00).
         - "reasoning": A detailed explanation of why the adjustment is recommended.
+        - "suggested_response": A polite, official suggested reply to the citizen (1-2 sentences) acknowledging the issue, explaining the category, and stating that zonal inspectors are assigned to resolve it.
+        - "suggested_action": 1-2 actionable operational steps for the redressing officer to resolve this specific complaint.
         
         Return ONLY the JSON object.
         """
@@ -1367,7 +1369,9 @@ class GroqClient(LLMClientBase):
             "vulnerable_population_risk": str(result.get("vulnerable_population_risk", "Medium")),
             "infrastructure_risk": str(result.get("infrastructure_risk", "Medium")),
             "recommended_adjustment": round(max(-0.15, min(0.15, adj)), 2),
-            "reasoning": str(result.get("reasoning", "LLM review completed."))
+            "reasoning": str(result.get("reasoning", "LLM review completed.")),
+            "suggested_response": str(result.get("suggested_response", "")),
+            "suggested_action": str(result.get("suggested_action", ""))
         }
 
 class MockLLMClient(LLMClientBase):
@@ -1423,7 +1427,9 @@ class MockLLMClient(LLMClientBase):
             "vulnerable_population_risk": vuln_risk,
             "infrastructure_risk": infra_risk,
             "recommended_adjustment": adjustment,
-            "reasoning": reasoning
+            "reasoning": reasoning,
+            "suggested_response": "Dear Citizen, we have registered your high-priority infrastructure grievance. Our engineering division is dispatched to assess the hazard and execute emergency remediation steps.",
+            "suggested_action": "Deploy structural inspection team, secure the immediate area with signage, and execute priority repairs to clear structural or public safety risks."
         }
 
 def get_llm_client():
@@ -1431,3 +1437,32 @@ def get_llm_client():
     if api_key:
         return GroqClient(api_key=api_key)
     return MockLLMClient()
+
+def get_routine_suggestions(category, text):
+    templates = {
+        "Electricity": (
+            "Dear Citizen, your electricity-related grievance has been successfully registered. The electricity board maintenance team is dispatching a zonal inspector to resolve the issue.",
+            "Inspect local power lines/transformer, verify substation connection, and replace any faulty components."
+        ),
+        "Water": (
+            "Dear Citizen, your water and sewerage grievance has been registered. The maintenance team has been notified to investigate and resolve the issue.",
+            "Verify pipeline pressure, locate sewage blockage/leakage, and dispatch pump truck if required."
+        ),
+        "Roads": (
+            "Dear Citizen, your roads/infrastructure grievance has been registered. The Public Works Department (PWD) road repair team is auditing the location for scheduled repairs.",
+            "Inspect road damage/potholes at the location, verify structural risk, and schedule patching or asphalt repair."
+        ),
+        "Health": (
+            "Dear Citizen, your public health/sanitation grievance has been registered. The municipal sanitation division is dispatching a team to address the hygiene issue.",
+            "Send public health team, clear municipal waste, spray disinfectant, and inspect vector/disease risks."
+        ),
+        "Transport": (
+            "Dear Citizen, your public transport/traffic grievance has been registered. The traffic management department has been alerted to review the location.",
+            "Alert local traffic controls, inspect signals or parking violations, and deploy patrol officers to clear congestion."
+        ),
+        "Other": (
+            "Dear Citizen, your grievance has been registered. The general municipal administration team will review and route it to the concerned department.",
+            "Route to general grievance cell, verify category, and assign to appropriate department inspector."
+        )
+    }
+    return templates.get(category, templates["Other"])

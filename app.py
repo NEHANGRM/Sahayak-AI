@@ -595,6 +595,17 @@ def officer_dashboard():
 > - **Advisory Rationale:** {complaint['llm_reasoning']} *(Summary: {complaint['llm_risk_summary']})*
 """)
 
+                    # Display AI Feedback and Suggested Response/Action
+                    sj = complaint.get('structured_json', {})
+                    if isinstance(sj, dict) and (sj.get('suggested_response') or sj.get('suggested_action')):
+                        st.markdown("---")
+                        st.markdown("#### 🤖 AI Feedback & Redressal Advice")
+                        adv_col1, adv_col2 = st.columns(2)
+                        with adv_col1:
+                            st.info(f"💬 **Suggested Response (Copy/Paste):**  \n*\"{sj.get('suggested_response', 'N/A')}\"*")
+                        with adv_col2:
+                            st.success(f"⚡ **Suggested Actions for Officer:**  \n{sj.get('suggested_action', 'N/A')}")
+
                     st.markdown("---")
                     col_rag, col_dup = st.columns(2)
                     with col_rag:

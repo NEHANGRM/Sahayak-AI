@@ -562,11 +562,19 @@ def calculate_duplicate_escalation(is_duplicate, similarity, cluster_id, complai
     if not is_duplicate or cluster_id is None or complaints_list is None:
         return 0.0
         
+    # Resolve the ultimate lead index to count correctly
+    actual_lead_index = cluster_id
+    if cluster_id < len(complaints_list):
+        candidate = complaints_list[cluster_id]
+        if isinstance(candidate, dict) and candidate.get('cluster_id') is not None:
+            actual_lead_index = candidate.get('cluster_id')
+        
     # Count how many other complaints belong to the same cluster or have matching details.
     count = 1  # include current complaint
     for c in complaints_list:
         if c.get('admissible', True):
-            if c.get('cluster_id') == cluster_id or c.get('id') == f"CMP-{2000 + cluster_id}":
+            c_cluster = c.get('cluster_id')
+            if c_cluster == actual_lead_index or c.get('id') == f"CMP-{2000 + actual_lead_index}":
                 count += 1
                 
     if count == 1:
@@ -782,8 +790,17 @@ def detect_duplicate(new_complaint_text, existing_complaints, vectorizer=None, t
             
             # Check 2: Location must match
             candidate_location = _extract_location_from_complaint(candidate)
-            if not _locations_match(new_location, candidate_location):
-                continue  # Different location, skip
+            norm_new = _normalize_location(new_location)
+            norm_cand = _normalize_location(candidate_location)
+            
+            if norm_new and norm_cand:
+                if not _locations_match(new_location, candidate_location):
+                    continue
+            elif not norm_new and not norm_cand:
+                pass  # Both are general complaints without location
+            else:
+                if sim < 0.85:
+                    continue  # One has location, one does not; only match if similarity >= 0.85
             
             # Both checks passed — this is a genuine duplicate
             return True, int(idx), round(float(sim), 3)

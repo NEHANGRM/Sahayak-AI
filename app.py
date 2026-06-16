@@ -581,7 +581,8 @@ def officer_dashboard():
                     st.markdown(metrics_table)
                     
                     llm_note = f" (Adjusted {complaint['llm_adjustment']:+.2f} by AI Governance Advisory)" if complaint.get('llm_reviewed', False) else ""
-                    st.markdown(f"🎯 **AI Final Priority:** **{display_label.upper()}** (Score: `{complaint.get('final_priority_score', 0.0):.3f}` = Base `{complaint.get('priority_score', 0.0):.3f}`{llm_note})")
+                    age_note = f" (Aging Escalation: +{complaint.get('aging_boost', 0.0):.2f} since it was open for {complaint.get('age_days', 0.0):.1f} days)" if complaint.get('aging_boost', 0.0) > 0 else ""
+                    st.markdown(f"🎯 **AI Final Priority:** **{display_label.upper()}** (Score: `{complaint.get('final_priority_score', 0.0):.3f}` = Base `{complaint.get('priority_score', 0.0):.3f}`{llm_note}{age_note})")
                     
                     # Display LLM reasoning details if available in a neat compact way
                     if complaint.get('llm_reviewed', False):

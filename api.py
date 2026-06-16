@@ -129,6 +129,19 @@ def load_ml_models():
 load_ml_models()
 
 def to_dict(c: Complaint) -> Dict[str, Any]:
+    try:
+        dt = datetime.datetime.strptime(c.timestamp, "%Y-%m-%d %H:%M:%S")
+        elapsed = datetime.datetime.now() - dt
+        age_days = max(0.0, elapsed.total_seconds() / (24 * 3600))
+    except Exception:
+        age_days = 0.0
+        
+    # Apply aging boost only if open and admissible
+    if c.admissible and c.status not in ["Resolved", "Rejected"]:
+        aging_boost = min(0.45, age_days * 0.05)
+    else:
+        aging_boost = 0.0
+        
     return {
         "id": c.id,
         "complaint_text": c.complaint_text,
@@ -170,6 +183,8 @@ def to_dict(c: Complaint) -> Dict[str, Any]:
         "llm_vulnerable_population_risk": c.llm_vulnerable_population_risk,
         "llm_infrastructure_risk": c.llm_infrastructure_risk,
         "llm_trigger_reasons": json.loads(c.llm_trigger_reasons or "[]"),
+        "age_days": round(age_days, 1),
+        "aging_boost": round(aging_boost, 2),
     }
 
 # Seed database with initial complaints if table is empty
@@ -549,16 +564,25 @@ def triage_complaint(req: TriageRequest, db: Session = Depends(get_db)):
             new_category=predicted_category
         )
         if is_duplicate and cluster_idx is not None and cluster_idx < len(existing_list):
-            lead_id = existing_list[cluster_idx]['id']
+            candidate = existing_list[cluster_idx]
+            lead_id = candidate.get('lead_id') or candidate['id']
+            # Count existing complaints in this cluster to determine correct escalation
+            cluster_count = sum(1 for c in existing_list if c.get('lead_id') == lead_id or c.get('id') == lead_id)
+            total_count = cluster_count + 1
+            if total_count <= 1:
+                duplicate_escalation_score = 0.0
+            elif total_count == 2:
+                duplicate_escalation_score = 0.60
+            elif total_count == 3:
+                duplicate_escalation_score = 0.85
+            else:
+                duplicate_escalation_score = 1.00
+            
+            # Incorporate similarity factor (80/20 blend)
+            duplicate_escalation_score = round(min(1.0, max(0.0, duplicate_escalation_score * 0.8 + similarity * 0.2)), 2)
         else:
             lead_id = None
-            
-        duplicate_escalation_score = utils.calculate_duplicate_escalation(
-            is_duplicate, 
-            similarity, 
-            cluster_idx, 
-            existing_list
-        )
+            duplicate_escalation_score = 0.0
         
         # RAG Context Retrieval
         similar_cases = utils.search_similar_complaints(
@@ -759,12 +783,12 @@ def get_complaints(db: Session = Depends(get_db)):
         )
         lead_dict['priority_score'] = base_pri
         
-        # Reblend LLM adjustment if reviewed
-        if lead_dict['llm_reviewed']:
-            lead_dict['final_priority_score'] = round(min(1.0, max(0.0, base_pri + lead_dict['llm_adjustment'])), 3)
-        else:
-            lead_dict['final_priority_score'] = base_pri
-            
+        # Reblend LLM adjustment if reviewed, then add aging boost
+        llm_adj = lead_dict['llm_adjustment'] if lead_dict['llm_reviewed'] else 0.0
+        aging_boost = lead_dict.get('aging_boost', 0.0)
+        age_days = lead_dict.get('age_days', 0.0)
+        
+        lead_dict['final_priority_score'] = round(min(1.0, max(0.0, base_pri + llm_adj + aging_boost)), 3)
         lead_dict['priority_label'] = utils.get_priority_label(lead_dict['final_priority_score'])
         
         lead_dict['explanation'] = utils.generate_explanation(
@@ -777,6 +801,8 @@ def get_complaints(db: Session = Depends(get_db)):
         )
         if lead_dict['llm_reviewed']:
             lead_dict['explanation'] += f" (LLM adjusted: {lead_dict['llm_adjustment']:+.2f} because: {lead_dict['llm_reasoning']})"
+        if aging_boost > 0:
+            lead_dict['explanation'] += f" (Escalated: +{aging_boost:.2f} due to age of {age_days:.1f} days)"
             
         # Add duplicate details
         lead_dict['duplicate_reports'] = [to_dict(x) for x in sorted_group[1:]]

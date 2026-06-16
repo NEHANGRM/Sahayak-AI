@@ -845,6 +845,19 @@ def get_complaints(db: Session = Depends(get_db)):
         if aging_boost > 0:
             lead_dict['explanation'] += f" (Aging Escalation: +{aging_boost:.2f} - registered {lead_dict['relative_time']})"
             
+        # Ensure suggested_response and suggested_action are present in structured_json for UI display
+        sj = lead_dict.get('structured_json', {})
+        if not isinstance(sj, dict):
+            sj = {}
+        if 'suggested_response' not in sj or not sj['suggested_response']:
+            rep, act = utils.get_routine_suggestions(lead_dict['category'], lead_dict['complaint_text'])
+            if lead_dict.get('llm_reviewed') and lead_dict.get('llm_reasoning'):
+                rep = f"Dear Citizen, we have registered your urgent grievance. Under AI Governance Review, the following was flagged: {lead_dict['llm_reasoning']}. We are dispatching field inspectors to investigate immediately."
+                act = f"Priority Action: Inspect reported issue immediately. Flagged risk: {lead_dict.get('llm_risk_summary', 'Immediate safety concern')}. Dispatch field maintenance unit."
+            sj['suggested_response'] = rep
+            sj['suggested_action'] = act
+            lead_dict['structured_json'] = sj
+            
         # Add duplicate details
         lead_dict['duplicate_reports'] = [to_dict(x) for x in sorted_group[1:]]
         grouped_result.append(lead_dict)

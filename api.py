@@ -136,9 +136,24 @@ def to_dict(c: Complaint) -> Dict[str, Any]:
     except Exception:
         age_days = 0.0
         
+    if age_days < 0.04:
+        relative_time = "Just now"
+    elif age_days < 1.0:
+        relative_time = "Today"
+    elif age_days < 2.0:
+        relative_time = "1 day ago"
+    else:
+        relative_time = f"{int(age_days)} days ago"
+        
     # Apply aging boost only if open and admissible
     if c.admissible and c.status not in ["Resolved", "Rejected"]:
-        aging_boost = min(0.45, age_days * 0.05)
+        base_label = c.priority_label or "Low"
+        if base_label in ["Critical", "High"]:
+            aging_boost = min(0.45, age_days * 0.45)
+        elif base_label == "Medium":
+            aging_boost = min(0.45, age_days * (0.45 / 5.0))
+        else:
+            aging_boost = min(0.45, age_days * (0.45 / 7.0))
     else:
         aging_boost = 0.0
         
@@ -185,6 +200,7 @@ def to_dict(c: Complaint) -> Dict[str, Any]:
         "llm_trigger_reasons": json.loads(c.llm_trigger_reasons or "[]"),
         "age_days": round(age_days, 1),
         "aging_boost": round(aging_boost, 2),
+        "relative_time": relative_time,
     }
 
 # Seed database with initial complaints if table is empty
@@ -783,11 +799,20 @@ def get_complaints(db: Session = Depends(get_db)):
         )
         lead_dict['priority_score'] = base_pri
         
-        # Reblend LLM adjustment if reviewed, then add aging boost
-        llm_adj = lead_dict['llm_adjustment'] if lead_dict['llm_reviewed'] else 0.0
-        aging_boost = lead_dict.get('aging_boost', 0.0)
+        # Determine tiered aging boost based on base priority label
+        base_label = utils.get_priority_label(base_pri)
         age_days = lead_dict.get('age_days', 0.0)
         
+        if base_label in ["Critical", "High"]:
+            aging_boost = min(0.45, age_days * 0.45)
+        elif base_label == "Medium":
+            aging_boost = min(0.45, age_days * (0.45 / 5.0))
+        else:
+            aging_boost = min(0.45, age_days * (0.45 / 7.0))
+            
+        lead_dict['aging_boost'] = round(aging_boost, 2)
+        
+        llm_adj = lead_dict['llm_adjustment'] if lead_dict['llm_reviewed'] else 0.0
         lead_dict['final_priority_score'] = round(min(1.0, max(0.0, base_pri + llm_adj + aging_boost)), 3)
         lead_dict['priority_label'] = utils.get_priority_label(lead_dict['final_priority_score'])
         
@@ -802,7 +827,7 @@ def get_complaints(db: Session = Depends(get_db)):
         if lead_dict['llm_reviewed']:
             lead_dict['explanation'] += f" (LLM adjusted: {lead_dict['llm_adjustment']:+.2f} because: {lead_dict['llm_reasoning']})"
         if aging_boost > 0:
-            lead_dict['explanation'] += f" (Escalated: +{aging_boost:.2f} due to age of {age_days:.1f} days)"
+            lead_dict['explanation'] += f" (Aging Escalation: +{aging_boost:.2f} - registered {lead_dict['relative_time']})"
             
         # Add duplicate details
         lead_dict['duplicate_reports'] = [to_dict(x) for x in sorted_group[1:]]

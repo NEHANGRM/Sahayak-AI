@@ -786,7 +786,9 @@ def detect_duplicate(new_complaint_text, existing_complaints, vectorizer=None, t
             # Check 1: Category must match (if available)
             if new_category and candidate.get('category', ''):
                 if new_category.lower() != candidate.get('category', '').lower():
-                    continue  # Different category, skip
+                    # Ignore category mismatch if similarity is high (>= 0.82)
+                    if sim < 0.82:
+                        continue  # Different category, skip
             
             # Check 2: Location must match
             candidate_location = _extract_location_from_complaint(candidate)
@@ -795,12 +797,15 @@ def detect_duplicate(new_complaint_text, existing_complaints, vectorizer=None, t
             
             if norm_new and norm_cand:
                 if not _locations_match(new_location, candidate_location):
-                    continue
+                    # Ignore location mismatch if similarity is extremely high (>= 0.95)
+                    if sim < 0.95:
+                        continue
             elif not norm_new and not norm_cand:
                 pass  # Both are general complaints without location
             else:
-                if sim < 0.85:
-                    continue  # One has location, one does not; only match if similarity >= 0.85
+                # One has location, one does not; only match if similarity >= 0.80
+                if sim < 0.80:
+                    continue
             
             # Both checks passed — this is a genuine duplicate
             return True, int(idx), round(float(sim), 3)

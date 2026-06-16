@@ -204,272 +204,262 @@ def to_dict(c: Complaint) -> Dict[str, Any]:
     }
 
 # Seed database with initial complaints if table is empty
+# Seed database with initial complaints if table is empty
 def seed_database(db: Session):
-    if db.query(Complaint).count() > 0:
+    # Check if there are any citizen complaints (CMP-2006 or higher)
+    citizen_exists = db.query(Complaint).filter(Complaint.id > "CMP-2005").count() > 0
+    if citizen_exists:
+        print("ℹ️ Citizen complaints exist. Skipping database wipe and seed.")
         return
         
+    # Otherwise, wipe the database and re-seed the 5 complaints
+    db.query(Complaint).delete()
+    db.commit()
+    print("🧹 Wiped all existing complaints from the database for re-seeding.")
+    
     seeds = [
         {
             'id': 'CMP-2001',
-            'complaint_text': "Water supply is completely cut off in Anna Nagar for the past 4 days. The local water board is not responding to calls.",
-            'timestamp': "2026-06-05 09:12:00",
-            'admissible': True,
-            'rejection_reason': None,
-            'category': "Water",
-            'raw_predicted_category': "Water",
-            'confidence_score': 0.95,
-            'priority_label': "Medium",
-            'priority_score': 0.385,
-            'final_priority_score': 0.385,
-            'severity_score': 0.40,
-            'severity_reason': "Infrastructure failure",
-            'severity_label': "Medium",
-            'public_impact_score': 0.50,
-            'vulnerability_score': 0.20,
-            'urgency_score': 0.35,
-            'duplicate_escalation_score': 0.0,
-            'sentiment_score': 0.75,
-            'department': "Water & Sewerage Board",
-            'explanation': "Marked MEDIUM based on governance factors.",
-            'is_duplicate': False,
-            'cluster_id': None,
-            'similarity': 0.0,
-            'lead_id': None,
-            'status': 'Open',
-            'officer_override': None,
-            'override_reason': None,
-            'resolution_history': [
-                {"status": "Registered", "date": "2026-06-05 09:12:00", "notes": "Registered automatically."},
-                {"status": "Assigned", "date": "2026-06-05 10:00:00", "notes": "Assigned to Water Board Engineer."},
-                {"status": "In Progress", "date": "2026-06-06 14:00:00", "notes": "Leak detected in the main inlet pipeline."}
-            ],
-            'escalation_history': [
-                {"level": "L1 - Junior Engineer", "date": "2026-06-05 10:00:00"},
-                {"level": "L2 - Assistant Executive Engineer", "date": "2026-06-07 09:00:00"}
-            ],
-            'structured_json': {"category": "Water", "location": "Anna Nagar", "infrastructure": "Water Pipeline", "risk_keywords": [], "entities": [], "severity": {"score": 0.40, "level": "Medium", "reason": "Infrastructure failure"}},
-            'ner_breakdown': {"Locations": ["Anna Nagar"]},
-            'llm_reviewed': False,
-            'llm_adjustment': 0.0,
-            'llm_reasoning': None,
-            'llm_trigger_reasons': []
+            'complaint_text': "The streetlight on MG Road is not working since yesterday, making the street completely dark at night.",
+            'timestamp': "2026-06-16 09:00:00"
         },
         {
             'id': 'CMP-2002',
-            'complaint_text': "Huge pothole on the main flyover near City General Hospital. Vehicles are swerving to avoid it, causing severe accident risk.",
-            'timestamp': "2026-06-06 11:20:00",
-            'admissible': True,
-            'rejection_reason': None,
-            'category': "Roads",
-            'raw_predicted_category': "Roads",
-            'confidence_score': 0.98,
-            'priority_label': "Critical",
-            'priority_score': 0.815,
-            'final_priority_score': 0.815,
-            'severity_score': 0.85,
-            'severity_reason': "Critical infrastructure + public safety risk",
-            'severity_label': "Critical",
-            'public_impact_score': 0.80,
-            'vulnerability_score': 0.90,
-            'urgency_score': 0.90,
-            'duplicate_escalation_score': 0.0,
-            'sentiment_score': 0.85,
-            'department': "Public Works Department (PWD)",
-            'explanation': "Marked CRITICAL based on governance factors.",
-            'is_duplicate': False,
-            'cluster_id': None,
-            'similarity': 0.0,
-            'lead_id': None,
-            'status': 'Resolved',
-            'officer_override': None,
-            'override_reason': None,
-            'resolution_history': [
-                {"status": "Registered", "date": "2026-06-06 11:20:00", "notes": "Registered via portal."},
-                {"status": "Assigned", "date": "2026-06-06 12:15:00", "notes": "Assigned to PWD Road Safety Division."},
-                {"status": "Resolved", "date": "2026-06-07 17:30:00", "notes": "Pothole filled with cold mix asphalt. Temporary repair completed."}
-            ],
-            'escalation_history': [
-                {"level": "L1 - PWD Engineer", "date": "2026-06-06 12:15:00"}
-            ],
-            'structured_json': {"category": "Roads", "location": "City General Hospital", "infrastructure": "Bridge", "risk_keywords": ["accident", "danger"], "entities": [], "severity": {"score": 0.85, "level": "Critical", "reason": "Critical infrastructure + public safety risk"}},
-            'ner_breakdown': {"Locations": ["City General Hospital"]},
-            'llm_reviewed': False,
-            'llm_adjustment': 0.0,
-            'llm_reasoning': None,
-            'llm_trigger_reasons': []
+            'complaint_text': "Low water pressure and muddy water supply in Sector 4 residential colony for the last 3 days.",
+            'timestamp': "2026-06-16 10:15:00"
         },
         {
             'id': 'CMP-2003',
-            'complaint_text': "Street lights are not functioning in T-Nagar near the girls high school, making the road unsafe for walking at night.",
-            'timestamp': "2026-06-07 19:40:00",
-            'admissible': True,
-            'rejection_reason': None,
-            'category': "Electricity",
-            'raw_predicted_category': "Electricity",
-            'confidence_score': 0.92,
-            'priority_label': "High",
-            'priority_score': 0.615,
-            'final_priority_score': 0.615,
-            'severity_score': 0.60,
-            'severity_reason': "Public safety risk + vulnerable setting",
-            'severity_label': "High",
-            'public_impact_score': 0.65,
-            'vulnerability_score': 0.70,
-            'urgency_score': 0.60,
-            'duplicate_escalation_score': 0.0,
-            'sentiment_score': 0.70,
-            'department': "Electricity Utilities Board",
-            'explanation': "Marked HIGH based on governance factors.",
-            'is_duplicate': False,
-            'cluster_id': None,
-            'similarity': 0.0,
-            'lead_id': None,
-            'status': 'Open',
-            'officer_override': None,
-            'override_reason': None,
-            'resolution_history': [
-                {"status": "Registered", "date": "2026-06-07 19:40:00", "notes": "Registered via web app."},
-                {"status": "Assigned", "date": "2026-06-08 08:30:00", "notes": "Assigned to Electricity Board Inspector."}
-            ],
-            'escalation_history': [
-                {"level": "L1 - Line Inspector", "date": "2026-06-08 08:30:00"}
-            ],
-            'structured_json': {"category": "Electricity", "location": "T-Nagar", "infrastructure": "School", "risk_keywords": ["unsafe"], "entities": [], "severity": {"score": 0.60, "level": "High", "reason": "Public safety risk + vulnerable setting"}},
-            'ner_breakdown': {"Locations": ["T-Nagar"]},
-            'llm_reviewed': False,
-            'llm_adjustment': 0.0,
-            'llm_reasoning': None,
-            'llm_trigger_reasons': []
+            'complaint_text': "Sewage water is overflowing from a broken pipeline on Anna Salai Road, causing massive public health hazard and foul smell.",
+            'timestamp': "2026-06-16 11:30:00"
         },
         {
             'id': 'CMP-2004',
-            'complaint_text': "Garbage has not been collected for two weeks in Sector 4, Chennai. The dumpster is overflowing onto the street, attracting stray dogs.",
-            'timestamp': "2026-06-08 10:15:00",
-            'admissible': True,
-            'rejection_reason': None,
-            'category': "Sanitation",
-            'raw_predicted_category': "Sanitation",
-            'confidence_score': 0.89,
-            'priority_label': "Medium",
-            'priority_score': 0.415,
-            'final_priority_score': 0.415,
-            'severity_score': 0.45,
-            'severity_reason': "Infrastructure failure",
-            'severity_label': "Medium",
-            'public_impact_score': 0.50,
-            'vulnerability_score': 0.30,
-            'urgency_score': 0.40,
-            'duplicate_escalation_score': 0.0,
-            'sentiment_score': 0.60,
-            'department': "Municipal Sanitation Department",
-            'explanation': "Marked MEDIUM based on governance factors.",
-            'is_duplicate': False,
-            'cluster_id': None,
-            'similarity': 0.0,
-            'lead_id': None,
-            'status': 'Open',
-            'officer_override': None,
-            'override_reason': None,
-            'resolution_history': [
-                {"status": "Registered", "date": "2026-06-08 10:15:00", "notes": "Registered."},
-                {"status": "Assigned", "date": "2026-06-08 11:30:00", "notes": "Assigned to Zonal Sanitation Officer."}
-            ],
-            'escalation_history': [
-                {"level": "L1 - Sanitary Inspector", "date": "2026-06-08 11:30:00"}
-            ],
-            'structured_json': {"category": "Sanitation", "location": "Sector 4", "infrastructure": "Waste Bin", "risk_keywords": [], "entities": [], "severity": {"score": 0.45, "level": "Medium", "reason": "Infrastructure failure"}},
-            'ner_breakdown': {"Locations": ["Sector 4", "Chennai"]},
-            'llm_reviewed': False,
-            'llm_adjustment': 0.0,
-            'llm_reasoning': None,
-            'llm_trigger_reasons': []
+            'complaint_text': "Major bridge structure crack detected on the busy subway road, causing severe risk of bridge collapse and blocking traffic.",
+            'timestamp': "2026-06-16 12:45:00"
         },
         {
             'id': 'CMP-2005',
-            'complaint_text': "A local official is demanding a bribe of 5000 rupees to process my business license application at the Municipal Corporation Office.",
-            'timestamp': "2026-06-09 14:30:00",
-            'admissible': True,
-            'rejection_reason': None,
-            'category': "Corruption",
-            'raw_predicted_category': "Corruption",
-            'confidence_score': 0.94,
-            'priority_label': "High",
-            'priority_score': 0.595,
-            'final_priority_score': 0.595,
-            'severity_score': 0.90,
-            'severity_reason': "Integrity violation / corruption bribe",
-            'severity_label': "High",
-            'public_impact_score': 0.30,
-            'vulnerability_score': 0.20,
-            'urgency_score': 0.70,
-            'duplicate_escalation_score': 0.0,
-            'sentiment_score': 0.80,
-            'department': "Vigilance Bureau",
-            'explanation': "Marked HIGH based on governance factors.",
-            'is_duplicate': False,
-            'cluster_id': None,
-            'similarity': 0.0,
-            'lead_id': None,
-            'status': 'Open',
-            'officer_override': None,
-            'override_reason': None,
-            'resolution_history': [
-                {"status": "Registered", "date": "2026-06-09 14:30:00", "notes": "Under review by anti-corruption cell."}
-            ],
-            'escalation_history': [
-                {"level": "L1 - Vigilance Officer", "date": "2026-06-09 15:00:00"}
-            ],
-            'structured_json': {"category": "Corruption", "location": "Municipal Corporation Office", "infrastructure": "Government Office", "risk_keywords": ["bribe", "corruption"], "entities": [], "severity": {"score": 0.90, "level": "High", "reason": "Integrity violation / corruption bribe"}},
-            'ner_breakdown': {"Locations": ["Municipal Corporation Office"]},
-            'llm_reviewed': False,
-            'llm_adjustment': 0.0,
-            'llm_reasoning': None,
-            'llm_trigger_reasons': []
+            'complaint_text': "Critical gas leak reported near St. Mary's Primary School. Urgent evacuation of the area is needed to prevent explosion.",
+            'timestamp': "2026-06-16 14:00:00"
         }
     ]
     
     for seed in seeds:
+        text = seed['complaint_text']
+        comp_id = seed['id']
+        timestamp = seed['timestamp']
+        
+        # 1. Run admissibility check
+        is_admissible, rejection_reason, predicted_category, confidence_score = utils.check_admissibility(
+            text, 
+            CATEGORY_MODEL, 
+            VECTORIZER
+        )
+        
+        # Default values
+        severity_score = 0.0
+        severity_reason = "Not evaluated."
+        severity_label = "Low"
+        public_impact_score = 0.0
+        vulnerability_score = 0.0
+        urgency_score = 0.0
+        duplicate_escalation_score = 0.0
+        sentiment_score = 0.0
+        priority_score = 0.0
+        final_priority_score = 0.0
+        priority_label = "Low"
+        department = "Not Routed"
+        explanation = ""
+        is_duplicate = False
+        cluster_id = None
+        similarity = 0.0
+        lead_id = None
+        ner_details = {"location": None, "infrastructure": None, "all_entities": [], "extracted_entities": {}}
+        risk_kws = []
+        similar_cases = []
+        
+        # LLM review outputs
+        llm_reviewed = False
+        llm_adjustment = 0.0
+        llm_reasoning = None
+        llm_risk_summary = None
+        llm_public_safety_risk = "Medium"
+        llm_vulnerable_population_risk = "Medium"
+        llm_infrastructure_risk = "Medium"
+        llm_trigger_reasons = []
+        suggested_response = ""
+        suggested_action = ""
+        
+        if is_admissible:
+            department = utils.route_to_department(predicted_category)
+            sentiment_score = utils.get_sentiment_score(text)
+            
+            # Extract NER details and risk keywords
+            ner_details = utils.extract_entities_and_details(text, predicted_category)
+            risk_kws = utils.extract_risk_keywords(text)
+            
+            # Predict Severity
+            severity_details = utils.predict_severity(
+                text, 
+                predicted_category, 
+                SEVERITY_MODEL, 
+                VECTORIZER
+            )
+            severity_score = severity_details["severity"]
+            severity_reason = severity_details["reason"]
+            severity_label = utils.get_severity_level(severity_score)
+            
+            temp_json = {
+                "location": ner_details["location"],
+                "infrastructure": ner_details["infrastructure"]
+            }
+            public_impact_score = utils.calculate_public_impact(text, predicted_category, temp_json)
+            vulnerability_score = utils.calculate_vulnerability(text, predicted_category, temp_json)
+            urgency_score = utils.calculate_urgency(text, predicted_category, severity_score, temp_json)
+            
+            # Seed complaints have no initial duplicates
+            duplicate_escalation_score = 0.0
+            
+            # Base Governance Priority Score
+            priority_score = utils.calculate_priority_score(
+                severity_score, 
+                public_impact_score, 
+                urgency_score, 
+                vulnerability_score, 
+                duplicate_escalation_score
+            )
+            
+            # Check LLM review triggers
+            complaint_data = {
+                "complaint_text": text,
+                "confidence_score": confidence_score,
+                "severity_score": severity_score,
+                "public_impact_score": public_impact_score,
+                "urgency_score": urgency_score,
+                "vulnerability_score": vulnerability_score,
+                "priority_score": priority_score
+            }
+            
+            llm_trigger_reasons = utils.check_llm_triggers(complaint_data)
+            
+            if len(llm_trigger_reasons) > 0:
+                llm_reviewed = True
+                try:
+                    client = utils.get_llm_client()
+                    review_result = client.review_complaint(complaint_data, similar_cases)
+                    llm_adjustment = review_result.get("recommended_adjustment", 0.0)
+                    llm_reasoning = review_result.get("reasoning", "LLM review completed.")
+                    llm_risk_summary = review_result.get("risk_summary", "")
+                    llm_public_safety_risk = review_result.get("public_safety_risk", "Medium")
+                    llm_vulnerable_population_risk = review_result.get("vulnerable_population_risk", "Medium")
+                    llm_infrastructure_risk = review_result.get("infrastructure_risk", "Medium")
+                    suggested_response = review_result.get("suggested_response", "")
+                    suggested_action = review_result.get("suggested_action", "")
+                except Exception as e:
+                    print(f"Error calling LLM Client: {e}")
+                    llm_reviewed = False
+                    llm_adjustment = 0.0
+                    llm_reasoning = f"Failed to run LLM review: {str(e)}"
+                    
+            # Fallback to dynamic LLM suggestions if empty or LLM was not triggered
+            if not suggested_response:
+                suggested_response, suggested_action = utils.generate_suggestions_with_llm(text, predicted_category)
+                
+            final_priority_score = round(min(1.0, max(0.0, priority_score + llm_adjustment)), 3)
+            priority_label = utils.get_priority_label(final_priority_score)
+            
+            explanation = utils.generate_explanation(
+                severity_score,
+                public_impact_score,
+                urgency_score,
+                vulnerability_score,
+                duplicate_escalation_score,
+                priority_label
+            )
+            
+            if llm_reviewed:
+                explanation += f" (LLM adjusted: {llm_adjustment:+.2f} because: {llm_reasoning})"
+                
+        # Set default histories
+        resolution_history = [
+            {"status": "Registered", "date": timestamp, "notes": "Registered automatically." if is_admissible else f"Rejected: {rejection_reason}"}
+        ]
+        escalation_history = []
+        if is_admissible:
+            resolution_history.append({"status": "Assigned", "date": timestamp, "notes": f"Assigned to {department}."})
+            escalation_history.append({"level": "L1 - Junior Inspector", "date": timestamp})
+            
+        structured_json = {
+            "category": predicted_category if is_admissible else "Other",
+            "location": ner_details.get("location"),
+            "infrastructure": ner_details.get("infrastructure"),
+            "risk_keywords": risk_kws,
+            "entities": ner_details.get("all_entities", []),
+            "severity": {
+                "score": severity_score,
+                "level": severity_label,
+                "reason": severity_reason
+            },
+            "public_impact_score": public_impact_score,
+            "vulnerability_score": vulnerability_score,
+            "urgency_score": urgency_score,
+            "duplicate_escalation_score": duplicate_escalation_score,
+            "priority": {
+                "score": final_priority_score,
+                "level": priority_label
+            },
+            "suggested_response": suggested_response,
+            "suggested_action": suggested_action
+        }
+        
         comp = Complaint(
-            id=seed['id'],
-            complaint_text=seed['complaint_text'],
-            timestamp=seed['timestamp'],
-            admissible=seed['admissible'],
-            rejection_reason=seed['rejection_reason'],
-            category=seed['category'],
-            raw_predicted_category=seed['raw_predicted_category'],
-            confidence_score=seed['confidence_score'],
-            priority_label=seed['priority_label'],
-            priority_score=seed['priority_score'],
-            final_priority_score=seed['final_priority_score'],
-            severity_score=seed['severity_score'],
-            severity_reason=seed['severity_reason'],
-            severity_label=seed['severity_label'],
-            public_impact_score=seed['public_impact_score'],
-            vulnerability_score=seed['vulnerability_score'],
-            urgency_score=seed['urgency_score'],
-            duplicate_escalation_score=seed['duplicate_escalation_score'],
-            sentiment_score=seed['sentiment_score'],
-            department=seed['department'],
-            explanation=seed['explanation'],
-            is_duplicate=seed['is_duplicate'],
-            cluster_id=seed['cluster_id'],
-            similarity=seed['similarity'],
-            lead_id=seed['lead_id'],
-            status=seed['status'],
-            officer_override=seed['officer_override'],
-            override_reason=seed['override_reason'],
-            resolution_history=json.dumps(seed['resolution_history']),
-            escalation_history=json.dumps(seed['escalation_history']),
-            structured_json=json.dumps(seed['structured_json']),
-            ner_breakdown=json.dumps(seed['ner_breakdown']),
-            llm_reviewed=seed['llm_reviewed'],
-            llm_adjustment=seed['llm_adjustment'],
-            llm_reasoning=seed['llm_reasoning'],
-            llm_trigger_reasons=json.dumps(seed['llm_trigger_reasons'])
+            id=comp_id,
+            complaint_text=text,
+            timestamp=timestamp,
+            admissible=is_admissible,
+            rejection_reason=rejection_reason,
+            category=predicted_category if is_admissible else "Other",
+            raw_predicted_category=predicted_category,
+            confidence_score=confidence_score,
+            severity_score=severity_score,
+            severity_reason=severity_reason,
+            severity_label=severity_label,
+            public_impact_score=public_impact_score,
+            vulnerability_score=vulnerability_score,
+            urgency_score=urgency_score,
+            duplicate_escalation_score=duplicate_escalation_score,
+            sentiment_score=sentiment_score,
+            priority_score=priority_score,
+            final_priority_score=final_priority_score,
+            priority_label=priority_label,
+            department=department,
+            explanation=explanation,
+            is_duplicate=is_duplicate,
+            cluster_id=cluster_id,
+            similarity=similarity,
+            lead_id=lead_id,
+            status="Open" if is_admissible else "Rejected",
+            officer_override=None,
+            override_reason=None,
+            resolution_history=json.dumps(resolution_history),
+            escalation_history=json.dumps(escalation_history),
+            structured_json=json.dumps(structured_json),
+            ner_breakdown=json.dumps(ner_details.get("extracted_entities", {})),
+            
+            # LLM review fields
+            llm_reviewed=llm_reviewed,
+            llm_adjustment=llm_adjustment,
+            llm_reasoning=llm_reasoning,
+            llm_risk_summary=llm_risk_summary,
+            llm_public_safety_risk=llm_public_safety_risk,
+            llm_vulnerable_population_risk=llm_vulnerable_population_risk,
+            llm_infrastructure_risk=llm_infrastructure_risk,
+            llm_trigger_reasons=json.dumps(llm_trigger_reasons)
         )
         db.add(comp)
     db.commit()
-    print("✅ Seed complaints inserted successfully.")
+    print("✅ Seed complaints triaged and inserted successfully.")
 
 # Run seeding and cleanups
 db = SessionLocal()
@@ -657,9 +647,9 @@ def triage_complaint(req: TriageRequest, db: Session = Depends(get_db)):
                 llm_adjustment = 0.0
                 llm_reasoning = f"Failed to run LLM review: {str(e)}"
                 
-        # Fallback to routine template suggestions if empty or LLM was not triggered
+        # Fallback to dynamic LLM suggestions if empty or LLM was not triggered
         if not suggested_response:
-            suggested_response, suggested_action = utils.get_routine_suggestions(predicted_category, text)
+            suggested_response, suggested_action = utils.generate_suggestions_with_llm(text, predicted_category)
             
         final_priority_score = round(min(1.0, max(0.0, priority_score + llm_adjustment)), 3)
         priority_label = utils.get_priority_label(final_priority_score)
@@ -850,13 +840,16 @@ def get_complaints(db: Session = Depends(get_db)):
         if not isinstance(sj, dict):
             sj = {}
         if 'suggested_response' not in sj or not sj['suggested_response']:
-            rep, act = utils.get_routine_suggestions(lead_dict['category'], lead_dict['complaint_text'])
-            if lead_dict.get('llm_reviewed') and lead_dict.get('llm_reasoning'):
-                rep = f"Dear Citizen, we have registered your urgent grievance. Under AI Governance Review, the following was flagged: {lead_dict['llm_reasoning']}. We are dispatching field inspectors to investigate immediately."
-                act = f"Priority Action: Inspect reported issue immediately. Flagged risk: {lead_dict.get('llm_risk_summary', 'Immediate safety concern')}. Dispatch field maintenance unit."
+            rep, act = utils.generate_suggestions_with_llm(lead_dict['complaint_text'], lead_dict['category'])
             sj['suggested_response'] = rep
             sj['suggested_action'] = act
             lead_dict['structured_json'] = sj
+            try:
+                lead.structured_json = json.dumps(sj)
+                db.commit()
+            except Exception as db_err:
+                print(f"Error saving dynamic suggestions to database: {db_err}")
+                db.rollback()
             
         # Add duplicate details
         lead_dict['duplicate_reports'] = [to_dict(x) for x in sorted_group[1:]]

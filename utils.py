@@ -1302,6 +1302,9 @@ class LLMClientBase:
     def review_complaint(self, complaint_data, retrieved_context):
         raise NotImplementedError
 
+    def generate_suggestions(self, text, category):
+        raise NotImplementedError
+
 class GroqClient(LLMClientBase):
     def __init__(self, api_key, model="llama3-8b-8192"):
         self.api_key = api_key
@@ -1374,6 +1377,44 @@ class GroqClient(LLMClientBase):
             "suggested_action": str(result.get("suggested_action", ""))
         }
 
+    def generate_suggestions(self, text, category):
+        try:
+            from groq import Groq
+            if self.client is None:
+                self.client = Groq(api_key=self.api_key)
+                
+            prompt = f"""
+            Generate a custom, helpful suggested response to the citizen and operational action plan for the following complaint.
+            
+            Category: {category}
+            Complaint Text: {text}
+            
+            Provide your analysis in JSON format with the following keys:
+            - "suggested_response": A polite, official suggested reply to the citizen (1-2 sentences) acknowledging the issue, explaining the category, and stating that zonal inspectors or maintenance teams are assigned to resolve it. Be specific to the complaint content rather than using generic templates.
+            - "suggested_action": 1-2 actionable operational steps for the redressing officer to resolve this specific complaint.
+            
+            Return ONLY the JSON object.
+            """
+            
+            completion = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are a senior public governance assistant. Return ONLY a valid JSON object."},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_object"}
+            )
+            
+            import json
+            result = json.loads(completion.choices[0].message.content)
+            return (
+                str(result.get("suggested_response", "")),
+                str(result.get("suggested_action", ""))
+            )
+        except Exception as e:
+            print(f"Error in Groq generate_suggestions: {e}. Falling back to templates.")
+            return get_routine_suggestions(category, text)
+
 class MockLLMClient(LLMClientBase):
     def review_complaint(self, complaint_data, retrieved_context):
         text = complaint_data.get("complaint_text", "").lower()
@@ -1432,6 +1473,9 @@ class MockLLMClient(LLMClientBase):
             "suggested_action": "Deploy structural inspection team, secure the immediate area with signage, and execute priority repairs to clear structural or public safety risks."
         }
 
+    def generate_suggestions(self, text, category):
+        return get_routine_suggestions(category, text)
+
 def get_llm_client():
     api_key = os.environ.get("GROQ_API_KEY")
     if api_key:
@@ -1466,3 +1510,7 @@ def get_routine_suggestions(category, text):
         )
     }
     return templates.get(category, templates["Other"])
+
+def generate_suggestions_with_llm(text, category):
+    client = get_llm_client()
+    return client.generate_suggestions(text, category)

@@ -475,9 +475,8 @@ def citizen_portal():
                     st.error(f"🛑 Grievance Not Admissible for Processing")
                     st.info(f"Reason for non-admissibility: {result['rejection_reason']}")
                     
-                    st.markdown("---")
-                    st.markdown("### ⚙️ Parser Output (Structured JSON)")
-                    st.json(result['structured_json'])
+                    with st.expander("⚙️ View Technical Triage Data", expanded=False):
+                        st.json(result['structured_json'])
                     
                     st.markdown("---")
                     st.warning("Notice: This complaint does not comply with public portal policies and has been locked from routing.")
@@ -567,60 +566,48 @@ def officer_dashboard():
                     st.markdown("**Grievance Description:**")
                     st.info(complaint['complaint_text'])
                     
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        if complaint.get('llm_reviewed', False):
-                            st.markdown(f"**🎯 AI Final Priority:** **{complaint['priority_label']}** (Score: `{complaint['final_priority_score']:.3f}`)")
-                            st.markdown(f"**⚖️ Base Governance Score:** `{complaint['priority_score']:.3f}`")
-                            st.markdown(f"**🤖 LLM Advisory Adjustment:** `{complaint['llm_adjustment']:+.2f}`")
-                        else:
-                            st.markdown(f"**🎯 AI Computed Priority:** **{complaint['priority_label']}** (Score: `{complaint['priority_score']:.3f}`)")
-                        st.markdown(f"**📂 Grievance Category:** `{complaint['category']}`")
-                        st.markdown(f"**🏢 Target Department:** `{complaint['department']}`")
-                        st.markdown(f"**⏰ Registered Timestamp:** `{complaint['timestamp']}`")
-                    with col2:
-                        st.markdown(f"**⚠️ Severity Score:** `{complaint.get('severity_score', 0.0):.2f}` (Tier: **{complaint.get('severity_label', 'Low')}**)")
-                        st.markdown(f"   *Rationale:* {complaint.get('severity_reason', 'N/A')}")
-                        st.markdown(f"**📊 Public Impact Score:** `{complaint.get('public_impact_score', 0.0):.2f}`")
-                        st.markdown(f"**😟 Vulnerability Score:** `{complaint.get('vulnerability_score', 0.0):.2f}`")
-                        st.markdown(f"**⚡ Urgency Score:** `{complaint.get('urgency_score', 0.0):.2f}`")
-                        st.markdown(f"**🔄 Duplicate Escalation Score:** `{complaint.get('duplicate_escalation_score', 0.0):.2f}`")
+                    st.markdown(f"📂 **Category:** `{complaint['category']}` | 🏢 **Department:** `{complaint['department']}` | ⏰ **Registered:** `{complaint['timestamp']}`")
                     
-                    st.markdown("**💡 System Explanation:**")
-                    st.markdown(f"> {complaint['explanation']}")
+                    # Markdown metrics table
+                    metrics_table = f"""
+| Factor / Dimension | Score | Weight | Rationale / Info |
+| :--- | :---: | :---: | :--- |
+| **Severity (Tier: {complaint.get('severity_label', 'Low')})** | `{complaint.get('severity_score', 0.0):.2f}` | 30% | {complaint.get('severity_reason', 'N/A')} |
+| **Public Impact** | `{complaint.get('public_impact_score', 0.0):.2f}` | 25% | Evaluates affected areas and infrastructure proximity |
+| **Urgency** | `{complaint.get('urgency_score', 0.0):.2f}` | 20% | Derived from incident time & immediate hazards |
+| **Vulnerability** | `{complaint.get('vulnerability_score', 0.0):.2f}` | 15% | School/hospital zones or public safety tags |
+| **Duplicate Escalation** | `{complaint.get('duplicate_escalation_score', 0.0):.2f}` | 10% | Frequency of repeating reports in the area |
+"""
+                    st.markdown(metrics_table)
                     
-                    # Display LLM reasoning details if available
+                    llm_note = f" (Adjusted {complaint['llm_adjustment']:+.2f} by AI Governance Advisory)" if complaint.get('llm_reviewed', False) else ""
+                    st.markdown(f"🎯 **AI Final Priority:** **{display_label.upper()}** (Score: `{complaint.get('final_priority_score', 0.0):.3f}` = Base `{complaint.get('priority_score', 0.0):.3f}`{llm_note})")
+                    
+                    # Display LLM reasoning details if available in a neat compact way
                     if complaint.get('llm_reviewed', False):
-                        st.markdown("---")
-                        st.markdown("**🤖 LLM Governance Advisory Review (Explainability)**")
-                        llm_col1, llm_col2 = st.columns(2)
-                        with llm_col1:
-                            st.markdown(f"**Adjustment:** `{complaint['llm_adjustment']:+.2f}`")
-                            st.markdown(f"**Trigger Reasons:**")
-                            for reason in complaint.get('llm_trigger_reasons', []):
-                                st.markdown(f"- {reason}")
-                        with llm_col2:
-                            st.markdown(f"**Public Safety Risk:** `{complaint['llm_public_safety_risk']}`")
-                            st.markdown(f"**Vulnerable Population Risk:** `{complaint['llm_vulnerable_population_risk']}`")
-                            st.markdown(f"**Infrastructure Risk:** `{complaint['llm_infrastructure_risk']}`")
-                        st.markdown(f"**Risk Summary:** *{complaint['llm_risk_summary']}*")
-                        st.markdown(f"**Review Reasoning:** *{complaint['llm_reasoning']}*")
+                        triggers_str = ", ".join(complaint.get('llm_trigger_reasons', []))
+                        st.markdown(f"""
+> 🤖 **AI Governance Advisory Review**
+> - **Trigger Flagged:** {triggers_str or 'None'}
+> - **Risks:** Public Safety: `{complaint['llm_public_safety_risk']}` | Vulnerable Population: `{complaint['llm_vulnerable_population_risk']}` | Infrastructure: `{complaint['llm_infrastructure_risk']}`
+> - **Advisory Rationale:** {complaint['llm_reasoning']} *(Summary: {complaint['llm_risk_summary']})*
+""")
 
                     st.markdown("---")
                     col_rag, col_dup = st.columns(2)
                     with col_rag:
-                        st.markdown("**🔍 RAG Context & Similar Grievances (Phase 5)**")
+                        st.markdown("**🔍 Historical Context (RAG)**")
                         similar_cases = complaint.get('similar_cases')
                         if similar_cases:
                             for sc in similar_cases[:2]:
-                                st.markdown(f"- **{sc['id']}** ({sc['category']}, Priority: **{sc['priority_label']}**) | Score: `{sc['similarity']*100:.1f}%`\n"
-                                             f"  *Text:* \"{sc['complaint_text'][:80]}...\"\n"
-                                             f"  *Status:* **{sc['resolution_history'][-1]['status'] if sc.get('resolution_history') else 'Submitted'}** ({sc['resolution_history'][-1]['date'] if sc.get('resolution_history') else sc.get('timestamp', '')})")
+                                st.markdown(f"- **{sc['id']}** ({sc['category']}, Priority: **{sc['priority_label']}**) | Similarity: `{sc['similarity']*100:.1f}%`  \n"
+                                             f"  *Text:* \"{sc['complaint_text'][:70]}...\"  \n"
+                                             f"  *Status:* **{sc['resolution_history'][-1]['status'] if sc.get('resolution_history') else 'Submitted'}**")
                         else:
                             st.info("No past similar cases found in database.")
                             
                     with col_dup:
-                        st.markdown("**📋 Duplicate Registry (Phase 6)**")
+                        st.markdown("**📋 Duplicate Registry**")
                         if complaint.get('duplicate_count', 0) > 0:
                             st.warning(f"**Duplicate Count:** `{complaint['duplicate_count']}` recurring reports.")
                             dup_ids = ", ".join([f"`{dc['id']}`" for dc in complaint['duplicate_reports']])
@@ -628,18 +615,15 @@ def officer_dashboard():
                         else:
                             st.success("No duplicates detected in queue.")
  
-                    st.markdown("---")
-                    st.markdown("**⚙️ Structured Parser Output (JSON)**")
-                    st.json(complaint['structured_json'])
+                    with st.expander("⚙️ View Raw Technical Parser Data (JSON)", expanded=False):
+                        st.json(complaint['structured_json'])
                     
                     if complaint.get('duplicate_count', 0) > 0:
-                        st.markdown("---")
-                        st.markdown(f"**🔗 Grouped Duplicate Reports ({complaint['duplicate_count']} duplicates)**")
-                        for d_idx, dc in enumerate(complaint['duplicate_reports'], 1):
-                            with st.container():
+                        with st.expander(f"🔗 View Grouped Duplicate Reports ({complaint['duplicate_count']})", expanded=False):
+                            for d_idx, dc in enumerate(complaint['duplicate_reports'], 1):
                                 st.markdown(f"**Duplicate #{d_idx}:** Reference ID: `{dc['id']}` | Filed: `{dc['timestamp']}`")
-                                st.markdown(f"**Description:** *\"{dc['complaint_text']}\"*")
-                                st.markdown("<div style='border-bottom: 1px dotted #e2e8f0; margin: 5px 0;'></div>", unsafe_allow_html=True)
+                                st.markdown(f"*{dc['complaint_text']}*")
+                                st.markdown("---")
                     
                     st.markdown("---")
                     st.markdown("**👮 Officer Actions**")
@@ -744,9 +728,8 @@ def officer_dashboard():
                     st.markdown(f"**Policy Violation Reason:** `{complaint['rejection_reason']}`")
                     st.markdown(f"**Timestamp:** `{complaint['timestamp']}`")
                     
-                    st.markdown("---")
-                    st.markdown("**⚙️ Parser Output (JSON)**")
-                    st.json(complaint['structured_json'])
+                    with st.expander("⚙️ View Raw Technical Parser Data (JSON)", expanded=False):
+                        st.json(complaint['structured_json'])
                     
     # Export override feedback
     st.markdown("---")

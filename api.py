@@ -107,6 +107,7 @@ class Officer(Base):
     designation = Column(String, default="Junior Inspector")
     email = Column(String, nullable=True)
     role = Column(String, default="officer")
+    profile_pic = Column(Text, nullable=True)
 
 # User Model for Authentication
 class User(Base):
@@ -180,6 +181,15 @@ try:
 except Exception:
     pass
 
+try:
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        with conn.begin():
+            # Add profile_pic column to officers table
+            conn.execute(text("ALTER TABLE officers ADD COLUMN profile_pic TEXT"))
+except Exception:
+    pass
+
 # Pydantic schemas
 class TriageRequest(BaseModel):
     complaint_text: str
@@ -208,6 +218,7 @@ class CreateOfficerRequest(BaseModel):
     ward: str
     designation: str = "Junior Inspector"
     email: Optional[str] = None
+    profile_pic: Optional[str] = None
 
 class UpdatePolicyRequest(BaseModel):
     severity_weight: float = 0.30
@@ -1499,7 +1510,8 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
                 'department': officer.department,
                 'zone': officer.zone,
                 'ward': officer.ward,
-                'designation': officer.designation
+                'designation': officer.designation,
+                'profile_pic': officer.profile_pic
             }
     return result
 
@@ -1558,7 +1570,8 @@ def list_officers(db: Session = Depends(get_db)):
         'ward': o.ward,
         'designation': o.designation,
         'email': o.email,
-        'role': o.role
+        'role': o.role,
+        'profile_pic': o.profile_pic
     } for o in officers]
 
 @app.get("/officers/{officer_id}")
@@ -1574,7 +1587,8 @@ def get_officer(officer_id: str, db: Session = Depends(get_db)):
         'ward': officer.ward,
         'designation': officer.designation,
         'email': officer.email,
-        'role': officer.role
+        'role': officer.role,
+        'profile_pic': officer.profile_pic
     }
 
 @app.post("/officers")
@@ -1588,7 +1602,8 @@ def create_officer(req: CreateOfficerRequest, db: Session = Depends(get_db)):
         zone=req.zone,
         ward=req.ward,
         designation=req.designation,
-        email=req.email
+        email=req.email,
+        profile_pic=req.profile_pic
     )
     db.add(officer)
     

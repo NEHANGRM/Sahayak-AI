@@ -1384,6 +1384,14 @@ def render_sidebar_user_info():
     if user.get('role') == 'officer':
         officer_info = user.get('officer', {})
         if officer_info:
+            profile_pic_b64 = officer_info.get('profile_pic')
+            if profile_pic_b64:
+                st.sidebar.markdown(f"""
+                <div style="display: flex; justify-content: center; margin-top: 10px; margin-bottom: 10px;">
+                    <img src="data:image/png;base64,{profile_pic_b64}" style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid #cbd5e0; object-fit: cover;" alt="Officer Profile Picture">
+                </div>
+                """, unsafe_allow_html=True)
+                
             st.sidebar.markdown(f"""
             <div style="border: 1px solid #cbd5e0; padding: 12px; background-color: #ffffff; border-radius: 4px; margin-bottom: 15px; font-family: Arial, sans-serif;">
                 <span style="font-size: 10px; font-weight: bold; color: #718096; text-transform: uppercase; letter-spacing: 0.5px;">Officer Details</span>
@@ -1589,9 +1597,11 @@ def citizen_profile_page():
             key="profile_pic_file_uploader",
             help="Select a PNG or JPG file"
         )
-        if uploaded_pic:
-            st.session_state.citizen_profile_pic = uploaded_pic.read()
-            st.rerun()
+        if uploaded_pic is not None:
+            new_bytes = uploaded_pic.getvalue()
+            if st.session_state.get('citizen_profile_pic') != new_bytes:
+                st.session_state.citizen_profile_pic = new_bytes
+                st.rerun()
             
     with col_fields:
         st.markdown("### Account & Personal Details")
@@ -2440,19 +2450,27 @@ def admin_dashboard():
                 new_designation = st.text_input("Designation", placeholder="e.g. Junior Engineer")
                 new_email = st.text_input("Email", placeholder="officer@gov.in")
             
+            new_profile_pic = st.file_uploader("Upload Officer Profile Photo", type=["png", "jpg", "jpeg"], help="Select a PNG or JPG file")
+            
             add_submitted = st.form_submit_button("Register Officer", type="primary", use_container_width=True)
             
             if add_submitted:
                 if not new_name or not new_department:
                     st.error("Name and Department are required fields.")
                 else:
+                    pic_b64 = None
+                    if new_profile_pic is not None:
+                        import base64
+                        pic_b64 = base64.b64encode(new_profile_pic.getvalue()).decode('utf-8')
+                        
                     result, error = add_officer({
                         "name": new_name,
                         "department": new_department,
                         "zone": new_zone,
                         "ward": new_ward,
                         "designation": new_designation,
-                        "email": new_email
+                        "email": new_email,
+                        "profile_pic": pic_b64
                     })
                     if result:
                         st.success(f"Officer `{result.get('officer_id', 'NEW')}` registered successfully!")

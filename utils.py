@@ -590,18 +590,106 @@ def calculate_duplicate_escalation(is_duplicate, similarity, cluster_id, complai
     score = score * 0.8 + similarity * 0.2
     return round(min(1.0, max(0.0, score)), 2)
 
-def calculate_priority_score(severity, public_impact, urgency, vulnerability, duplicate_escalation):
+def calculate_escalation(priority_score, age_days, duplicate_count, current_escalation_history):
+    """Calculate dynamic priority escalation based on time and duplicates.
+    Returns (boosted_priority, new_escalation_events)."""
+    boost = 0.0
+    new_events = []
+    
+    # Time-based escalation
+    if age_days >= 14:
+        boost += 0.3  # +0.1 for >=7 days + 0.2 for >=14 days
+        new_events.append({'level': 'Time Escalation (14+ days)', 'boost': 0.3})
+    elif age_days >= 7:
+        boost += 0.1
+        new_events.append({'level': 'Time Escalation (7+ days)', 'boost': 0.1})
+    
+    # Duplicate-based escalation
+    if duplicate_count >= 20:
+        return (1.0, new_events + [{'level': 'Mass Complaint Override (20+ duplicates)', 'boost': 'MAX'}])
+    elif duplicate_count >= 5:
+        boost += 0.25
+        new_events.append({'level': 'Duplicate Escalation (5+ reports)', 'boost': 0.25})
+    
+    final_priority = min(1.0, max(0.0, priority_score + boost))
+    
+    # Authority escalation
+    if final_priority >= 0.90 and age_days >= 1:
+        new_events.append({'level': 'Escalated to Chief Secretary', 'authority': 'Chief Secretary'})
+    elif final_priority >= 0.85:
+        new_events.append({'level': 'Escalated to Ministry Head', 'authority': 'Ministry Head'})
+    
+    return (final_priority, new_events)
+
+def calculate_priority_score(severity, public_impact, urgency, vulnerability, duplicate_escalation, weights=None):
     """
-    PRIORITY_SCORE = 0.30 * SEVERITY + 0.25 * PUBLIC_IMPACT + 0.20 * URGENCY + 0.15 * VULNERABILITY + 0.10 * DUPLICATE_ESCALATION
+    PRIORITY_SCORE calculates the weighted sum of factors based on optional dynamic weights.
+    Default weights represent the standard cross-department baseline.
     """
+    if weights is None:
+        weights = {
+            'severity_weight': 0.30,
+            'impact_weight': 0.25,
+            'urgency_weight': 0.20,
+            'vulnerability_weight': 0.15,
+            'duplicate_weight': 0.10
+        }
+        
     priority_score = (
-        0.30 * severity + 
-        0.25 * public_impact + 
-        0.20 * urgency + 
-        0.15 * vulnerability + 
-        0.10 * duplicate_escalation
+        weights.get('severity_weight', 0.30) * severity + 
+        weights.get('impact_weight', 0.25) * public_impact + 
+        weights.get('urgency_weight', 0.20) * urgency + 
+        weights.get('vulnerability_weight', 0.15) * vulnerability + 
+        weights.get('duplicate_weight', 0.10) * duplicate_escalation
     )
     return round(min(1.0, max(0.0, priority_score)), 3)
+
+def get_priority_breakdown(severity, public_impact, urgency, vulnerability, duplicate_escalation, weights=None):
+    """Returns structured priority breakdown with individual contributions using dynamic weights."""
+    if weights is None:
+        weights = {
+            'severity_weight': 0.30,
+            'impact_weight': 0.25,
+            'urgency_weight': 0.20,
+            'vulnerability_weight': 0.15,
+            'duplicate_weight': 0.10
+        }
+        
+    w_sev = weights.get('severity_weight', 0.30)
+    w_imp = weights.get('impact_weight', 0.25)
+    w_urg = weights.get('urgency_weight', 0.20)
+    w_vul = weights.get('vulnerability_weight', 0.15)
+    w_dup = weights.get('duplicate_weight', 0.10)
+    
+    priority_score = calculate_priority_score(severity, public_impact, urgency, vulnerability, duplicate_escalation, weights)
+    
+    breakdown = {
+        'Severity': {'score': severity, 'weight': w_sev, 'contribution': round(severity * w_sev, 3)},
+        'Public Impact': {'score': public_impact, 'weight': w_imp, 'contribution': round(public_impact * w_imp, 3)},
+        'Urgency': {'score': urgency, 'weight': w_urg, 'contribution': round(urgency * w_urg, 3)},
+        'Vulnerability': {'score': vulnerability, 'weight': w_vul, 'contribution': round(vulnerability * w_vul, 3)},
+        'Duplicate/Escalation': {'score': duplicate_escalation, 'weight': w_dup, 'contribution': round(duplicate_escalation * w_dup, 3)}
+    }
+    
+    return {
+        'priority_score': priority_score,
+        'priority_level': get_priority_label(priority_score),
+        'explanation': breakdown
+    }
+
+def calculate_department_priority(severity, public_impact, urgency, vulnerability, duplicate_escalation, weights=None):
+    """Calculate priority using department-specific weights. Falls back to global weights if none provided."""
+    if weights is None:
+        return calculate_priority_score(severity, public_impact, urgency, vulnerability, duplicate_escalation)
+    
+    score = (
+        weights.get('severity_weight', 0.30) * severity +
+        weights.get('impact_weight', 0.25) * public_impact +
+        weights.get('urgency_weight', 0.20) * urgency +
+        weights.get('vulnerability_weight', 0.15) * vulnerability +
+        weights.get('duplicate_weight', 0.10) * duplicate_escalation
+    )
+    return min(1.0, max(0.0, round(score, 4)))
 
 def get_priority_label(priority_score):
     """
@@ -622,6 +710,60 @@ def route_to_department(category):
     Route complaint to relevant government department.
     """
     return DEPARTMENT_MAP.get(category, "General Administration Department")
+
+def assign_officer(department, location_text, db_session):
+    """Assign the best matching officer based on department + location (zone/ward).
+    Returns officer_id or None if no officers found.
+    """
+    import re
+    from sqlalchemy import func
+    
+    # Import Officer model - will be available when called from api.py context
+    try:
+        from api import Officer
+    except ImportError:
+        return None
+    
+    # Query officers in the target department
+    officers = db_session.query(Officer).filter(
+        func.lower(Officer.department) == department.lower()
+    ).all()
+    
+    if not officers:
+        return None
+    
+    if not location_text:
+        return officers[0].officer_id  # Return first available
+    
+    loc_lower = location_text.lower()
+    
+    # Try to extract ward number
+    ward_match = re.search(r'ward\s*(\d+)', loc_lower)
+    ward_num = f"Ward {ward_match.group(1)}" if ward_match else None
+    
+    best_officer = None
+    best_score = 0
+    
+    for officer in officers:
+        score = 0
+        # Zone match (check if zone name appears in location text)
+        if officer.zone and officer.zone.lower() in loc_lower:
+            score += 2
+        # Ward match
+        if ward_num and officer.ward and ward_num.lower() == officer.ward.lower():
+            score += 3
+        # Partial zone match (any word overlap)
+        if officer.zone:
+            zone_words = set(officer.zone.lower().split())
+            loc_words = set(loc_lower.split())
+            if zone_words & loc_words:
+                score += 1
+        
+        if score > best_score:
+            best_score = score
+            best_officer = officer
+    
+    return best_officer.officer_id if best_officer else officers[0].officer_id
 
 def generate_explanation(severity, public_impact, urgency, vulnerability, duplicate_escalation, priority_label):
     """
@@ -1198,6 +1340,26 @@ def calculate_public_impact(text, category, structured_json):
     if critical_infra_active and major_incident_active:
         score += 0.20
         
+    # 8. Railway Station / Metro Station (+0.35)
+    railway_words = ["railway station", "metro station", "railway", "metro", "rail terminal"]
+    if any(w in text_lower for w in railway_words):
+        score += 0.35
+    
+    # 9. Bus Stand / Bus Terminal (+0.25)
+    bus_words = ["bus stand", "bus terminal", "bus stop", "bus depot", "bus station"]
+    if any(w in text_lower for w in bus_words):
+        score += 0.25
+    
+    # 10. Airport (+0.40)
+    airport_words = ["airport", "airstrip", "aerodrome", "air terminal"]
+    if any(w in text_lower for w in airport_words):
+        score += 0.40
+    
+    # 11. Government Office / Secretariat (+0.25)
+    gov_office_words = ["government office", "secretariat", "collectorate", "tehsil office", "district office"]
+    if any(w in text_lower for w in gov_office_words):
+        score += 0.25
+    
     # Specific tuning for streetlight example (must be exactly 0.2)
     if "streetlight" in text_lower or "street light" in text_lower:
         if not any(w in text_lower for w in hospital_words + school_words + ["fire", "accident"]):
@@ -1510,6 +1672,68 @@ def get_routine_suggestions(category, text):
         )
     }
     return templates.get(category, templates["Other"])
+
+def detect_hotspots(complaints, min_count=8, days=7):
+    """Detect geographic hotspots: clusters of complaints in same location + category within a time window.
+    Returns list of hotspot alert dicts."""
+    from datetime import datetime, timedelta
+    from collections import defaultdict
+    
+    cutoff = datetime.now() - timedelta(days=days)
+    hotspot_groups = defaultdict(list)
+    
+    for c in complaints:
+        # Parse timestamp
+        try:
+            ts = datetime.strptime(c.get('timestamp', ''), '%Y-%m-%d %H:%M:%S')
+        except (ValueError, TypeError):
+            continue
+        
+        if ts < cutoff:
+            continue
+        
+        # Extract location
+        structured = c.get('structured_json', {})
+        if isinstance(structured, str):
+            try:
+                structured = json.loads(structured)
+            except (json.JSONDecodeError, TypeError):
+                structured = {}
+        
+        location = structured.get('location', 'Unknown')
+        if not location or location == 'Unknown':
+            continue
+        
+        norm_loc = _normalize_location(location)
+        category = c.get('category', 'Other')
+        key = (norm_loc, category)
+        hotspot_groups[key].append({
+            'id': c.get('id', ''),
+            'timestamp': c.get('timestamp', ''),
+            'text': c.get('complaint_text', '')[:100]
+        })
+    
+    hotspots = []
+    for (location, category), complaints_list in hotspot_groups.items():
+        if len(complaints_list) >= min_count:
+            timestamps = []
+            for comp in complaints_list:
+                try:
+                    timestamps.append(datetime.strptime(comp['timestamp'], '%Y-%m-%d %H:%M:%S'))
+                except (ValueError, TypeError):
+                    pass
+            
+            hotspots.append({
+                'event': category,
+                'location': location,
+                'category': category,
+                'complaints_count': len(complaints_list),
+                'complaint_ids': [c['id'] for c in complaints_list],
+                'first_reported': min(timestamps).strftime('%Y-%m-%d %H:%M:%S') if timestamps else '',
+                'latest_reported': max(timestamps).strftime('%Y-%m-%d %H:%M:%S') if timestamps else ''
+            })
+    
+    return sorted(hotspots, key=lambda x: x['complaints_count'], reverse=True)
 
 def generate_suggestions_with_llm(text, category):
     client = get_llm_client()

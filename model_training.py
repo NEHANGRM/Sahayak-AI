@@ -93,6 +93,20 @@ def train_models():
     
     df['Mapped_Category'] = df['Category'].map(category_mapping)
     
+    import os
+    if os.path.exists('cleaned_grievance_dataset.csv'):
+        print("✓ Loading cleaned CPGRAMS dataset...")
+        df_gov = pd.read_csv('cleaned_grievance_dataset.csv')
+        print(f"✓ Loaded {len(df_gov)} CPGRAMS complaints")
+        
+        df_base_mapped = pd.DataFrame({
+            'Complaint_Text': df['Complaint_Text'],
+            'Mapped_Category': df['Mapped_Category'],
+            'Priority_Label': df['Priority_Label']
+        })
+        
+        df = pd.concat([df_base_mapped, df_gov], ignore_index=True)
+    
     # Define synthetic samples for new and prohibited categories
     synthetic_samples = []
     

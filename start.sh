@@ -1,4 +1,5 @@
 #!/bin/bash
+export KMP_DUPLICATE_LIB_OK=TRUE
 
 # Sahayak AI - Quick Start Script
 # Run this script to install, train, and launch the application
@@ -10,7 +11,7 @@ echo ""
 
 # Step 1: Install dependencies
 echo "[1/3] Installing dependencies..."
-pip install -r requirements-backend.txt
+.venv/bin/pip install -r requirements-backend.txt
 
 if [ $? -ne 0 ]; then
     echo "❌ Installation failed. Please check your Python environment."
@@ -22,7 +23,7 @@ echo ""
 
 # Step 2: Train models
 echo "[2/3] Training ML models..."
-python model_training.py
+.venv/bin/python model_training.py
 
 if [ $? -ne 0 ]; then
     echo "❌ Model training failed. Please check the dataset."
@@ -41,7 +42,7 @@ echo "============================================================"
 echo ""
 
 # Start FastAPI backend in the background
-uvicorn api:app --port 8000 --host 0.0.0.0 &
+.venv/bin/uvicorn api:app --port 8000 --host 0.0.0.0 &
 backend_pid=$!
 
 echo "Waiting for API server to initialize..."
@@ -53,7 +54,7 @@ echo ""
 echo "Press Ctrl+C to stop the servers."
 echo ""
 
-streamlit run app.py
+.venv/bin/streamlit run app.py
 
 # Clean up background process on exit
 kill $backend_pid

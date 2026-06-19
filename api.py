@@ -144,17 +144,39 @@ class OfficerFeedback(Base):
 # Create tables
 Base.metadata.create_all(bind=engine)
 
-# Migration to add submitted_by to existing SQLite database if missing
+# Migration to add missing columns to existing SQLite/PostgreSQL database if missing
 try:
+    from sqlalchemy import text
+    columns_to_add = [
+        ("assigned_officer_id", "VARCHAR"),
+        ("global_priority_score", "FLOAT"),
+        ("officer_priority_score", "FLOAT"),
+        ("submitted_by", "VARCHAR"),
+        ("llm_reviewed", "BOOLEAN"),
+        ("llm_adjustment", "FLOAT"),
+        ("llm_reasoning", "TEXT"),
+        ("llm_risk_summary", "TEXT"),
+        ("llm_public_safety_risk", "VARCHAR"),
+        ("llm_vulnerable_population_risk", "VARCHAR"),
+        ("llm_infrastructure_risk", "VARCHAR"),
+        ("llm_trigger_reasons", "TEXT")
+    ]
     with engine.connect() as conn:
-        conn.execute("ALTER TABLE complaints ADD COLUMN submitted_by VARCHAR;")
-except Exception:
-    pass
+        for col_name, col_type in columns_to_add:
+            try:
+                with conn.begin():
+                    conn.execute(text(f"ALTER TABLE complaints ADD COLUMN {col_name} {col_type}"))
+            except Exception:
+                pass
+except Exception as e:
+    print(f"Migration error: {e}")
 
 try:
+    from sqlalchemy import text
     with engine.connect() as conn:
-        # Link existing seeded complaints to citizen1 so they have previous history
-        conn.execute("UPDATE complaints SET submitted_by = 'citizen1' WHERE submitted_by IS NULL;")
+        with conn.begin():
+            # Link existing seeded complaints to citizen1 so they have previous history
+            conn.execute(text("UPDATE complaints SET submitted_by = 'citizen1' WHERE submitted_by IS NULL"))
 except Exception:
     pass
 

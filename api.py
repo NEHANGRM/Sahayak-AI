@@ -1015,7 +1015,8 @@ def seed_database(db: Session):
             if len(llm_trigger_reasons) > 0:
                 llm_reviewed = True
                 try:
-                    client = utils.get_llm_client()
+                    # ALWAYS use MockLLMClient during seeding to prevent Render port scan timeouts
+                    client = utils.MockLLMClient()
                     review_result = client.review_complaint(complaint_data, similar_cases)
                     llm_adjustment = review_result.get("recommended_adjustment", 0.0)
                     llm_reasoning = review_result.get("reasoning", "LLM review completed.")
@@ -1024,16 +1025,16 @@ def seed_database(db: Session):
                     llm_vulnerable_population_risk = review_result.get("vulnerable_population_risk", "Medium")
                     llm_infrastructure_risk = review_result.get("infrastructure_risk", "Medium")
                     suggested_response = review_result.get("suggested_response", "")
-                    suggested_action = review_result.get("suggested_action", "")
+                    suggested_action = review_result.get("officer_handbook", review_result.get("suggested_action", ""))
                 except Exception as e:
-                    print(f"Error calling LLM Client: {e}")
+                    print(f"Error calling LLM Client during seed: {e}")
                     llm_reviewed = False
                     llm_adjustment = 0.0
                     llm_reasoning = f"Failed to run LLM review: {str(e)}"
                     
-            # Fallback to dynamic LLM suggestions if empty or LLM was not triggered
+            # Fallback to templates if empty or LLM was not triggered
             if not suggested_response:
-                suggested_response, suggested_action = utils.generate_suggestions_with_llm(text, predicted_category)
+                suggested_response, suggested_action = utils.get_routine_suggestions(predicted_category, text)
                 
             final_priority_score = round(min(1.0, max(0.0, priority_score + llm_adjustment)), 3)
             priority_label = utils.get_priority_label(final_priority_score)

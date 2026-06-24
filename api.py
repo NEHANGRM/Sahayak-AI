@@ -19,6 +19,21 @@ import utils
 # Initialize FastAPI App
 app = FastAPI(title="Sahayak AI - Civic Grievance Backend", version="1.0.0")
 
+@app.get("/wipe-and-reseed-db-danger")
+def wipe_and_reseed_db(db: Session = Depends(get_db)):
+    db.query(Complaint).delete()
+    db.query(User).delete()
+    db.query(Officer).delete()
+    db.query(DepartmentPolicy).delete()
+    db.commit()
+    seed_department_policies(db)
+    seed_officers(db)
+    seed_users(db)
+    seed_database(db)
+    return {"status": "Database wiped and reseeded successfully!"}
+
+
+
 # Enable CORS for frontend connection
 app.add_middleware(
     CORSMiddleware,
@@ -230,10 +245,10 @@ def startup_db_init():
         
         # Run seeding and cleanups
         db = SessionLocal()
-        seed_database(db)
+        seed_department_policies(db)
         seed_officers(db)
         seed_users(db)
-        seed_department_policies(db)
+        seed_database(db)
         try:
             deleted = db.query(Complaint).filter(Complaint.id.in_(["CMP-2006", "CMP-2007"])).delete(synchronize_session=False)
             db.commit()
@@ -581,6 +596,14 @@ def seed_users(db: Session):
             role="citizen",
             officer_id=None,
             name="Demo Citizen"
+        ),
+        User(
+            user_id="USR-012",
+            username="citizen2",
+            password_hash=bcrypt.hashpw(b"cit123", bcrypt.gensalt()).decode('utf-8'),
+            role="citizen",
+            officer_id=None,
+            name="Demo Citizen 2"
         ),
     ]
     
@@ -1122,7 +1145,7 @@ def seed_database(db: Session):
             llm_infrastructure_risk=llm_infrastructure_risk,
             llm_trigger_reasons=json.dumps(llm_trigger_reasons),
             assigned_officer_id=assigned_officer_id,
-            submitted_by="citizen1"
+            submitted_by="citizen2" if int(comp_id.split("-")[1]) % 2 == 0 else "citizen1"
         )
         db.add(comp)
     db.commit()

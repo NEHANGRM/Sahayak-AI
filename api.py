@@ -214,13 +214,19 @@ def startup_db_init():
                 except Exception:
                     pass
 
-        with engine.connect() as conn:
-            with conn.begin():
-                conn.execute(text("UPDATE complaints SET submitted_by = 'citizen1' WHERE submitted_by IS NULL"))
+        try:
+            with engine.connect() as conn:
+                with conn.begin():
+                    conn.execute(text("UPDATE complaints SET submitted_by = 'citizen1' WHERE submitted_by IS NULL"))
+        except Exception:
+            pass
         
-        with engine.connect() as conn:
-            with conn.begin():
-                conn.execute(text("ALTER TABLE officers ADD COLUMN profile_pic TEXT"))
+        try:
+            with engine.connect() as conn:
+                with conn.begin():
+                    conn.execute(text("ALTER TABLE officers ADD COLUMN profile_pic TEXT"))
+        except Exception:
+            pass
         
         # Run seeding and cleanups
         db = SessionLocal()

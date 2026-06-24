@@ -221,6 +221,21 @@ def startup_db_init():
         with engine.connect() as conn:
             with conn.begin():
                 conn.execute(text("ALTER TABLE officers ADD COLUMN profile_pic TEXT"))
+        
+        # Run seeding and cleanups
+        db = SessionLocal()
+        seed_database(db)
+        seed_officers(db)
+        seed_users(db)
+        seed_department_policies(db)
+        try:
+            deleted = db.query(Complaint).filter(Complaint.id.in_(["CMP-2006", "CMP-2007"])).delete(synchronize_session=False)
+            db.commit()
+            print(f"🧹 Database cleanup: deleted {deleted} complaints (CMP-2006, CMP-2007)")
+        except Exception as e:
+            print(f"Error during db cleanup: {e}")
+        db.close()
+        
         print("Database Initialized Successfully.")
     except Exception as e:
         print(f"Database initialization failed during startup. Check credentials! Error: {e}")
@@ -1107,19 +1122,7 @@ def seed_database(db: Session):
     db.commit()
     print("✅ Seed complaints triaged and inserted successfully.")
 
-# Run seeding and cleanups
-db = SessionLocal()
-seed_database(db)
-seed_officers(db)
-seed_users(db)
-seed_department_policies(db)
-try:
-    deleted = db.query(Complaint).filter(Complaint.id.in_(["CMP-2006", "CMP-2007"])).delete(synchronize_session=False)
-    db.commit()
-    print(f"🧹 Database cleanup: deleted {deleted} complaints (CMP-2006, CMP-2007)")
-except Exception as e:
-    print(f"Error during db cleanup: {e}")
-db.close()
+
 
 
 @app.post("/triage")

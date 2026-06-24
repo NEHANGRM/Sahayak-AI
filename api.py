@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import json
 import pickle
 import datetime
@@ -66,7 +68,7 @@ class Complaint(Base):
     cluster_id = Column(Integer, nullable=True)
     similarity = Column(Float, default=0.0)
     lead_id = Column(String, nullable=True)
-    status = Column(String, default="Open")
+    status = Column(String, default="Submitted")
     officer_override = Column(String, nullable=True)
     override_reason = Column(Text, nullable=True)
     
@@ -96,6 +98,14 @@ class Complaint(Base):
     # Submitted by (Citizen username)
     submitted_by = Column(String, nullable=True)
 
+    # Lifecycle Management
+    sla_deadline = Column(String, nullable=True)      # ISO timestamp
+    sla_breached = Column(Boolean, default=False)
+    accepted_at = Column(String, nullable=True)
+    resolved_at = Column(String, nullable=True)
+    closed_at = Column(String, nullable=True)
+    escalation_level = Column(Integer, default=0)     # 0=normal, 1=senior, 2=dept head, 3=ministry
+
 # Officer Model for Smart Routing
 class Officer(Base):
     __tablename__ = 'officers'
@@ -108,6 +118,17 @@ class Officer(Base):
     email = Column(String, nullable=True)
     role = Column(String, default="officer")
     profile_pic = Column(Text, nullable=True)
+    escalation_level = Column(Integer, default=0)
+
+# Notification Model
+class Notification(Base):
+    __tablename__ = 'notifications'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String, nullable=False)  # officer_id or "admin"
+    message = Column(String, nullable=False)
+    type = Column(String, default="info")
+    timestamp = Column(String, nullable=False)
+    is_read = Column(Boolean, default=False)
 
 # User Model for Authentication
 class User(Base):
@@ -142,6 +163,19 @@ class OfficerFeedback(Base):
     officer_value = Column(String, nullable=False)
     reason = Column(Text, nullable=False)
 
+# Audit Log for Lifecycle Tracking
+class AuditLog(Base):
+    __tablename__ = 'audit_logs'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    complaint_id = Column(String, nullable=False)
+    timestamp = Column(String, nullable=False)
+    action = Column(String, nullable=False)        # status_change, priority_override, severity_override, department_transfer, officer_reassignment, sla_breach, auto_escalation
+    from_value = Column(String, nullable=True)
+    to_value = Column(String, nullable=True)
+    performed_by = Column(String, nullable=False)   # user_id or SYSTEM
+    performer_role = Column(String, nullable=False)  # citizen, officer, admin, system
+    notes = Column(Text, nullable=True)
+
 # Create tables
 Base.metadata.create_all(bind=engine)
 
@@ -160,7 +194,13 @@ try:
         ("llm_public_safety_risk", "VARCHAR"),
         ("llm_vulnerable_population_risk", "VARCHAR"),
         ("llm_infrastructure_risk", "VARCHAR"),
-        ("llm_trigger_reasons", "TEXT")
+        ("llm_trigger_reasons", "TEXT"),
+        ("sla_deadline", "VARCHAR"),
+        ("sla_breached", "BOOLEAN"),
+        ("accepted_at", "VARCHAR"),
+        ("resolved_at", "VARCHAR"),
+        ("closed_at", "VARCHAR"),
+        ("escalation_level", "INTEGER")
     ]
     with engine.connect() as conn:
         for col_name, col_type in columns_to_add:
@@ -171,6 +211,8 @@ try:
                 pass
 except Exception as e:
     print(f"Migration error: {e}")
+
+
 
 try:
     from sqlalchemy import text
@@ -218,7 +260,9 @@ class CreateOfficerRequest(BaseModel):
     ward: str
     designation: str = "Junior Inspector"
     email: Optional[str] = None
+    password: str = "off123"
     profile_pic: Optional[str] = None
+    escalation_level: int = 0
 
 class UpdatePolicyRequest(BaseModel):
     severity_weight: float = 0.30
@@ -236,6 +280,138 @@ class OverrideDepartmentRequest(BaseModel):
     new_department: str
     reason: str
     officer_id: Optional[str] = None
+
+class AcceptRequest(BaseModel):
+    officer_id: str
+
+class StartProgressRequest(BaseModel):
+    officer_id: str
+    notes: Optional[str] = None
+
+class FieldInspectionRequest(BaseModel):
+    officer_id: str
+    notes: Optional[str] = None
+
+class EscalateRequest(BaseModel):
+    officer_id: str
+    reason: str
+    escalation_level: Optional[int] = None
+
+class CloseRequest(BaseModel):
+    admin_id: str
+    notes: Optional[str] = None
+
+class ReassignRequest(BaseModel):
+    admin_id: str
+    new_officer_id: str
+    reason: str
+
+# ===================== LIFECYCLE HELPERS =====================
+
+VALID_TRANSITIONS = {
+    "Submitted": ["Assigned", "Rejected"],
+    "Assigned": ["Accepted", "Reassigned"],
+    "Accepted": ["In Progress", "Escalated"],
+    "In Progress": ["Field Inspection", "Escalated", "Resolved"],
+    "Field Inspection": ["In Progress", "Resolved", "Escalated"],
+    "Escalated": ["Assigned", "In Progress"],
+    "Resolved": ["Closed"],
+    "Reassigned": ["Assigned"],
+}
+
+SLA_HOURS = {"Critical": 24, "High": 72, "Medium": 120, "Low": 168}
+
+ESCALATION_LEVELS = {
+    0: "L1 - Junior Inspector",
+    1: "L2 - Senior Inspector",
+    2: "L3 - Department Head",
+    3: "L4 - Ministry Level"
+}
+
+def validate_transition(current_status: str, new_status: str):
+    """Validate that a status transition is allowed."""
+    allowed = VALID_TRANSITIONS.get(current_status, [])
+    if new_status not in allowed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid status transition: '{current_status}' → '{new_status}'. Allowed: {allowed}"
+        )
+
+def calculate_sla_deadline(priority_label: str, submitted_at: str) -> str:
+    """Calculate SLA deadline based on priority level."""
+    try:
+        dt = datetime.datetime.strptime(submitted_at, "%Y-%m-%d %H:%M:%S")
+    except:
+        dt = datetime.datetime.now()
+    hours = SLA_HOURS.get(priority_label, 168)
+    deadline = dt + datetime.timedelta(hours=hours)
+    return deadline.strftime("%Y-%m-%d %H:%M:%S")
+
+def log_audit(db: Session, complaint_id: str, action: str, from_val: str, to_val: str, performed_by: str, performer_role: str, notes: str = None):
+    """Create an audit log entry."""
+    entry = AuditLog(
+        complaint_id=complaint_id,
+        timestamp=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        action=action,
+        from_value=from_val,
+        to_value=to_val,
+        performed_by=performed_by,
+        performer_role=performer_role,
+        notes=notes
+    )
+    db.add(entry)
+
+def check_and_escalate_sla(db: Session):
+    """Check all active complaints for SLA breaches and auto-escalate."""
+    now = datetime.datetime.now()
+    active_statuses = ["Submitted", "Assigned", "Accepted", "In Progress", "Field Inspection"]
+    active_complaints = db.query(Complaint).filter(
+        Complaint.status.in_(active_statuses),
+        Complaint.sla_breached == False,
+        Complaint.sla_deadline != None
+    ).all()
+    
+    for comp in active_complaints:
+        try:
+            deadline = datetime.datetime.strptime(comp.sla_deadline, "%Y-%m-%d %H:%M:%S")
+            if now > deadline:
+                comp.sla_breached = True
+                current_level = comp.escalation_level or 0
+                new_level = min(current_level + 1, 3)
+                comp.escalation_level = new_level
+                
+                # Reassign to higher level officer
+                import utils
+                new_officer_id = utils.reassign_to_escalation_level(comp.department, new_level, db)
+                if new_officer_id and new_officer_id != comp.assigned_officer_id:
+                    comp.assigned_officer_id = new_officer_id
+                    n_off = Notification(user_id=new_officer_id, message=f"SLA Breach: Complaint {comp.id} auto-escalated to you.", type="escalation", timestamp=now.strftime('%Y-%m-%d %H:%M:%S'))
+                    db.add(n_off)
+                    
+                n_admin = Notification(user_id="admin", message=f"SLA Breach: Complaint {comp.id} auto-escalated to {ESCALATION_LEVELS.get(new_level, f'L{new_level}')}.", type="alert", timestamp=now.strftime('%Y-%m-%d %H:%M:%S'))
+                db.add(n_admin)
+                
+                # Auto-escalate status if not already escalated
+                if comp.status not in ["Escalated", "Resolved", "Closed"]:
+                    old_status = comp.status
+                    comp.status = "Escalated"
+                    log_audit(db, comp.id, "auto_escalation", old_status, "Escalated", "SYSTEM", "system",
+                             f"SLA breached. Auto-escalated from {ESCALATION_LEVELS.get(current_level, 'L1')} to {ESCALATION_LEVELS.get(new_level, 'L2')}.")
+                    log_audit(db, comp.id, "sla_breach", comp.sla_deadline, now.strftime('%Y-%m-%d %H:%M:%S'), "SYSTEM", "system",
+                             f"SLA deadline exceeded. Priority: {comp.priority_label}")
+                    
+                    # Update escalation history
+                    esc_hist = json.loads(comp.escalation_history or '[]')
+                    esc_hist.append({
+                        "level": ESCALATION_LEVELS.get(new_level, f"L{new_level}"),
+                        "date": now.strftime("%Y-%m-%d %H:%M:%S"),
+                        "reason": "SLA breach - auto-escalated"
+                    })
+                    comp.escalation_history = json.dumps(esc_hist)
+        except Exception:
+            pass
+    
+    db.commit()
 
 
 # Dependency to get DB session
@@ -344,6 +520,8 @@ def to_dict(c: Complaint) -> Dict[str, Any]:
         "age_days": round(age_days, 1),
         "aging_boost": round(aging_boost, 2),
         "relative_time": relative_time,
+        "sla_deadline": c.sla_deadline,
+        "sla_breached": getattr(c, 'sla_breached', False)
     }
 
 
@@ -912,7 +1090,7 @@ def seed_database(db: Session):
             cluster_id=cluster_id,
             similarity=similarity,
             lead_id=lead_id,
-            status="Open" if is_admissible else "Rejected",
+            status="Assigned" if (is_admissible and assigned_officer_id) else ("Submitted" if is_admissible else "Rejected"),
             officer_override=None,
             override_reason=None,
             resolution_history=json.dumps(resolution_history),
@@ -1198,7 +1376,10 @@ def triage_complaint(req: TriageRequest, db: Session = Depends(get_db)):
     ]
     escalation_history = []
     if is_admissible:
-        resolution_history.append({"status": "Assigned", "date": timestamp, "notes": f"Assigned to {department}."})
+        if assigned_officer_id:
+            resolution_history.append({"status": "Assigned", "date": timestamp, "notes": f"Assigned to {department}."})
+        else:
+            resolution_history.append({"status": "Submitted", "date": timestamp, "notes": f"Pending officer assignment in {department} due to workload limits."})
         escalation_history.append({"level": "L1 - Junior Inspector", "date": timestamp})
         
     structured_json = {
@@ -1222,6 +1403,7 @@ def triage_complaint(req: TriageRequest, db: Session = Depends(get_db)):
         },
         "suggested_response": suggested_response,
         "suggested_action": suggested_action,
+        "officer_handbook": suggested_action,
         "priority_breakdown": priority_breakdown
     }
     
@@ -1251,7 +1433,7 @@ def triage_complaint(req: TriageRequest, db: Session = Depends(get_db)):
         cluster_id=cluster_id,
         similarity=similarity,
         lead_id=lead_id,
-        status="Open" if is_admissible else "Rejected",
+        status="Assigned" if (is_admissible and assigned_officer_id) else ("Submitted" if is_admissible else "Rejected"),
         officer_override=None,
         override_reason=None,
         resolution_history=json.dumps(resolution_history),
@@ -1274,10 +1456,23 @@ def triage_complaint(req: TriageRequest, db: Session = Depends(get_db)):
         officer_priority_score=round(officer_priority, 4),
     )
     
+    if is_admissible:
+        comp.sla_deadline = calculate_sla_deadline(priority_label, timestamp)
+        
     db.add(comp)
     db.commit()
     db.refresh(comp)
     
+    # Audit logging
+    if is_admissible:
+        log_audit(db, comp.id, "status_change", None, "Submitted", req.submitted_by or "CITIZEN", "citizen", "Complaint submitted by citizen.")
+        if assigned_officer_id:
+            log_audit(db, comp.id, "status_change", "Submitted", "Assigned", "SYSTEM", "system", f"Auto-assigned to officer {assigned_officer_id}.")
+        db.commit()
+    else:
+        log_audit(db, comp.id, "status_change", None, "Rejected", "SYSTEM", "system", f"Rejected: {rejection_reason}")
+        db.commit()
+        
     return to_dict(comp)
 
 @app.get("/complaints")
@@ -1288,10 +1483,10 @@ def get_complaints(officer_id: Optional[str] = Query(None), db: Session = Depend
     carrying lists of duplicate references.
     Also recalculates duplicate escalation and priority dynamically.
     """
+    check_and_escalate_sla(db)
     query = db.query(Complaint).filter(
         Complaint.admissible == True,
-        Complaint.status != "Resolved",
-        Complaint.status != "Rejected"
+        ~Complaint.status.in_(["Resolved", "Closed", "Rejected"])
     )
     if officer_id:
         query = query.filter(Complaint.assigned_officer_id == officer_id)
@@ -1399,7 +1594,7 @@ def get_complaints(officer_id: Optional[str] = Query(None), db: Session = Depend
 @app.get("/complaints/resolved")
 def get_resolved_complaints(db: Session = Depends(get_db)):
     resolved = db.query(Complaint).filter(
-        Complaint.status == "Resolved"
+        Complaint.status.in_(["Resolved", "Closed"])
     ).all()
     # Convert and return sorted by timestamp descending
     res_dicts = [to_dict(c) for c in resolved]
@@ -1429,6 +1624,10 @@ def resolve_complaint(id: str, req: ResolveRequest, db: Session = Depends(get_db
             else:
                 c_hist.append({"status": "Resolved", "date": timestamp, "notes": f"Resolved automatically with lead complaint {id}: {req.notes}"})
             c_item.resolution_history = json.dumps(c_hist)
+            
+            # Audit log
+            c_item.resolved_at = timestamp
+            log_audit(db, c_item.id, "status_change", c_item.status, "Resolved", c_item.assigned_officer_id or "unknown", "officer", req.notes)
         
     db.commit()
     return {"message": "Complaint and duplicates marked as resolved."}
@@ -1447,6 +1646,7 @@ def override_priority(id: str, req: OverrideRequest, db: Session = Depends(get_d
     ).all()
     
     for c_item in cluster_complaints:
+        log_audit(db, c_item.id, "priority_override", str(c_item.priority_label), str(req.priority_label), comp.assigned_officer_id or "unknown", "officer", req.reason)
         c_item.officer_override = req.priority_label
         c_item.override_reason = req.reason
     
@@ -1464,6 +1664,136 @@ def override_priority(id: str, req: OverrideRequest, db: Session = Depends(get_d
     db.commit()
     return {"message": "Override applied successfully for complaint and duplicates."}
 
+@app.post("/complaints/{complaint_id}/accept")
+def accept_complaint(complaint_id: str, req: AcceptRequest, db: Session = Depends(get_db)):
+    comp = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not comp:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    validate_transition(comp.status, "Accepted")
+    old_status = comp.status
+    comp.status = "Accepted"
+    comp.accepted_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    res_hist = json.loads(comp.resolution_history or '[]')
+    res_hist.append({"status": "Accepted", "date": comp.accepted_at, "notes": f"Accepted by officer {req.officer_id}"})
+    comp.resolution_history = json.dumps(res_hist)
+    
+    log_audit(db, complaint_id, "status_change", old_status, "Accepted", req.officer_id, "officer", "Officer accepted the assignment.")
+    db.commit()
+    return {"message": "Complaint accepted.", "complaint": to_dict(comp)}
+
+@app.post("/complaints/{complaint_id}/start-progress")
+def start_progress(complaint_id: str, req: StartProgressRequest, db: Session = Depends(get_db)):
+    comp = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not comp:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    validate_transition(comp.status, "In Progress")
+    old_status = comp.status
+    comp.status = "In Progress"
+    
+    res_hist = json.loads(comp.resolution_history or '[]')
+    res_hist.append({"status": "In Progress", "date": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "notes": req.notes or "Officer started working on this complaint."})
+    comp.resolution_history = json.dumps(res_hist)
+    
+    log_audit(db, complaint_id, "status_change", old_status, "In Progress", req.officer_id, "officer", req.notes or "Started working.")
+    db.commit()
+    return {"message": "Complaint is now in progress.", "complaint": to_dict(comp)}
+
+@app.post("/complaints/{complaint_id}/field-inspection")
+def field_inspection(complaint_id: str, req: FieldInspectionRequest, db: Session = Depends(get_db)):
+    comp = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not comp:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    validate_transition(comp.status, "Field Inspection")
+    old_status = comp.status
+    comp.status = "Field Inspection"
+    
+    res_hist = json.loads(comp.resolution_history or '[]')
+    res_hist.append({"status": "Field Inspection", "date": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "notes": req.notes or "Officer conducting on-site inspection."})
+    comp.resolution_history = json.dumps(res_hist)
+    
+    log_audit(db, complaint_id, "status_change", old_status, "Field Inspection", req.officer_id, "officer", req.notes or "Field inspection started.")
+    db.commit()
+    return {"message": "Complaint marked for field inspection.", "complaint": to_dict(comp)}
+
+@app.post("/complaints/{complaint_id}/escalate")
+def escalate_complaint(complaint_id: str, req: EscalateRequest, db: Session = Depends(get_db)):
+    comp = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not comp:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    validate_transition(comp.status, "Escalated")
+    old_status = comp.status
+    comp.status = "Escalated"
+    current_level = comp.escalation_level or 0
+    new_level = req.escalation_level if req.escalation_level is not None else min(current_level + 1, 3)
+    comp.escalation_level = new_level
+    
+    # Reassign to higher level officer
+    import utils
+    new_officer_id = utils.reassign_to_escalation_level(comp.department, new_level, db)
+    if new_officer_id and new_officer_id != comp.assigned_officer_id:
+        comp.assigned_officer_id = new_officer_id
+        n_off = Notification(user_id=new_officer_id, message=f"Complaint {comp.id} escalated to you.", type="escalation", timestamp=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        db.add(n_off)
+        
+    n_admin = Notification(user_id="admin", message=f"Complaint {comp.id} escalated to {ESCALATION_LEVELS.get(new_level, f'L{new_level}')}.", type="escalation", timestamp=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    db.add(n_admin)
+    
+    esc_hist = json.loads(comp.escalation_history or '[]')
+    esc_hist.append({"level": ESCALATION_LEVELS.get(new_level, f"L{new_level}"), "date": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "reason": req.reason})
+    comp.escalation_history = json.dumps(esc_hist)
+    
+    res_hist = json.loads(comp.resolution_history or '[]')
+    res_hist.append({"status": "Escalated", "date": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "notes": f"Escalated to {ESCALATION_LEVELS.get(new_level, 'higher authority')}: {req.reason}"})
+    comp.resolution_history = json.dumps(res_hist)
+    
+    log_audit(db, complaint_id, "status_change", old_status, "Escalated", req.officer_id, "officer", req.reason)
+    db.commit()
+    return {"message": f"Complaint escalated to {ESCALATION_LEVELS.get(new_level, 'higher authority')}.", "complaint": to_dict(comp)}
+
+@app.post("/complaints/{complaint_id}/close")
+def close_complaint(complaint_id: str, req: CloseRequest, db: Session = Depends(get_db)):
+    comp = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not comp:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    validate_transition(comp.status, "Closed")
+    old_status = comp.status
+    comp.status = "Closed"
+    comp.closed_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    res_hist = json.loads(comp.resolution_history or '[]')
+    res_hist.append({"status": "Closed", "date": comp.closed_at, "notes": req.notes or "Complaint closed by admin."})
+    comp.resolution_history = json.dumps(res_hist)
+    
+    log_audit(db, complaint_id, "status_change", old_status, "Closed", req.admin_id, "admin", req.notes or "Closed by admin.")
+    db.commit()
+    return {"message": "Complaint closed.", "complaint": to_dict(comp)}
+
+@app.post("/complaints/{complaint_id}/reassign")
+def reassign_complaint(complaint_id: str, req: ReassignRequest, db: Session = Depends(get_db)):
+    comp = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not comp:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    
+    old_officer = comp.assigned_officer_id
+    old_status = comp.status
+    comp.assigned_officer_id = req.new_officer_id
+    comp.status = "Assigned"
+    comp.escalation_level = 0  # Reset escalation on reassignment
+    comp.sla_breached = False  # Reset SLA
+    # Recalculate SLA deadline from now
+    comp.sla_deadline = calculate_sla_deadline(comp.priority_label or "Low", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    
+    res_hist = json.loads(comp.resolution_history or '[]')
+    res_hist.append({"status": "Reassigned", "date": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "notes": f"Reassigned from {old_officer} to {req.new_officer_id}: {req.reason}"})
+    comp.resolution_history = json.dumps(res_hist)
+    
+    log_audit(db, complaint_id, "officer_reassignment", old_officer or 'none', req.new_officer_id, req.admin_id, "admin", req.reason)
+    log_audit(db, complaint_id, "status_change", old_status, "Assigned", req.admin_id, "admin", f"Reassigned to {req.new_officer_id}")
+    db.commit()
+    return {"message": f"Complaint reassigned to {req.new_officer_id}.", "complaint": to_dict(comp)}
+
+
 @app.get("/complaints/rejected")
 def get_rejected_complaints(db: Session = Depends(get_db)):
     rejected = db.query(Complaint).filter(
@@ -1475,7 +1805,7 @@ def get_rejected_complaints(db: Session = Depends(get_db)):
 
 @app.get("/stats")
 def get_stats(db: Session = Depends(get_db)):
-    admissible_count = db.query(Complaint).filter(Complaint.admissible == True, Complaint.status != "Resolved").count()
+    admissible_count = db.query(Complaint).filter(Complaint.admissible == True, ~Complaint.status.in_(["Resolved", "Closed", "Rejected"])).count()
     rejected_count = db.query(Complaint).filter(Complaint.admissible == False).count()
     overrides_count = db.query(Complaint).filter(Complaint.officer_override != None).count()
     return {
@@ -1603,7 +1933,8 @@ def create_officer(req: CreateOfficerRequest, db: Session = Depends(get_db)):
         ward=req.ward,
         designation=req.designation,
         email=req.email,
-        profile_pic=req.profile_pic
+        profile_pic=req.profile_pic,
+        escalation_level=req.escalation_level
     )
     db.add(officer)
     
@@ -1613,7 +1944,7 @@ def create_officer(req: CreateOfficerRequest, db: Session = Depends(get_db)):
     user = User(
         user_id=user_id,
         username=req.email,
-        password_hash=bcrypt.hashpw(b"off123", bcrypt.gensalt()).decode('utf-8'),
+        password_hash=bcrypt.hashpw(req.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
         role="officer",
         officer_id=officer_id,
         name=req.name
@@ -1621,7 +1952,56 @@ def create_officer(req: CreateOfficerRequest, db: Session = Depends(get_db)):
     db.add(user)
     
     db.commit()
-    return {'message': 'Officer created and User account generated with password off123', 'officer_id': officer_id}
+    
+    # Auto-assign waitlisted complaints for this department
+    unassigned_complaints = db.query(Complaint).filter(
+        Complaint.department == req.department,
+        Complaint.status == "Submitted",
+        Complaint.assigned_officer_id.is_(None)
+    ).limit(10).all()
+    
+    assigned_count = 0
+    import datetime
+    for comp in unassigned_complaints:
+        comp.assigned_officer_id = officer_id
+        comp.status = "Assigned"
+        # Update resolution history safely
+        import json
+        try:
+            history = json.loads(comp.resolution_history_raw) if comp.resolution_history_raw else []
+        except:
+            history = []
+        history.append({
+            "status": "Assigned", 
+            "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 
+            "notes": f"Auto-assigned to newly added officer {officer_id}."
+        })
+        comp.resolution_history_raw = json.dumps(history)
+        assigned_count += 1
+        
+    if assigned_count > 0:
+        db.commit()
+        
+    msg = f"Officer created and User account generated for {req.email}"
+    if assigned_count > 0:
+        msg += f". Auto-assigned {assigned_count} waitlisted complaints."
+        
+    return {'message': msg, 'officer_id': officer_id}
+
+# ===================== NOTIFICATION ENDPOINTS =====================
+
+@app.get("/notifications/{user_id}")
+def get_notifications(user_id: str, db: Session = Depends(get_db)):
+    notifs = db.query(Notification).filter(Notification.user_id == user_id).order_by(Notification.id.desc()).limit(20).all()
+    return [{"id": n.id, "message": n.message, "type": n.type, "timestamp": n.timestamp, "is_read": n.is_read} for n in notifs]
+
+@app.post("/notifications/{notification_id}/read")
+def read_notification(notification_id: int, db: Session = Depends(get_db)):
+    n = db.query(Notification).filter(Notification.id == notification_id).first()
+    if n:
+        n.is_read = True
+        db.commit()
+    return {"status": "ok"}
 
 # ===================== DEPARTMENT POLICY ENDPOINTS =====================
 
@@ -1673,6 +2053,7 @@ def override_severity(complaint_id: str, req: OverrideSeverityRequest, db: Sessi
         reason=req.reason
     )
     db.add(feedback)
+    log_audit(db, complaint_id, "severity_override", str(complaint.severity_score), str(req.severity_score), req.officer_id or complaint.assigned_officer_id or "unknown", "officer", req.reason)
     complaint.severity_score = req.severity_score
     complaint.severity_label = utils.get_severity_level(req.severity_score)
     db.commit()
@@ -1694,6 +2075,7 @@ def override_department(complaint_id: str, req: OverrideDepartmentRequest, db: S
         reason=req.reason
     )
     db.add(feedback)
+    log_audit(db, complaint_id, "department_transfer", complaint.department, req.new_department, req.officer_id or complaint.assigned_officer_id or "unknown", "officer", req.reason)
     complaint.department = req.new_department
     # Re-assign officer for new department
     location_text = ''
@@ -1761,16 +2143,222 @@ def export_feedback(db: Session = Depends(get_db)):
         'reason': fb.reason
     } for fb in all_feedback]
 
+@app.post("/feedback/apply-learning")
+def apply_feedback_learning(db: Session = Depends(get_db)):
+    """Adjust department policy weights based on high-trust officer override patterns.
+    Officers with trust_score >= 0.70 are considered reliable. Their override patterns
+    shift department weights by up to 5% in the direction of their overrides."""
+    from collections import defaultdict
+
+    all_feedback = db.query(OfficerFeedback).all()
+    if not all_feedback:
+        return {'message': 'No feedback data to learn from.', 'updated': []}
+
+    # Compute per-officer trust scores
+    officer_trust = {}
+    officer_override_counts = defaultdict(int)
+    for fb in all_feedback:
+        officer_override_counts[fb.officer_id] += 1
+
+    for officer_id, total_overrides in officer_override_counts.items():
+        total_assigned = db.query(Complaint).filter(
+            Complaint.assigned_officer_id == officer_id
+        ).count()
+        total_assigned = max(total_assigned, 1)
+        override_rate = total_overrides / total_assigned
+        trust_score = max(0.0, min(1.0, 1.0 - override_rate))
+        officer_trust[officer_id] = trust_score
+
+    # Only use feedback from high-trust officers (>= 0.70)
+    reliable_feedback = [fb for fb in all_feedback if officer_trust.get(fb.officer_id, 0) >= 0.70]
+    if not reliable_feedback:
+        return {'message': 'No high-trust officer feedback available (trust >= 0.70). No changes applied.', 'updated': []}
+
+    # Map complaint_id -> department
+    complaint_dept_map = {}
+    for fb in reliable_feedback:
+        if fb.complaint_id not in complaint_dept_map:
+            comp = db.query(Complaint).filter(Complaint.id == fb.complaint_id).first()
+            if comp:
+                complaint_dept_map[fb.complaint_id] = comp.department
+
+    PRIORITY_ORDER = ["Low", "Medium", "High", "Critical"]
+    dept_drift = defaultdict(lambda: {'severity': 0.0, 'impact': 0.0, 'urgency': 0.0, 'count': 0})
+
+    for fb in reliable_feedback:
+        dept = complaint_dept_map.get(fb.complaint_id)
+        if not dept:
+            continue
+        drift_amount = 0.01
+        if fb.override_type == 'severity':
+            try:
+                sys_val = float(fb.system_value)
+                off_val = float(fb.officer_value)
+                direction = 1 if off_val > sys_val else -1
+            except (ValueError, TypeError):
+                direction = 0
+            dept_drift[dept]['severity'] += direction * drift_amount
+        elif fb.override_type == 'priority':
+            sys_idx = PRIORITY_ORDER.index(fb.system_value) if fb.system_value in PRIORITY_ORDER else 1
+            off_idx = PRIORITY_ORDER.index(fb.officer_value) if fb.officer_value in PRIORITY_ORDER else 1
+            direction = 1 if off_idx > sys_idx else -1
+            dept_drift[dept]['urgency'] += direction * drift_amount * 0.5
+            dept_drift[dept]['impact'] += direction * drift_amount * 0.5
+        dept_drift[dept]['count'] += 1
+
+    MAX_DRIFT = 0.05
+    updated = []
+    for dept, drift in dept_drift.items():
+        if drift['count'] == 0:
+            continue
+        policy = db.query(DepartmentPolicy).filter(DepartmentPolicy.department == dept).first()
+        if not policy:
+            continue
+
+        old_weights = {
+            'severity': policy.severity_weight,
+            'impact': policy.impact_weight,
+            'urgency': policy.urgency_weight,
+            'vulnerability': policy.vulnerability_weight,
+            'duplicate': policy.duplicate_weight
+        }
+
+        new_severity = round(min(0.60, max(0.05, policy.severity_weight + max(-MAX_DRIFT, min(MAX_DRIFT, drift['severity'])))), 4)
+        new_impact = round(min(0.60, max(0.05, policy.impact_weight + max(-MAX_DRIFT, min(MAX_DRIFT, drift['impact'])))), 4)
+        new_urgency = round(min(0.60, max(0.05, policy.urgency_weight + max(-MAX_DRIFT, min(MAX_DRIFT, drift['urgency'])))), 4)
+        new_vuln = policy.vulnerability_weight
+        new_dup = policy.duplicate_weight
+
+        # Renormalize to sum to 1.0
+        total = new_severity + new_impact + new_urgency + new_vuln + new_dup
+        if abs(total - 1.0) > 0.001:
+            factor = 1.0 / total
+            new_severity = round(new_severity * factor, 4)
+            new_impact = round(new_impact * factor, 4)
+            new_urgency = round(new_urgency * factor, 4)
+            new_vuln = round(new_vuln * factor, 4)
+            new_dup = round(max(0.01, 1.0 - new_severity - new_impact - new_urgency - new_vuln), 4)
+
+        policy.severity_weight = new_severity
+        policy.impact_weight = new_impact
+        policy.urgency_weight = new_urgency
+        policy.vulnerability_weight = new_vuln
+        policy.duplicate_weight = new_dup
+
+        updated.append({
+            'department': dept,
+            'feedback_count': drift['count'],
+            'old_weights': old_weights,
+            'new_weights': {
+                'severity': new_severity,
+                'impact': new_impact,
+                'urgency': new_urgency,
+                'vulnerability': new_vuln,
+                'duplicate': new_dup
+            }
+        })
+
+    db.commit()
+    return {
+        'message': f'Learning applied from {len(reliable_feedback)} reliable overrides across {len(updated)} department(s).',
+        'high_trust_officers': [oid for oid, ts in officer_trust.items() if ts >= 0.70],
+        'updated': updated
+    }
+
 # ===================== HOTSPOT & CONTEXT ENDPOINTS =====================
 
 @app.get("/hotspots")
 def get_hotspots(db: Session = Depends(get_db)):
     complaints = db.query(Complaint).filter(
         Complaint.admissible == True,
-        Complaint.status != "Resolved"
+        Complaint.status.notin_(["Resolved", "Closed", "Rejected"])
     ).all()
     complaint_dicts = [to_dict(c) for c in complaints]
-    hotspots = utils.detect_hotspots(complaint_dicts)
+
+    # Enrich complaint dicts: fallback location = department + ward when structured_json.location is null
+    officers_by_id = {o.officer_id: o for o in db.query(Officer).all()}
+    for cd in complaint_dicts:
+        sj = cd.get('structured_json', {})
+        if isinstance(sj, str):
+            try:
+                import json as _json
+                sj = _json.loads(sj)
+            except Exception:
+                sj = {}
+        loc = sj.get('location') if sj else None
+        if not loc or loc.lower() in ('unknown', 'none', ''):
+            # Use ward if officer is assigned, else department
+            oid = cd.get('assigned_officer_id')
+            officer = officers_by_id.get(oid)
+            if officer and officer.ward:
+                loc = f"{officer.ward}, {officer.zone}"
+            elif officer and officer.zone:
+                loc = officer.zone
+            else:
+                loc = cd.get('department', '')
+            if sj is None:
+                sj = {}
+            sj['location'] = loc
+            cd['structured_json'] = sj
+
+    # Lower threshold to 3, extend window to 30 days to cover historical complaint clusters
+    hotspots = utils.detect_hotspots(complaint_dicts, min_count=3, days=30)
+
+
+    # Enrich each hotspot with severity info and officer load data
+    officers_in_db = db.query(Officer).all()
+    officer_map = {o.officer_id: o for o in officers_in_db}
+
+    for hotspot in hotspots:
+        ids = hotspot.get('complaint_ids', [])
+        cluster = db.query(Complaint).filter(Complaint.id.in_(ids)).all()
+        if cluster:
+            scores = [c.final_priority_score or 0 for c in cluster]
+            avg_score = sum(scores) / len(scores)
+        else:
+            avg_score = 0.0
+        hotspot['severity_score'] = round(avg_score, 3)
+        if avg_score >= 0.75:
+            hotspot['severity_label'] = 'Critical'
+        elif avg_score >= 0.50:
+            hotspot['severity_label'] = 'High'
+        elif avg_score >= 0.30:
+            hotspot['severity_label'] = 'Medium'
+        else:
+            hotspot['severity_label'] = 'Low'
+
+        # Officer load per hotspot zone (match by zone substring)
+        hotspot_loc = hotspot.get('location', '').lower()
+        hotspot_dept = hotspot.get('category', '')
+        assigned_officer_ids = set(c.assigned_officer_id for c in cluster if c.assigned_officer_id)
+        officers_in_zone = []
+        for o in officers_in_db:
+            if hotspot_loc and (hotspot_loc in o.zone.lower() or o.zone.lower() in hotspot_loc):
+                officers_in_zone.append(o.officer_id)
+        hotspot['officers_in_zone'] = officers_in_zone
+        hotspot['assigned_officer_ids'] = list(assigned_officer_ids)
+
+        # Recommendation: flag if zone is understaffed
+        if len(officers_in_zone) == 0:
+            hotspot['recommend_officer'] = True
+            hotspot['recommendation_reason'] = f"No officer mapped to this zone. Add an officer for {hotspot_dept}."
+        else:
+            # Check if mapped officers are overloaded (>10 active complaints)
+            overloaded = []
+            for oid in officers_in_zone:
+                active_count = db.query(Complaint).filter(
+                    Complaint.assigned_officer_id == oid,
+                    Complaint.status.notin_(["Resolved", "Closed", "Rejected"])
+                ).count()
+                if active_count > 10:
+                    overloaded.append(oid)
+            if len(overloaded) == len(officers_in_zone):
+                hotspot['recommend_officer'] = True
+                hotspot['recommendation_reason'] = f"All {len(overloaded)} officer(s) in zone are handling >10 active complaints each. Additional officer recommended."
+            else:
+                hotspot['recommend_officer'] = False
+                hotspot['recommendation_reason'] = ''
+
     return hotspots
 
 @app.get("/complaints/{complaint_id}/similar")
@@ -1827,3 +2415,215 @@ def get_escalation_history(complaint_id: str, db: Session = Depends(get_db)):
     except Exception:
         history = []
     return {'complaint_id': complaint_id, 'escalation_history': history}
+
+
+# ===================== AUDIT TRAIL ENDPOINTS =====================
+
+@app.get("/complaints/{complaint_id}/audit-log")
+def get_complaint_audit_log(complaint_id: str, db: Session = Depends(get_db)):
+    logs = db.query(AuditLog).filter(AuditLog.complaint_id == complaint_id).order_by(AuditLog.timestamp).all()
+    return [{
+        'id': l.id, 'complaint_id': l.complaint_id, 'timestamp': l.timestamp,
+        'action': l.action, 'from_value': l.from_value, 'to_value': l.to_value,
+        'performed_by': l.performed_by, 'performer_role': l.performer_role, 'notes': l.notes
+    } for l in logs]
+
+@app.get("/audit-logs")
+def get_all_audit_logs(action: Optional[str] = None, complaint_id: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(AuditLog)
+    if action:
+        query = query.filter(AuditLog.action == action)
+    if complaint_id:
+        query = query.filter(AuditLog.complaint_id == complaint_id)
+    logs = query.order_by(AuditLog.timestamp.desc()).limit(500).all()
+    return [{
+        'id': l.id, 'complaint_id': l.complaint_id, 'timestamp': l.timestamp,
+        'action': l.action, 'from_value': l.from_value, 'to_value': l.to_value,
+        'performed_by': l.performed_by, 'performer_role': l.performer_role, 'notes': l.notes
+    } for l in logs]
+
+# ===================== ENHANCED STATS ENDPOINTS =====================
+
+@app.get("/stats/dashboard")
+def get_dashboard_stats(db: Session = Depends(get_db)):
+    # Check for SLA breaches first
+    check_and_escalate_sla(db)
+    
+    all_complaints = db.query(Complaint).filter(Complaint.admissible == True).all()
+    
+    status_counts = {}
+    dept_counts = {}
+    priority_counts = {"Critical": 0, "High": 0, "Medium": 0, "Low": 0}
+    category_counts = {}
+    total_resolution_hours = 0
+    resolved_count = 0
+    sla_breached_count = 0
+    sla_compliant_count = 0
+    
+    for c in all_complaints:
+        status_counts[c.status] = status_counts.get(c.status, 0) + 1
+        dept_counts[c.department] = dept_counts.get(c.department, 0) + 1
+        label = c.officer_override or c.priority_label or "Low"
+        if label in priority_counts:
+            priority_counts[label] += 1
+        category_counts[c.category] = category_counts.get(c.category, 0) + 1
+        
+        if c.status in ["Resolved", "Closed"]:
+            resolved_count += 1
+            if c.resolved_at and c.timestamp:
+                try:
+                    sub = datetime.datetime.strptime(c.timestamp, "%Y-%m-%d %H:%M:%S")
+                    res = datetime.datetime.strptime(c.resolved_at, "%Y-%m-%d %H:%M:%S")
+                    total_resolution_hours += (res - sub).total_seconds() / 3600
+                except:
+                    pass
+            if getattr(c, 'sla_breached', False):
+                sla_breached_count += 1
+            else:
+                sla_compliant_count += 1
+        elif c.status not in ["Rejected"]:
+            if getattr(c, 'sla_breached', False):
+                sla_breached_count += 1
+    
+    avg_resolution_hours = round(total_resolution_hours / max(resolved_count, 1), 1)
+    total_active = sum(1 for c in all_complaints if c.status not in ["Resolved", "Closed", "Rejected"])
+    
+    rejected_count = db.query(Complaint).filter(Complaint.admissible == False).count()
+    overrides_count = db.query(OfficerFeedback).count()
+    
+    return {
+        "total_complaints": len(all_complaints),
+        "total_active": total_active,
+        "resolved_count": resolved_count,
+        "rejected_count": rejected_count,
+        "overrides_count": overrides_count,
+        "status_counts": status_counts,
+        "department_counts": dept_counts,
+        "priority_counts": priority_counts,
+        "category_counts": category_counts,
+        "avg_resolution_hours": avg_resolution_hours,
+        "sla_breached_count": sla_breached_count,
+        "sla_compliant_count": sla_compliant_count,
+        "sla_compliance_rate": round(sla_compliant_count / max(sla_compliant_count + sla_breached_count, 1) * 100, 1)
+    }
+
+@app.get("/stats/officer/{officer_id}")
+def get_officer_stats(officer_id: str, db: Session = Depends(get_db)):
+    officer_complaints = db.query(Complaint).filter(
+        Complaint.assigned_officer_id == officer_id,
+        Complaint.admissible == True
+    ).all()
+    
+    total = len(officer_complaints)
+    resolved = sum(1 for c in officer_complaints if c.status in ["Resolved", "Closed"])
+    sla_breached = sum(1 for c in officer_complaints if getattr(c, 'sla_breached', False))
+    
+    status_breakdown = {}
+    for c in officer_complaints:
+        status_breakdown[c.status] = status_breakdown.get(c.status, 0) + 1
+    
+    total_hours = 0
+    resolved_with_time = 0
+    for c in officer_complaints:
+        if c.status in ["Resolved", "Closed"] and c.resolved_at and c.timestamp:
+            try:
+                sub = datetime.datetime.strptime(c.timestamp, "%Y-%m-%d %H:%M:%S")
+                res = datetime.datetime.strptime(c.resolved_at, "%Y-%m-%d %H:%M:%S")
+                total_hours += (res - sub).total_seconds() / 3600
+                resolved_with_time += 1
+            except:
+                pass
+    
+    overrides = db.query(OfficerFeedback).filter(OfficerFeedback.officer_id == officer_id).count()
+    
+    return {
+        "officer_id": officer_id,
+        "total_assigned": total,
+        "total_resolved": resolved,
+        "resolution_rate": round(resolved / max(total, 1) * 100, 1),
+        "avg_resolution_hours": round(total_hours / max(resolved_with_time, 1), 1),
+        "sla_compliance_rate": round((total - sla_breached) / max(total, 1) * 100, 1),
+        "sla_breached": sla_breached,
+        "status_breakdown": status_breakdown,
+        "overrides_count": overrides,
+        "current_active": sum(1 for c in officer_complaints if c.status not in ["Resolved", "Closed", "Rejected"])
+    }
+
+@app.get("/complaints/sla-breached")
+def get_sla_breached(db: Session = Depends(get_db)):
+    check_and_escalate_sla(db)
+    breached = db.query(Complaint).filter(
+        Complaint.sla_breached == True,
+        ~Complaint.status.in_(["Closed", "Rejected"])
+    ).all()
+    return [to_dict(c) for c in breached]
+
+@app.get("/complaints/by-status/{status}")
+def get_complaints_by_status(status: str, officer_id: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(Complaint).filter(Complaint.status == status, Complaint.admissible == True)
+    if officer_id:
+        query = query.filter(Complaint.assigned_officer_id == officer_id)
+    comps = query.all()
+    result = [to_dict(c) for c in comps]
+    result.sort(key=lambda x: x['final_priority_score'], reverse=True)
+    return result
+
+
+# ===================== BATCH OFFICER STATS =====================
+
+@app.get("/stats/all-officers")
+def get_all_officer_stats(db: Session = Depends(get_db)):
+    """Returns aggregated stats for ALL officers in a single call (avoids N+1 queries)."""
+    officers = db.query(Officer).all()
+    result = []
+
+    for officer in officers:
+        oid = officer.officer_id
+        officer_complaints = db.query(Complaint).filter(
+            Complaint.assigned_officer_id == oid,
+            Complaint.admissible == True
+        ).all()
+
+        total = len(officer_complaints)
+        resolved = sum(1 for c in officer_complaints if c.status in ["Resolved", "Closed"])
+        active = sum(1 for c in officer_complaints if c.status not in ["Resolved", "Closed", "Rejected"])
+        sla_breached = sum(1 for c in officer_complaints if getattr(c, 'sla_breached', False))
+
+        total_hours = 0.0
+        resolved_with_time = 0
+        for c in officer_complaints:
+            if c.status in ["Resolved", "Closed"] and c.resolved_at and c.timestamp:
+                try:
+                    sub = datetime.datetime.strptime(c.timestamp, "%Y-%m-%d %H:%M:%S")
+                    res = datetime.datetime.strptime(c.resolved_at, "%Y-%m-%d %H:%M:%S")
+                    total_hours += (res - sub).total_seconds() / 3600
+                    resolved_with_time += 1
+                except Exception:
+                    pass
+
+        overrides_count = db.query(OfficerFeedback).filter(OfficerFeedback.officer_id == oid).count()
+
+        status_breakdown = {}
+        for c in officer_complaints:
+            status_breakdown[c.status] = status_breakdown.get(c.status, 0) + 1
+
+        result.append({
+            'officer_id': oid,
+            'name': officer.name,
+            'department': officer.department,
+            'zone': officer.zone,
+            'ward': officer.ward,
+            'designation': officer.designation,
+            'total_assigned': total,
+            'total_resolved': resolved,
+            'current_active': active,
+            'resolution_rate': round(resolved / max(total, 1) * 100, 1),
+            'avg_resolution_hours': round(total_hours / max(resolved_with_time, 1), 1),
+            'sla_compliance_rate': round((total - sla_breached) / max(total, 1) * 100, 1),
+            'sla_breached': sla_breached,
+            'overrides_count': overrides_count,
+            'status_breakdown': status_breakdown
+        })
+
+    result.sort(key=lambda x: x['resolution_rate'], reverse=True)
+    return result

@@ -720,20 +720,38 @@ def assign_officer(department, location_text, db_session):
     
     # Import Officer model - will be available when called from api.py context
     try:
-        from api import Officer
+        from api import Officer, Complaint
     except ImportError:
         return None
     
-    # Query officers in the target department
+    # Query officers in the target department at L1 (escalation_level == 0)
     officers = db_session.query(Officer).filter(
-        func.lower(Officer.department) == department.lower()
+        func.lower(Officer.department) == department.lower(),
+        Officer.escalation_level == 0
     ).all()
     
     if not officers:
         return None
     
+    # Filter out officers who have >= 10 active complaints
+    available_officers = []
+    officer_workloads = {}
+    for off in officers:
+        active_count = db_session.query(Complaint).filter(
+            Complaint.assigned_officer_id == off.officer_id,
+            Complaint.status.notin_(["Resolved", "Closed", "Rejected"])
+        ).count()
+        if active_count < 10:
+            available_officers.append(off)
+            officer_workloads[off.officer_id] = active_count
+
+    if not available_officers:
+        return None  # All officers are at capacity!
+    
     if not location_text:
-        return officers[0].officer_id  # Return first available
+        # Return the officer with the lowest workload
+        best_off = min(available_officers, key=lambda x: officer_workloads[x.officer_id])
+        return best_off.officer_id
     
     loc_lower = location_text.lower()
     
@@ -742,9 +760,10 @@ def assign_officer(department, location_text, db_session):
     ward_num = f"Ward {ward_match.group(1)}" if ward_match else None
     
     best_officer = None
-    best_score = 0
+    best_score = -1
+    best_workload = 999
     
-    for officer in officers:
+    for officer in available_officers:
         score = 0
         # Zone match (check if zone name appears in location text)
         if officer.zone and officer.zone.lower() in loc_lower:
@@ -759,11 +778,62 @@ def assign_officer(department, location_text, db_session):
             if zone_words & loc_words:
                 score += 1
         
+        workload = officer_workloads[officer.officer_id]
+        
+        # We prefer higher score, or tie-break on lower workload
         if score > best_score:
             best_score = score
             best_officer = officer
+            best_workload = workload
+        elif score == best_score and workload < best_workload:
+            best_officer = officer
+            best_workload = workload
+            
+    return best_officer.officer_id if best_officer else available_officers[0].officer_id
+
+def reassign_to_escalation_level(department, target_level, db_session):
+    """
+    Finds an officer in the same department who has escalation_level >= target_level.
+    Tie-breaks on workload if multiple exist.
+    """
+    from sqlalchemy import func
+    try:
+        from api import Officer, Complaint
+    except ImportError:
+        return None
+        
+    officers = db_session.query(Officer).filter(
+        func.lower(Officer.department) == department.lower(),
+        Officer.escalation_level >= target_level
+    ).all()
     
-    return best_officer.officer_id if best_officer else officers[0].officer_id
+    if not officers:
+        # Fallback: if no officer at or above target_level exists, try to find the highest level officer available
+        officers = db_session.query(Officer).filter(
+            func.lower(Officer.department) == department.lower(),
+            Officer.escalation_level > 0 # Any higher authority
+        ).order_by(Officer.escalation_level.desc()).all()
+        if not officers:
+            return None # No higher level officers exist
+    
+    available_officers = []
+    officer_workloads = {}
+    for off in officers:
+        active_count = db_session.query(Complaint).filter(
+            Complaint.assigned_officer_id == off.officer_id,
+            Complaint.status.notin_(["Resolved", "Closed", "Rejected"])
+        ).count()
+        if active_count < 10:
+            available_officers.append(off)
+            officer_workloads[off.officer_id] = active_count
+
+    if not available_officers:
+        return None
+        
+    # Return the officer with the lowest workload among the candidates
+    best_off = min(available_officers, key=lambda x: officer_workloads[x.officer_id])
+    return best_off.officer_id
+
 
 def generate_explanation(severity, public_impact, urgency, vulnerability, duplicate_escalation, priority_label):
     """
@@ -1468,7 +1538,7 @@ class LLMClientBase:
         raise NotImplementedError
 
 class GroqClient(LLMClientBase):
-    def __init__(self, api_key, model="llama3-8b-8192"):
+    def __init__(self, api_key, model="llama-3.1-8b-instant"):
         self.api_key = api_key
         self.model = model
         self.client = None
@@ -1517,7 +1587,11 @@ class GroqClient(LLMClientBase):
         - "recommended_adjustment": A float value between -0.15 and +0.15 (recommend + for increased risk, - for decreased risk, or 0.00).
         - "reasoning": A detailed explanation of why the adjustment is recommended.
         - "suggested_response": A polite, official suggested reply to the citizen (1-2 sentences) acknowledging the issue, explaining the category, and stating that zonal inspectors are assigned to resolve it.
-        - "suggested_action": 1-2 actionable operational steps for the redressing officer to resolve this specific complaint.
+        - "officer_handbook": A comprehensive handbook-style action plan for the redressing officer. This MUST be formatted in Markdown and include:
+            1. Initial Assessment: Immediate valid suggestions and steps to take.
+            2. Resolution Handbook: A detailed, step-by-step guide explaining exactly HOW and WHAT should be done to thoroughly resolve this specific issue in the field.
+            3. Resource Allocation: Required personnel, equipment, or cross-departmental coordination needed.
+            4. Compliance & Verification: Follow-up checks to ensure the grievance is permanently fixed.
         
         Return ONLY the JSON object.
         """
@@ -1529,14 +1603,14 @@ class GroqClient(LLMClientBase):
         except (ValueError, TypeError):
             adj = 0.0
         return {
+            "recommended_adjustment": round(max(-0.15, min(0.15, adj)), 2),
+            "reasoning": str(result.get("reasoning", "LLM review completed.")),
             "risk_summary": str(result.get("risk_summary", "")),
             "public_safety_risk": str(result.get("public_safety_risk", "Medium")),
             "vulnerable_population_risk": str(result.get("vulnerable_population_risk", "Medium")),
             "infrastructure_risk": str(result.get("infrastructure_risk", "Medium")),
-            "recommended_adjustment": round(max(-0.15, min(0.15, adj)), 2),
-            "reasoning": str(result.get("reasoning", "LLM review completed.")),
             "suggested_response": str(result.get("suggested_response", "")),
-            "suggested_action": str(result.get("suggested_action", ""))
+            "officer_handbook": str(result.get("officer_handbook", result.get("suggested_action", "")))
         }
 
     def generate_suggestions(self, text, category):
@@ -1546,16 +1620,20 @@ class GroqClient(LLMClientBase):
                 self.client = Groq(api_key=self.api_key)
                 
             prompt = f"""
-            Generate a custom, helpful suggested response to the citizen and operational action plan for the following complaint.
+            Generate a custom, helpful suggested response to the citizen and an extensive operational handbook for the officer.
             
             Category: {category}
             Complaint Text: {text}
             
             Provide your analysis in JSON format with the following keys:
-            - "suggested_response": A polite, official suggested reply to the citizen (1-2 sentences) acknowledging the issue, explaining the category, and stating that zonal inspectors or maintenance teams are assigned to resolve it. Be specific to the complaint content rather than using generic templates.
-            - "suggested_action": 1-2 actionable operational steps for the redressing officer to resolve this specific complaint.
+            - "suggested_response": A polite, official, and detailed suggested reply to the citizen acknowledging the specific issue, explaining the assigned department, and stating the clear next steps and expected actions for resolution. Be highly specific to the citizen's complaint.
+            - "officer_handbook": A comprehensive handbook-style action plan for the redressing officer in Markdown format. This MUST include:
+                1. Initial Assessment: Immediate valid suggestions and steps to take upon receiving the complaint.
+                2. Resolution Handbook: A detailed, step-by-step guide explaining exactly HOW and WHAT should be done to thoroughly resolve this specific issue in the field.
+                3. Resource Allocation: Required personnel, equipment, or cross-departmental coordination needed.
+                4. Compliance & Verification: Follow-up checks to ensure the grievance is permanently fixed.
             
-            Return ONLY the JSON object.
+            Return ONLY the valid JSON object.
             """
             
             completion = self.client.chat.completions.create(
@@ -1571,7 +1649,7 @@ class GroqClient(LLMClientBase):
             result = json.loads(completion.choices[0].message.content)
             return (
                 str(result.get("suggested_response", "")),
-                str(result.get("suggested_action", ""))
+                str(result.get("officer_handbook", result.get("suggested_action", "")))
             )
         except Exception as e:
             print(f"Error in Groq generate_suggestions: {e}. Falling back to templates.")

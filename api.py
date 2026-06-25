@@ -21,6 +21,22 @@ app = FastAPI(title="Sahayak AI - Civic Grievance Backend", version="1.0.0")
 
 
 # Enable CORS for frontend connection
+
+@app.get("/reseed-danger")
+def reseed_danger(db: Session = Depends(get_db)):
+    db.query(Complaint).delete()
+    db.query(User).delete()
+    db.query(Officer).delete()
+    db.query(DepartmentPolicy).delete()
+    db.commit()
+    
+    seed_department_policies(db)
+    seed_officers(db)
+    seed_users(db)
+    seed_database(db)
+    return {"status": "Database wiped and reseeded successfully."}
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -546,16 +562,16 @@ def seed_officers(db: Session):
         return
     
     officers = [
-        Officer(officer_id="OFF-001", name="Rajesh Kumar", department="Water & Sewerage Board", zone="Anna Nagar", ward="Ward 5", designation="Junior Inspector", email="rajesh.water@gov.in"),
-        Officer(officer_id="OFF-002", name="Priya Sharma", department="Public Works Department (PWD)", zone="T. Nagar", ward="Ward 3", designation="Senior Inspector", email="priya.pwd@gov.in"),
-        Officer(officer_id="OFF-003", name="Suresh Babu", department="Electricity Utilities Board", zone="Adyar", ward="Ward 8", designation="Junior Inspector", email="suresh.elec@gov.in"),
-        Officer(officer_id="OFF-004", name="Kavitha Rajan", department="Health Department", zone="Mylapore", ward="Ward 12", designation="Health Inspector", email="kavitha.health@gov.in"),
-        Officer(officer_id="OFF-005", name="Arun Prakash", department="Police & Disaster Response", zone="Anna Nagar", ward="Ward 5", designation="Sub Inspector", email="arun.police@gov.in"),
-        Officer(officer_id="OFF-006", name="Deepa Venkat", department="Municipal Sanitation Department", zone="Velachery", ward="Ward 15", designation="Sanitation Inspector", email="deepa.sanitation@gov.in"),
-        Officer(officer_id="OFF-007", name="Mohan Das", department="Transport & Traffic Authority", zone="Guindy", ward="Ward 10", designation="Traffic Inspector", email="mohan.transport@gov.in"),
-        Officer(officer_id="OFF-008", name="Lakshmi Narayanan", department="Education Department", zone="Nungambakkam", ward="Ward 7", designation="Education Officer", email="lakshmi.edu@gov.in"),
-        Officer(officer_id="OFF-009", name="Ganesh Iyer", department="Vigilance Bureau", zone="Egmore", ward="Ward 2", designation="Vigilance Inspector", email="ganesh.vigilance@gov.in"),
-        Officer(officer_id="OFF-010", name="Anitha Subramanian", department="General Administration Department", zone="Fort St. George", ward="Ward 1", designation="Administrative Officer", email="anitha.admin@gov.in"),
+        Officer(officer_id="OFF1_W_L1", name="Rajesh Kumar", department="Water & Sewerage Board", zone="Anna Nagar", ward="Ward 5", designation="Junior Inspector", email="rajesh.water@gov.in"),
+        Officer(officer_id="OFF2_P_L1", name="Priya Sharma", department="Public Works Department (PWD)", zone="T. Nagar", ward="Ward 3", designation="Senior Inspector", email="priya.pwd@gov.in"),
+        Officer(officer_id="OFF3_E_L1", name="Suresh Babu", department="Electricity Utilities Board", zone="Adyar", ward="Ward 8", designation="Junior Inspector", email="suresh.elec@gov.in"),
+        Officer(officer_id="OFF4_H_L1", name="Kavitha Rajan", department="Health Department", zone="Mylapore", ward="Ward 12", designation="Health Inspector", email="kavitha.health@gov.in"),
+        Officer(officer_id="OFF5_P_L1", name="Arun Prakash", department="Police & Disaster Response", zone="Anna Nagar", ward="Ward 5", designation="Sub Inspector", email="arun.police@gov.in"),
+        Officer(officer_id="OFF6_M_L1", name="Deepa Venkat", department="Municipal Sanitation Department", zone="Velachery", ward="Ward 15", designation="Sanitation Inspector", email="deepa.sanitation@gov.in"),
+        Officer(officer_id="OFF7_T_L1", name="Mohan Das", department="Transport & Traffic Authority", zone="Guindy", ward="Ward 10", designation="Traffic Inspector", email="mohan.transport@gov.in"),
+        Officer(officer_id="OFF8_E_L1", name="Lakshmi Narayanan", department="Education Department", zone="Nungambakkam", ward="Ward 7", designation="Education Officer", email="lakshmi.edu@gov.in"),
+        Officer(officer_id="OFF9_V_L1", name="Ganesh Iyer", department="Vigilance Bureau", zone="Egmore", ward="Ward 2", designation="Vigilance Inspector", email="ganesh.vigilance@gov.in"),
+        Officer(officer_id="OFF10_G_L1", name="Anitha Subramanian", department="General Administration Department", zone="Fort St. George", ward="Ward 1", designation="Administrative Officer", email="anitha.admin@gov.in"),
     ]
     for officer in officers:
         db.add(officer)
@@ -569,7 +585,7 @@ def seed_users(db: Session):
     users = [
         User(
             user_id="USR-000",
-            username="admin",
+            username="ADM1_A_L5",
             password_hash=bcrypt.hashpw(b"admin123", bcrypt.gensalt()).decode('utf-8'),
             role="admin",
             officer_id=None,
@@ -599,7 +615,7 @@ def seed_users(db: Session):
         users.append(
             User(
                 user_id=f"USR-{i+1:03d}",
-                username=f"officer{i+1}",
+                username=officer.officer_id,
                 password_hash=bcrypt.hashpw(b"off123", bcrypt.gensalt()).decode('utf-8'),
                 role="officer",
                 officer_id=officer.officer_id,
@@ -636,7 +652,7 @@ def seed_department_policies(db: Session):
 # Seed database with initial complaints if table is empty
 def seed_database(db: Session):
     # Check if there are any citizen complaints (CMP-2006 or higher)
-    citizen_exists = db.query(Complaint).filter(Complaint.id > "CMP-2050").count() > 0
+    citizen_exists = db.query(Complaint).filter(Complaint.id > "CMP-3050").count() > 0
     if citizen_exists:
         print("ℹ️ Citizen complaints exist. Skipping database wipe and seed.")
         return
@@ -647,256 +663,24 @@ def seed_database(db: Session):
     print("🧹 Wiped all existing complaints from the database for re-seeding.")
     
     seeds = [
-        {
-            "id": "CMP-2001",
-            "complaint_text": "Low water pressure and muddy water supply in Sector 4 residential colony for the last 3 days.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2002",
-            "complaint_text": "Sewage water is overflowing from a broken pipeline on Anna Salai Road, causing massive public health hazard and foul smell.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2003",
-            "complaint_text": "No drinking water supply in Ward 5 for the past week, residents are facing severe hardships.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2004",
-            "complaint_text": "A major water pipe burst near the Central Market is wasting thousands of liters of clean water.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2005",
-            "complaint_text": "Drainage is completely blocked in the 2nd cross street, causing dirty water to enter homes during rain.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2006",
-            "complaint_text": "Major bridge structure crack detected on the busy subway road, causing severe risk of bridge collapse and blocking traffic.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2007",
-            "complaint_text": "Deep potholes on the main highway are causing multiple two-wheeler accidents daily.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2008",
-            "complaint_text": "The newly constructed retaining wall near the riverbed has collapsed after a minor shower.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2009",
-            "complaint_text": "Road widening work has been abandoned for 6 months, leaving debris that blocks pedestrian paths.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2010",
-            "complaint_text": "Public building roof is leaking severely in the revenue office, damaging important documents.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2011",
-            "complaint_text": "Unlicensed clinic operating in the basement of a residential building is dispensing expired medicines.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2012",
-            "complaint_text": "Dengue outbreak reported in the slum area; urgent mosquito fogging and medical camps are needed.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2013",
-            "complaint_text": "The government hospital pharmacy has been out of essential life-saving drugs for over a month.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2014",
-            "complaint_text": "Illegal bio-medical waste dumping observed near the local lake by private hospitals.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2015",
-            "complaint_text": "Food poisoning cases spreading rapidly after a local festival; health inspection of vendors is urgently required.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2016",
-            "complaint_text": "The streetlight on MG Road is not working since yesterday, making the street completely dark at night.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2017",
-            "complaint_text": "High voltage fluctuations are burning out home appliances in the entire Gandhi Nagar neighborhood.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2018",
-            "complaint_text": "A live electric wire has fallen on the street near the primary school, posing a lethal threat to children.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2019",
-            "complaint_text": "Unscheduled power cuts lasting 8-10 hours daily are disrupting business and life.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2020",
-            "complaint_text": "The electricity transformer caught fire yesterday and has not been repaired, leaving 500 houses without power.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2021",
-            "complaint_text": "Critical gas leak reported near St. Mary's Primary School. Urgent evacuation of the area is needed to prevent explosion.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2022",
-            "complaint_text": "Rampant chain-snatching incidents occurring daily at the local park after sunset.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2023",
-            "complaint_text": "Illegal sand mining operations are happening at the riverbank every night with heavy machinery.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2024",
-            "complaint_text": "A suspicious abandoned vehicle has been parked outside the mall for three days without license plates.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2025",
-            "complaint_text": "Flash floods have trapped several families in the low-lying areas of the district.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2026",
-            "complaint_text": "Garbage has not been collected from our street for over two weeks, creating a severe health hazard.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2027",
-            "complaint_text": "Public toilets in the bus stand are overflowing and completely unusable, causing unhygienic conditions.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2028",
-            "complaint_text": "Dead animal carcass has been lying on the road for 3 days, emitting an unbearable stench.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2029",
-            "complaint_text": "Illegal dumping of construction debris is blocking the municipal storm water drains.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2030",
-            "complaint_text": "Sweepers are demanding bribes from residents to clean the neighborhood streets.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2031",
-            "complaint_text": "The traffic signal at the major four-way junction has been dead for a week, causing massive gridlock.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2032",
-            "complaint_text": "Local city buses are skipping scheduled stops, leaving students and workers stranded daily.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2033",
-            "complaint_text": "Private buses are illegally parking on the main road, choking the flow of traffic.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2034",
-            "complaint_text": "Auto-rickshaws are demanding exorbitant fares and refusing to use meters at the railway station.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2035",
-            "complaint_text": "The pedestrian crossing lines have completely faded, causing risk to people crossing the busy highway.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2036",
-            "complaint_text": "The roof of the government primary school classroom is collapsing and unsafe for students.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2037",
-            "complaint_text": "Mid-day meals being served to students contain insects and are completely unhygienic.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2038",
-            "complaint_text": "The school has no dedicated subject teachers for math and science for the entire academic year.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2039",
-            "complaint_text": "Private schools are illegally demanding capitation fees for kindergarten admissions.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2040",
-            "complaint_text": "No drinking water or functional toilets available for girls in the high school.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2041",
-            "complaint_text": "The local sub-registrar is demanding a massive bribe for property registration.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2042",
-            "complaint_text": "A government official was caught on camera accepting cash to pass a building construction plan.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2043",
-            "complaint_text": "Ration shop owner is illegally diverting subsidized grains to the black market.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2044",
-            "complaint_text": "Funds allocated for the village road construction have been completely embezzled by the contractor.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2045",
-            "complaint_text": "Fake caste certificates are being issued by agents operating near the taluk office.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2046",
-            "complaint_text": "The e-Seva portal for applying for income certificates has been down for two weeks.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2047",
-            "complaint_text": "No staff available at the citizen facilitation center during working hours.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2048",
-            "complaint_text": "My grievance petition submitted three months ago has been closed without any action taken.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2049",
-            "complaint_text": "The public notice board at the collectorate has not been updated with current government schemes.",
-            "timestamp": "2026-06-16 09:00:00"
-        },
-        {
-            "id": "CMP-2050",
-            "complaint_text": "Delay of over 6 months in issuing death certificates due to administrative negligence.",
-            "timestamp": "2026-06-16 09:00:00"
-        }
+        # Citizen 2 Complaints (Mapped to 10 departments)
+        {"id": "CMP-3001", "complaint_text": "The sewer line on MG Road is completely blocked and overflowing into the street, causing a foul smell and health hazard.", "timestamp": "2026-06-25 10:00:00"},
+        {"id": "CMP-3002", "complaint_text": "A massive pothole has developed on the main highway bridge, threatening the structural integrity and causing severe traffic accidents.", "timestamp": "2026-06-25 10:05:00"},
+        {"id": "CMP-3003", "complaint_text": "The main transformer in Sector 4 caught fire and exploded. We have been without power for 12 hours.", "timestamp": "2026-06-25 10:10:00"},
+        {"id": "CMP-3004", "complaint_text": "There is a severe outbreak of dengue in our neighborhood due to stagnant water and lack of fogging by the authorities.", "timestamp": "2026-06-25 10:15:00"},
+        {"id": "CMP-3005", "complaint_text": "A large mob is gathering near the town square and starting to block traffic and vandalize shops. Immediate police intervention is required.", "timestamp": "2026-06-25 10:20:00"},
+        {"id": "CMP-3006", "complaint_text": "Garbage hasn't been collected from the market area for over a week. The waste is spilling onto the road.", "timestamp": "2026-06-25 10:25:00"},
+        {"id": "CMP-3007", "complaint_text": "The traffic signals at the major intersection are completely dead, resulting in chaotic traffic jams and accidents.", "timestamp": "2026-06-25 10:30:00"},
+        {"id": "CMP-3008", "complaint_text": "The roof of the government primary school is leaking heavily during the rains, making the classrooms unusable.", "timestamp": "2026-06-25 10:35:00"},
+        {"id": "CMP-3009", "complaint_text": "The local contractor is using substandard materials for the new road construction and demanding bribes from residents.", "timestamp": "2026-06-25 10:40:00"},
+        {"id": "CMP-3010", "complaint_text": "The public park's gates are broken and antisocial elements occupy the area at night, making it unsafe for residents.", "timestamp": "2026-06-25 10:45:00"},
+        
+        # Citizen 1 Complaints (2 Valid, 3 CPGRAMS Rejections)
+        {"id": "CMP-3011", "complaint_text": "Water supply has been very muddy for the past two days in our residential complex.", "timestamp": "2026-06-25 11:00:00"},
+        {"id": "CMP-3012", "complaint_text": "Streetlights on the 3rd cross street are completely non-functional, leading to safety issues at night.", "timestamp": "2026-06-25 11:05:00"},
+        {"id": "CMP-3013", "complaint_text": "I submitted an RTI request last month regarding the funds allocated for the new library, but I haven't received a response. Please provide the RTI details immediately.", "timestamp": "2026-06-25 11:10:00"},
+        {"id": "CMP-3014", "complaint_text": "My neighbor and I have an ongoing property dispute case in the High Court. I want the municipality to intervene and grant me the land title while the court case is pending.", "timestamp": "2026-06-25 11:15:00"},
+        {"id": "CMP-3015", "complaint_text": "I am a government employee in the revenue department. My promotion has been delayed by two years and my transfer request was denied. Please approve my promotion.", "timestamp": "2026-06-25 11:20:00"}
     ]
     
     

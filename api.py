@@ -22,19 +22,7 @@ app = FastAPI(title="Sahayak AI - Civic Grievance Backend", version="1.0.0")
 
 # Enable CORS for frontend connection
 
-@app.get("/reseed-danger")
-def reseed_danger(db: Session = Depends(get_db)):
-    db.query(Complaint).delete()
-    db.query(User).delete()
-    db.query(Officer).delete()
-    db.query(DepartmentPolicy).delete()
-    db.commit()
-    
-    seed_department_policies(db)
-    seed_officers(db)
-    seed_users(db)
-    seed_database(db)
-    return {"status": "Database wiped and reseeded successfully."}
+
 
 
 app.add_middleware(

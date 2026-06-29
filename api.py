@@ -110,7 +110,8 @@ class Complaint(Base):
     accepted_at = Column(String, nullable=True)
     resolved_at = Column(String, nullable=True)
     closed_at = Column(String, nullable=True)
-    escalation_level = Column(Integer, default=0)     # 0=normal, 1=senior, 2=dept head, 3=ministry
+    escalation_level = Column(Integer, default=1)     # 1=Assigned, 2=Supervisor, 3=Dept Head, 4=Commissioner
+    sla_start_time = Column(String, nullable=True)
 
 # Officer Model for Smart Routing
 class Officer(Base):
@@ -130,11 +131,14 @@ class Officer(Base):
 class Notification(Base):
     __tablename__ = 'notifications'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(String, nullable=False)  # officer_id or "admin"
+    user_id = Column(String, nullable=False)  # officer_id, "admin", or "commissioner"
     message = Column(String, nullable=False)
     type = Column(String, default="info")
     timestamp = Column(String, nullable=False)
     is_read = Column(Boolean, default=False)
+    complaint_id = Column(String, nullable=True)
+    escalation_level = Column(Integer, nullable=True)
+    priority = Column(String, nullable=True)
 
 # User Model for Authentication
 class User(Base):
@@ -156,6 +160,34 @@ class DepartmentPolicy(Base):
     urgency_weight = Column(Float, default=0.20)
     vulnerability_weight = Column(Float, default=0.15)
     duplicate_weight = Column(Float, default=0.10)
+
+# SLA Configuration
+class SLAConfiguration(Base):
+    __tablename__ = 'sla_configurations'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    department = Column(String, unique=True, nullable=False)
+    resolve_sla_hours = Column(Integer, default=72)
+    accept_sla_hours = Column(Integer, default=24)
+
+# Escalation Configuration
+class EscalationConfiguration(Base):
+    __tablename__ = 'escalation_configurations'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    level = Column(Integer, unique=True, nullable=False)  # 1, 2, 3, 4
+    priority_threshold = Column(Float, default=0.8)
+    unresolved_hours_threshold = Column(Integer, default=72)
+    description = Column(String, nullable=True)
+
+# Escalation History
+class EscalationHistory(Base):
+    __tablename__ = 'escalation_history'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    complaint_id = Column(String, nullable=False)
+    from_level = Column(Integer, nullable=False)
+    to_level = Column(Integer, nullable=False)
+    timestamp = Column(String, nullable=False)
+    trigger_reason = Column(String, nullable=False)
+    user_responsible = Column(String, nullable=False)
 
 # Officer Feedback for Learning
 class OfficerFeedback(Base):
@@ -181,6 +213,129 @@ class AuditLog(Base):
     performed_by = Column(String, nullable=False)   # user_id or SYSTEM
     performer_role = Column(String, nullable=False)  # citizen, officer, admin, system
     notes = Column(Text, nullable=True)
+
+
+from datetime import datetime, timedelta
+import asyncio
+
+def run_escalation_checks(db: Session):
+    try:
+        now = datetime.now()
+        # Get unresolved complaints
+        unresolved = db.query(Complaint).filter(
+            Complaint.closed_at == None,
+            Complaint.resolved_at == None
+        ).all()
+        
+        # Get configs
+        slas = {s.department: s for s in db.query(SLAConfiguration).all()}
+        esc_configs = {e.level: e for e in db.query(EscalationConfiguration).all()}
+        
+        for comp in unresolved:
+            current_level = comp.escalation_level
+            if current_level >= 4:
+                continue
+                
+            next_level = current_level + 1
+            config = esc_configs.get(next_level)
+            if not config:
+                continue
+                
+            # Parse times
+            comp_time = datetime.strptime(comp.timestamp, "%Y-%m-%d %H:%M:%S")
+            unresolved_hours = (now - comp_time).total_seconds() / 3600.0
+            
+            sla = slas.get(comp.category)
+            
+            should_escalate = False
+            trigger_reason = ""
+            
+            # SLA Breach Check
+            if sla:
+                if current_level == 1 and unresolved_hours > sla.accept_sla_hours and not comp.accepted_at:
+                    should_escalate = True
+                    trigger_reason = f"Not accepted within {sla.accept_sla_hours}h SLA"
+                elif unresolved_hours > sla.resolve_sla_hours:
+                    should_escalate = True
+                    trigger_reason = f"Resolution SLA breached ({sla.resolve_sla_hours}h)"
+            
+            # Config Check
+            if not should_escalate and unresolved_hours >= config.unresolved_hours_threshold:
+                should_escalate = True
+                trigger_reason = f"Unresolved hours exceeded {config.unresolved_hours_threshold}h threshold"
+                
+            if not should_escalate and comp.final_priority_score >= config.priority_threshold:
+                should_escalate = True
+                trigger_reason = f"Priority {comp.final_priority_score} exceeded {config.priority_threshold} threshold"
+                
+            if should_escalate:
+                # Update complaint
+                comp.escalation_level = next_level
+                
+                # Log history
+                history = EscalationHistory(
+                    complaint_id=comp.id,
+                    from_level=current_level,
+                    to_level=next_level,
+                    timestamp=now.strftime("%Y-%m-%d %H:%M:%S"),
+                    trigger_reason=trigger_reason,
+                    user_responsible="SYSTEM"
+                )
+                db.add(history)
+                
+                # Create Notification
+                # Notify officers of the new level in the same department
+                if next_level == 4:
+                    # Notify Commissioner
+                    notif = Notification(
+                        user_id="COMM_1",
+                        message=f"Complaint {comp.id} escalated to Level 4 (Commissioner). Reason: {trigger_reason}",
+                        type="error",
+                        timestamp=now.strftime("%Y-%m-%d %H:%M:%S"),
+                        complaint_id=comp.id,
+                        escalation_level=next_level,
+                        priority=comp.severity_label
+                    )
+                    db.add(notif)
+                else:
+                    # Notify respective officers
+                    target_officers = db.query(Officer).filter(
+                        Officer.department == comp.category,
+                        Officer.escalation_level == next_level
+                    ).all()
+                    for off in target_officers:
+                        notif = Notification(
+                            user_id=off.officer_id,
+                            message=f"Complaint {comp.id} escalated to Level {next_level}. Reason: {trigger_reason}",
+                            type="warning",
+                            timestamp=now.strftime("%Y-%m-%d %H:%M:%S"),
+                            complaint_id=comp.id,
+                            escalation_level=next_level,
+                            priority=comp.severity_label
+                        )
+                        db.add(notif)
+                        
+                db.commit()
+    except Exception as e:
+        print(f"Error in escalation check: {e}")
+        db.rollback()
+
+@app.post("/system/run-escalations")
+def trigger_escalations(db: Session = Depends(get_db)):
+    run_escalation_checks(db)
+    return {"status": "success", "message": "Escalation checks completed"}
+
+# Background loop for escalations
+async def escalation_background_task():
+    while True:
+        try:
+            db = SessionLocal()
+            run_escalation_checks(db)
+            db.close()
+        except Exception as e:
+            print(f"Background task error: {e}")
+        await asyncio.sleep(60) # run every 60 seconds
+
 
 @app.on_event("startup")
 def startup_db_init():
@@ -209,13 +364,27 @@ def startup_db_init():
             ("accepted_at", "VARCHAR"),
             ("resolved_at", "VARCHAR"),
             ("closed_at", "VARCHAR"),
-            ("escalation_level", "INTEGER")
+            ("escalation_level", "INTEGER"),
+            ("sla_start_time", "VARCHAR")
         ]
         with engine.connect() as conn:
             for col_name, col_type in columns_to_add:
                 try:
                     with conn.begin():
                         conn.execute(text(f"ALTER TABLE complaints ADD COLUMN {col_name} {col_type}"))
+                except Exception:
+                    pass
+                    
+        notif_cols = [
+            ("complaint_id", "VARCHAR"),
+            ("escalation_level", "INTEGER"),
+            ("priority", "VARCHAR")
+        ]
+        with engine.connect() as conn:
+            for col_name, col_type in notif_cols:
+                try:
+                    with conn.begin():
+                        conn.execute(text(f"ALTER TABLE notifications ADD COLUMN {col_name} {col_type}"))
                 except Exception:
                     pass
 
@@ -247,6 +416,7 @@ def startup_db_init():
             print(f"Error during db cleanup: {e}")
         db.close()
         
+        asyncio.create_task(escalation_background_task())
         print("Database Initialized Successfully.")
     except Exception as e:
         print(f"Database initialization failed during startup. Check credentials! Error: {e}")
@@ -550,16 +720,44 @@ def seed_officers(db: Session):
         return
     
     officers = [
-        Officer(officer_id="OFF1_W_L1", name="Rajesh Kumar", department="Water & Sewerage Board", zone="Anna Nagar", ward="Ward 5", designation="Junior Inspector", email="rajesh.water@gov.in"),
-        Officer(officer_id="OFF2_P_L1", name="Priya Sharma", department="Public Works Department (PWD)", zone="T. Nagar", ward="Ward 3", designation="Senior Inspector", email="priya.pwd@gov.in"),
-        Officer(officer_id="OFF3_E_L1", name="Suresh Babu", department="Electricity Utilities Board", zone="Adyar", ward="Ward 8", designation="Junior Inspector", email="suresh.elec@gov.in"),
-        Officer(officer_id="OFF4_H_L1", name="Kavitha Rajan", department="Health Department", zone="Mylapore", ward="Ward 12", designation="Health Inspector", email="kavitha.health@gov.in"),
-        Officer(officer_id="OFF5_P_L1", name="Arun Prakash", department="Police & Disaster Response", zone="Anna Nagar", ward="Ward 5", designation="Sub Inspector", email="arun.police@gov.in"),
-        Officer(officer_id="OFF6_M_L1", name="Deepa Venkat", department="Municipal Sanitation Department", zone="Velachery", ward="Ward 15", designation="Sanitation Inspector", email="deepa.sanitation@gov.in"),
-        Officer(officer_id="OFF7_T_L1", name="Mohan Das", department="Transport & Traffic Authority", zone="Guindy", ward="Ward 10", designation="Traffic Inspector", email="mohan.transport@gov.in"),
-        Officer(officer_id="OFF8_E_L1", name="Lakshmi Narayanan", department="Education Department", zone="Nungambakkam", ward="Ward 7", designation="Education Officer", email="lakshmi.edu@gov.in"),
-        Officer(officer_id="OFF9_V_L1", name="Ganesh Iyer", department="Vigilance Bureau", zone="Egmore", ward="Ward 2", designation="Vigilance Inspector", email="ganesh.vigilance@gov.in"),
-        Officer(officer_id="OFF10_G_L1", name="Anitha Subramanian", department="General Administration Department", zone="Fort St. George", ward="Ward 1", designation="Administrative Officer", email="anitha.admin@gov.in"),
+        # Level 1 Officers (Assigned Officers)
+        Officer(officer_id="OFF1_W_L1", name="Rajesh Kumar", department="Water & Sewerage Board", zone="Anna Nagar", ward="Ward 5", designation="Junior Inspector", email="rajesh.water@gov.in", escalation_level=1),
+        Officer(officer_id="OFF2_P_L1", name="Priya Sharma", department="Public Works Department (PWD)", zone="T. Nagar", ward="Ward 3", designation="Senior Inspector", email="priya.pwd@gov.in", escalation_level=1),
+        Officer(officer_id="OFF3_E_L1", name="Suresh Babu", department="Electricity Utilities Board", zone="Adyar", ward="Ward 8", designation="Junior Inspector", email="suresh.elec@gov.in", escalation_level=1),
+        Officer(officer_id="OFF4_H_L1", name="Kavitha Rajan", department="Health Department", zone="Mylapore", ward="Ward 12", designation="Health Inspector", email="kavitha.health@gov.in", escalation_level=1),
+        Officer(officer_id="OFF5_P_L1", name="Arun Prakash", department="Police & Disaster Response", zone="Anna Nagar", ward="Ward 5", designation="Sub Inspector", email="arun.police@gov.in", escalation_level=1),
+        Officer(officer_id="OFF6_M_L1", name="Deepa Venkat", department="Municipal Sanitation Department", zone="Velachery", ward="Ward 15", designation="Sanitation Inspector", email="deepa.sanitation@gov.in", escalation_level=1),
+        Officer(officer_id="OFF7_T_L1", name="Mohan Das", department="Transport & Traffic Authority", zone="Guindy", ward="Ward 10", designation="Traffic Inspector", email="mohan.transport@gov.in", escalation_level=1),
+        Officer(officer_id="OFF8_E_L1", name="Lakshmi Narayanan", department="Education Department", zone="Nungambakkam", ward="Ward 7", designation="Education Officer", email="lakshmi.edu@gov.in", escalation_level=1),
+        Officer(officer_id="OFF9_V_L1", name="Ganesh Iyer", department="Vigilance Bureau", zone="Egmore", ward="Ward 2", designation="Vigilance Inspector", email="ganesh.vigilance@gov.in", escalation_level=1),
+        Officer(officer_id="OFF10_G_L1", name="Anitha Subramanian", department="General Administration Department", zone="Fort St. George", ward="Ward 1", designation="Administrative Officer", email="anitha.admin@gov.in", escalation_level=1),
+        
+        # Level 2 Officers (Supervisors) - We add one for each department just to be complete, or maybe a few. Let's add for all.
+        Officer(officer_id="OFF1_W_L2", name="W_Supervisor", department="Water & Sewerage Board", zone="All", ward="All", designation="Supervisor", email="w.sup@gov.in", escalation_level=2),
+        Officer(officer_id="OFF2_P_L2", name="P_Supervisor", department="Public Works Department (PWD)", zone="All", ward="All", designation="Supervisor", email="p.sup@gov.in", escalation_level=2),
+        Officer(officer_id="OFF3_E_L2", name="E_Supervisor", department="Electricity Utilities Board", zone="All", ward="All", designation="Supervisor", email="e.sup@gov.in", escalation_level=2),
+        Officer(officer_id="OFF4_H_L2", name="H_Supervisor", department="Health Department", zone="All", ward="All", designation="Supervisor", email="h.sup@gov.in", escalation_level=2),
+        Officer(officer_id="OFF5_P_L2", name="Pol_Supervisor", department="Police & Disaster Response", zone="All", ward="All", designation="Supervisor", email="pol.sup@gov.in", escalation_level=2),
+        Officer(officer_id="OFF6_M_L2", name="M_Supervisor", department="Municipal Sanitation Department", zone="All", ward="All", designation="Supervisor", email="m.sup@gov.in", escalation_level=2),
+        Officer(officer_id="OFF7_T_L2", name="T_Supervisor", department="Transport & Traffic Authority", zone="All", ward="All", designation="Supervisor", email="t.sup@gov.in", escalation_level=2),
+        Officer(officer_id="OFF8_E_L2", name="Ed_Supervisor", department="Education Department", zone="All", ward="All", designation="Supervisor", email="ed.sup@gov.in", escalation_level=2),
+        Officer(officer_id="OFF9_V_L2", name="V_Supervisor", department="Vigilance Bureau", zone="All", ward="All", designation="Supervisor", email="v.sup@gov.in", escalation_level=2),
+        Officer(officer_id="OFF10_G_L2", name="G_Supervisor", department="General Administration Department", zone="All", ward="All", designation="Supervisor", email="g.sup@gov.in", escalation_level=2),
+
+        # Level 3 Officers (Department Heads)
+        Officer(officer_id="OFF1_W_L3", name="W_DeptHead", department="Water & Sewerage Board", zone="All", ward="All", designation="Dept Head", email="w.head@gov.in", escalation_level=3),
+        Officer(officer_id="OFF2_P_L3", name="P_DeptHead", department="Public Works Department (PWD)", zone="All", ward="All", designation="Dept Head", email="p.head@gov.in", escalation_level=3),
+        Officer(officer_id="OFF3_E_L3", name="E_DeptHead", department="Electricity Utilities Board", zone="All", ward="All", designation="Dept Head", email="e.head@gov.in", escalation_level=3),
+        Officer(officer_id="OFF4_H_L3", name="H_DeptHead", department="Health Department", zone="All", ward="All", designation="Dept Head", email="h.head@gov.in", escalation_level=3),
+        Officer(officer_id="OFF5_P_L3", name="Pol_DeptHead", department="Police & Disaster Response", zone="All", ward="All", designation="Dept Head", email="pol.head@gov.in", escalation_level=3),
+        Officer(officer_id="OFF6_M_L3", name="M_DeptHead", department="Municipal Sanitation Department", zone="All", ward="All", designation="Dept Head", email="m.head@gov.in", escalation_level=3),
+        Officer(officer_id="OFF7_T_L3", name="T_DeptHead", department="Transport & Traffic Authority", zone="All", ward="All", designation="Dept Head", email="t.head@gov.in", escalation_level=3),
+        Officer(officer_id="OFF8_E_L3", name="Ed_DeptHead", department="Education Department", zone="All", ward="All", designation="Dept Head", email="ed.head@gov.in", escalation_level=3),
+        Officer(officer_id="OFF9_V_L3", name="V_DeptHead", department="Vigilance Bureau", zone="All", ward="All", designation="Dept Head", email="v.head@gov.in", escalation_level=3),
+        Officer(officer_id="OFF10_G_L3", name="G_DeptHead", department="General Administration Department", zone="All", ward="All", designation="Dept Head", email="g.head@gov.in", escalation_level=3),
+        
+        # Level 4 Commissioner (We don't need a department because commissioner spans all, but we can assign a dummy department or 'All')
+        Officer(officer_id="COMM_1", name="City Commissioner", department="Commissioner Office", zone="All", ward="All", designation="Commissioner", email="comm@gov.in", escalation_level=4, role="commissioner"),
     ]
     for officer in officers:
         db.add(officer)
@@ -578,6 +776,14 @@ def seed_users(db: Session):
             role="admin",
             officer_id=None,
             name="System Administrator"
+        ),
+        User(
+            user_id="COMM-001",
+            username="COMM_1",
+            password_hash=bcrypt.hashpw(b"comm123", bcrypt.gensalt()).decode('utf-8'),
+            role="commissioner",
+            officer_id="COMM_1",
+            name="City Commissioner"
         ),
         User(
             user_id="USR-011",
@@ -613,6 +819,41 @@ def seed_users(db: Session):
         
     for user in users:
         db.add(user)
+    db.commit()
+
+
+def seed_sla_configurations(db: Session):
+    if db.query(SLAConfiguration).count() > 0:
+        return
+        
+    configs = [
+        SLAConfiguration(department="Water & Sewerage Board", resolve_sla_hours=72, accept_sla_hours=24),
+        SLAConfiguration(department="Public Works Department (PWD)", resolve_sla_hours=168, accept_sla_hours=48), # 7 days
+        SLAConfiguration(department="Health Department", resolve_sla_hours=24, accept_sla_hours=12),
+        SLAConfiguration(department="Electricity Utilities Board", resolve_sla_hours=48, accept_sla_hours=12),
+        SLAConfiguration(department="Police & Disaster Response", resolve_sla_hours=2, accept_sla_hours=1),
+        SLAConfiguration(department="Municipal Sanitation Department", resolve_sla_hours=72, accept_sla_hours=24),
+        SLAConfiguration(department="Transport & Traffic Authority", resolve_sla_hours=48, accept_sla_hours=24),
+        SLAConfiguration(department="Education Department", resolve_sla_hours=168, accept_sla_hours=48),
+        SLAConfiguration(department="Vigilance Bureau", resolve_sla_hours=168, accept_sla_hours=48),
+        SLAConfiguration(department="General Administration Department", resolve_sla_hours=72, accept_sla_hours=24)
+    ]
+    for conf in configs:
+        db.add(conf)
+    db.commit()
+
+def seed_escalation_configurations(db: Session):
+    if db.query(EscalationConfiguration).count() > 0:
+        return
+        
+    configs = [
+        EscalationConfiguration(level=1, priority_threshold=1.0, unresolved_hours_threshold=72, description="Assigned Officer"),
+        EscalationConfiguration(level=2, priority_threshold=0.7, unresolved_hours_threshold=48, description="Supervising Officer"),
+        EscalationConfiguration(level=3, priority_threshold=0.85, unresolved_hours_threshold=24, description="Department Head"),
+        EscalationConfiguration(level=4, priority_threshold=0.95, unresolved_hours_threshold=12, description="Commissioner")
+    ]
+    for conf in configs:
+        db.add(conf)
     db.commit()
 
 def seed_department_policies(db: Session):
@@ -654,6 +895,8 @@ def seed_database(db: Session):
     
     # We must call the other seeders here since we wiped them!
     seed_department_policies(db)
+    seed_sla_configurations(db)
+    seed_escalation_configurations(db)
     seed_officers(db)
     seed_users(db)
     
@@ -1785,8 +2028,17 @@ def create_officer(req: CreateOfficerRequest, db: Session = Depends(get_db)):
 
 @app.get("/notifications/{user_id}")
 def get_notifications(user_id: str, db: Session = Depends(get_db)):
-    notifs = db.query(Notification).filter(Notification.user_id == user_id).order_by(Notification.id.desc()).limit(20).all()
-    return [{"id": n.id, "message": n.message, "type": n.type, "timestamp": n.timestamp, "is_read": n.is_read} for n in notifs]
+    notifs = db.query(Notification).filter(Notification.user_id == user_id).order_by(Notification.id.desc()).limit(50).all()
+    return [{
+        "id": n.id, 
+        "message": n.message, 
+        "type": n.type, 
+        "timestamp": n.timestamp, 
+        "is_read": n.is_read,
+        "complaint_id": getattr(n, 'complaint_id', None),
+        "escalation_level": getattr(n, 'escalation_level', None),
+        "priority": getattr(n, 'priority', None)
+    } for n in notifs]
 
 @app.post("/notifications/{notification_id}/read")
 def read_notification(notification_id: int, db: Session = Depends(get_db)):
@@ -1797,6 +2049,43 @@ def read_notification(notification_id: int, db: Session = Depends(get_db)):
     return {"status": "ok"}
 
 # ===================== DEPARTMENT POLICY ENDPOINTS =====================
+
+
+@app.get("/sla-configurations")
+def get_sla_configurations(db: Session = Depends(get_db)):
+    return db.query(SLAConfiguration).all()
+
+@app.put("/sla-configurations/{department}")
+def update_sla_configuration(department: str, data: dict, db: Session = Depends(get_db)):
+    config = db.query(SLAConfiguration).filter(SLAConfiguration.department == department).first()
+    if not config:
+        raise HTTPException(status_code=404, detail="SLA config not found")
+    
+    if "resolve_sla_hours" in data:
+        config.resolve_sla_hours = data["resolve_sla_hours"]
+    if "accept_sla_hours" in data:
+        config.accept_sla_hours = data["accept_sla_hours"]
+        
+    db.commit()
+    return {"status": "success"}
+
+@app.get("/escalation-configurations")
+def get_escalation_configurations(db: Session = Depends(get_db)):
+    return db.query(EscalationConfiguration).all()
+
+@app.put("/escalation-configurations/{level}")
+def update_escalation_configuration(level: int, data: dict, db: Session = Depends(get_db)):
+    config = db.query(EscalationConfiguration).filter(EscalationConfiguration.level == level).first()
+    if not config:
+        raise HTTPException(status_code=404, detail="Escalation config not found")
+        
+    if "priority_threshold" in data:
+        config.priority_threshold = data["priority_threshold"]
+    if "unresolved_hours_threshold" in data:
+        config.unresolved_hours_threshold = data["unresolved_hours_threshold"]
+        
+    db.commit()
+    return {"status": "success"}
 
 @app.get("/department-policies")
 def list_policies(db: Session = Depends(get_db)):

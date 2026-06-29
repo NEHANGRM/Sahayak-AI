@@ -2144,7 +2144,9 @@ def login_page(target_role):
                         if user_data:
                             # Enforce role restriction checks: citizen portal can't login officer etc.
                             user_role = user_data.get('role')
-                            if user_role != target_role:
+                            # Allow commissioner to log in through officer portal
+                            role_match = (user_role == target_role) or (user_role == 'commissioner' and target_role == 'officer')
+                            if not role_match:
                                 st.session_state.login_error = f"Access denied: You are attempting to log in as a {user_role.capitalize()} on the {role_label} Portal. Please use the appropriate portal."
                             else:
                                 st.session_state.user = user_data

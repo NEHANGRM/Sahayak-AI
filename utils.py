@@ -727,7 +727,7 @@ def assign_officer(department, location_text, db_session):
     # Query officers in the target department at L1 (escalation_level == 0)
     officers = db_session.query(Officer).filter(
         func.lower(Officer.department) == department.lower(),
-        Officer.escalation_level == 0
+        Officer.escalation_level == 1
     ).all()
     
     if not officers:

@@ -561,6 +561,19 @@ def run_escalation_checks(db: Session):
                 db.add(history)
                 
                 # Create Notification
+                # Notify the previous assigned officer of the escalation
+                if comp.assigned_officer_id:
+                    notif_prev = Notification(
+                        user_id=comp.assigned_officer_id,
+                        message=f"Complaint {comp.id} was escalated to Level {next_level}. Reason: {trigger_reason}",
+                        type="info",
+                        timestamp=now.strftime("%Y-%m-%d %H:%M:%S"),
+                        complaint_id=comp.id,
+                        escalation_level=next_level,
+                        priority=comp.severity_label
+                    )
+                    db.add(notif_prev)
+                    
                 # Notify officers of the new level in the same department
                 if next_level == 4:
                     # Notify Commissioner
@@ -1123,8 +1136,8 @@ def seed_database(db: Session):
         }
         
         from sqlalchemy import func
-        # Assign Officer directly inside api.py to avoid circular imports during startup
-        assigned_officer = db.query(Officer).filter(func.lower(Officer.department) == department.lower()).first()
+        # Assign to L1 officer specifically
+        assigned_officer = db.query(Officer).filter(func.lower(Officer.department) == department.lower(), Officer.escalation_level == 1).first()
         assigned_officer_id = assigned_officer.officer_id if assigned_officer else None
         
         comp = Complaint(

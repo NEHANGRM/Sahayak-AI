@@ -1552,7 +1552,7 @@ def get_complaints(officer_id: Optional[str] = Query(None), db: Session = Depend
         Complaint.admissible == True,
         ~Complaint.status.in_(["Resolved", "Closed", "Rejected"])
     )
-    if officer_id:
+    if officer_id and officer_id != "ADMIN":
         officer = db.query(Officer).filter(Officer.officer_id == officer_id).first()
         if officer:
             if officer.escalation_level <= 1:
@@ -2680,7 +2680,7 @@ def get_sla_breached(db: Session = Depends(get_db)):
 @app.get("/complaints/by-status/{status}")
 def get_complaints_by_status(status: str, officer_id: Optional[str] = None, db: Session = Depends(get_db)):
     query = db.query(Complaint).filter(Complaint.status == status, Complaint.admissible == True)
-    if officer_id:
+    if officer_id and officer_id != "ADMIN":
         officer = db.query(Officer).filter(Officer.officer_id == officer_id).first()
         if officer:
             if officer.escalation_level <= 1:

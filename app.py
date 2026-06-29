@@ -1420,6 +1420,38 @@ def render_complaint_queue(complaints, resolved_complaints, rejected_complaints,
                     st.warning(c['complaint_text'])
                     st.markdown(f"**Policy Violation Reason:** `{c.get('rejection_reason', 'N/A')}`")
 
+
+def render_notification_center():
+    user = st.session_state.user
+    user_id = user.get("user_id") if user.get("role") == "admin" else user.get("officer_id")
+    if not user_id:
+        return
+        
+    try:
+        r = requests.get(f"{API_URL}/notifications/{user_id}")
+        if r.status_code == 200:
+            notifs = r.json()
+            unread = sum(1 for n in notifs if not n['is_read'])
+            
+            with st.sidebar.expander(f"🔔 Notifications ({unread})", expanded=unread > 0):
+                if not notifs:
+                    st.info("No notifications.")
+                for n in notifs:
+                    color = "red" if n['type'] == 'error' else "orange" if n['type'] == 'warning' else "blue"
+                    st.markdown(f"<div style='border-left: 3px solid {color}; padding-left: 8px; margin-bottom: 8px;'>", unsafe_allow_html=True)
+                    st.write(f"**{n['timestamp']}**")
+                    st.write(n['message'])
+                    if n.get('complaint_id'):
+                        st.caption(f"Complaint: {n['complaint_id']} | Priority: {n.get('priority', 'N/A')}")
+                    if not n['is_read']:
+                        if st.button("Mark Read", key=f"read_{n['id']}", help="Mark this notification as read"):
+                            requests.post(f"{API_URL}/notifications/{n['id']}/read")
+                            st.rerun()
+                    st.markdown("</div>", unsafe_allow_html=True)
+    except Exception as e:
+        st.sidebar.error("Failed to load notifications.")
+
+
 def render_sidebar_header():
     """Renders the sidebar government header"""
     logo_b64 = get_logo_base64()
@@ -3245,7 +3277,9 @@ def main():
         render_sidebar_header()
         
         # Admin gets page navigation in sidebar at the top
-        if role == 'admin' and st.session_state.get('admin_view') != 'profile':
+        if role == 'commissioner' and st.session_state.get('commissioner_view') != 'profile':
+            st.sidebar.markdown("**Role:** City Commissioner")
+        elif role == 'admin' and st.session_state.get('admin_view') != 'profile':
             admin_page = st.sidebar.radio(
                 "Admin Navigation:",
                 [
@@ -3253,6 +3287,8 @@ def main():
                                         "System-Wide Queue",
                     "Escalation & SLA Queue",
                     "Audit Trail Viewer",
+                    "SLA Configurations",
+                    "Escalation Configurations",
                     "Officer Management",
                     "Department Policies",
                     "Hotspot Intelligence",

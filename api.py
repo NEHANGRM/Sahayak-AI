@@ -810,12 +810,12 @@ def seed_users(db: Session):
     # Skip COMM_1 since it already has a hardcoded entry above with 'commissioner' role
     manually_defined_usernames = {u.username for u in users}
     officers = db.query(Officer).all()
-    for i, officer in enumerate(officers):
+    for officer in officers:
         if officer.officer_id in manually_defined_usernames:
             continue
         users.append(
             User(
-                user_id=f"USR-{i+1:03d}",
+                user_id=f"USR-{officer.officer_id}",
                 username=officer.officer_id,
                 password_hash=bcrypt.hashpw(b"off123", bcrypt.gensalt()).decode('utf-8'),
                 role="officer",

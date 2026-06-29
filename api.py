@@ -1558,7 +1558,7 @@ def get_complaints(officer_id: Optional[str] = Query(None), db: Session = Depend
             if officer.escalation_level <= 1:
                 query = query.filter(Complaint.assigned_officer_id == officer_id)
             elif officer.escalation_level > 1 and officer.role != 'commissioner':
-                query = query.filter(Complaint.category == officer.department, Complaint.escalation_level == officer.escalation_level)
+                query = query.filter(Complaint.department == officer.department, Complaint.escalation_level == officer.escalation_level)
             elif officer.role == 'commissioner':
                 query = query.filter(Complaint.escalation_level >= 4)
         else:
@@ -2686,7 +2686,7 @@ def get_complaints_by_status(status: str, officer_id: Optional[str] = None, db: 
             if officer.escalation_level <= 1:
                 query = query.filter(Complaint.assigned_officer_id == officer_id)
             elif officer.escalation_level > 1 and officer.role != 'commissioner':
-                query = query.filter(Complaint.category == officer.department, Complaint.escalation_level == officer.escalation_level)
+                query = query.filter(Complaint.department == officer.department, Complaint.escalation_level == officer.escalation_level)
             elif officer.role == 'commissioner':
                 query = query.filter(Complaint.escalation_level >= 4)
         else:

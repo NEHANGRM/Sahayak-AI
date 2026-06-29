@@ -283,18 +283,19 @@ def startup_db_init():
             pass
             
         try:
-            # Auto-fix SLA breached seeded complaints on startup
+            # Auto-fix seeded complaints on every startup:
+            # Reset timestamps to NOW so SLA/escalation timers start fresh
             with engine.connect() as conn:
                 with conn.begin():
-                    # Reset timestamps and status
                     conn.execute(text("""
                         UPDATE complaints 
                         SET timestamp = to_char(NOW() - INTERVAL '2 hours', 'YYYY-MM-DD HH24:MI:SS'), 
                             sla_deadline = to_char(NOW() + INTERVAL '46 hours', 'YYYY-MM-DD HH24:MI:SS'), 
-                            status='Assigned', 
-                            sla_breached=false, 
-                            escalation_level=1
-                        WHERE id LIKE 'CMP-30%' AND status = 'Escalated'
+                            status = CASE WHEN status IN ('Resolved','Closed','Rejected') THEN status ELSE 'Assigned' END, 
+                            sla_breached = false, 
+                            escalation_level = 1
+                        WHERE id LIKE 'CMP-30%'
+                          AND status NOT IN ('Resolved','Closed','Rejected')
                     """))
                     # Reassign back to L1 officer of the same department
                     conn.execute(text("""
@@ -302,9 +303,11 @@ def startup_db_init():
                         SET assigned_officer_id = o.officer_id
                         FROM officers o
                         WHERE c.id LIKE 'CMP-30%' 
+                          AND c.status NOT IN ('Resolved','Closed','Rejected')
                           AND c.department = o.department 
                           AND o.escalation_level = 1
                     """))
+            print("✅ Auto-fixed seeded complaint timestamps and assignments on startup.")
         except Exception as e:
             print(f"Error auto-fixing SLAs: {e}")
         
@@ -535,7 +538,7 @@ def run_escalation_checks(db: Session):
         esc_configs = {e.level: e for e in db.query(EscalationConfiguration).all()}
         
         for comp in unresolved:
-            current_level = comp.escalation_level
+            current_level = comp.escalation_level or 1
             if current_level >= 4:
                 continue
                 
@@ -545,15 +548,19 @@ def run_escalation_checks(db: Session):
                 continue
                 
             # Parse times
-            comp_time = datetime.strptime(comp.timestamp, "%Y-%m-%d %H:%M:%S")
+            try:
+                comp_time = datetime.strptime(comp.timestamp, "%Y-%m-%d %H:%M:%S")
+            except Exception:
+                continue
             unresolved_hours = (now - comp_time).total_seconds() / 3600.0
             
-            sla = slas.get(comp.category)
+            # Use department (mapped) not category (raw ML prediction) for SLA lookup
+            sla = slas.get(comp.department) or slas.get(comp.category)
             
             should_escalate = False
             trigger_reason = ""
             
-            # SLA Breach Check
+            # SLA Breach Check (time-based only)
             if sla:
                 if current_level == 1 and unresolved_hours > sla.accept_sla_hours and not comp.accepted_at:
                     should_escalate = True
@@ -562,18 +569,29 @@ def run_escalation_checks(db: Session):
                     should_escalate = True
                     trigger_reason = f"Resolution SLA breached ({sla.resolve_sla_hours}h)"
             
-            # Config Check
+            # Config time-based check
             if not should_escalate and unresolved_hours >= config.unresolved_hours_threshold:
                 should_escalate = True
                 trigger_reason = f"Unresolved hours exceeded {config.unresolved_hours_threshold}h threshold"
                 
-            if not should_escalate and comp.final_priority_score >= config.priority_threshold:
+            # Priority-based escalation: only trigger if ALSO past a minimum time
+            # This prevents brand-new high-priority complaints from instantly escalating
+            min_hours_for_priority_escalation = max(4.0, config.unresolved_hours_threshold * 0.25)
+            if not should_escalate and comp.final_priority_score >= config.priority_threshold and unresolved_hours >= min_hours_for_priority_escalation:
                 should_escalate = True
-                trigger_reason = f"Priority {comp.final_priority_score} exceeded {config.priority_threshold} threshold"
+                trigger_reason = f"Priority {comp.final_priority_score:.2f} exceeded {config.priority_threshold} threshold (after {unresolved_hours:.1f}h)"
                 
             if should_escalate:
                 # Update complaint
                 comp.escalation_level = next_level
+                old_status = comp.status
+                if comp.status not in ["Escalated", "Resolved", "Closed"]:
+                    comp.status = "Escalated"
+                
+                # Reassign to higher level officer in the same department
+                new_officer_id = utils.reassign_to_escalation_level(comp.department, next_level, db)
+                if new_officer_id and new_officer_id != comp.assigned_officer_id:
+                    comp.assigned_officer_id = new_officer_id
                 
                 # Log history
                 history = EscalationHistory(
@@ -586,7 +604,19 @@ def run_escalation_checks(db: Session):
                 )
                 db.add(history)
                 
-                # Create Notification
+                # Update escalation_history JSON on the complaint
+                esc_hist = json.loads(comp.escalation_history or '[]')
+                esc_hist.append({
+                    "level": f"L{next_level}",
+                    "date": now.strftime("%Y-%m-%d %H:%M:%S"),
+                    "reason": trigger_reason
+                })
+                comp.escalation_history = json.dumps(esc_hist)
+                
+                # Audit log
+                log_audit(db, comp.id, "auto_escalation", old_status, "Escalated", "SYSTEM", "system",
+                         f"Auto-escalated L{current_level}→L{next_level}. {trigger_reason}")
+                
                 # Notify the previous assigned officer of the escalation
                 if comp.assigned_officer_id:
                     notif_prev = Notification(
@@ -602,7 +632,6 @@ def run_escalation_checks(db: Session):
                     
                 # Notify officers of the new level in the same department
                 if next_level == 4:
-                    # Notify Commissioner
                     notif = Notification(
                         user_id="COMM_1",
                         message=f"Complaint {comp.id} escalated to Level 4 (Commissioner). Reason: {trigger_reason}",
@@ -614,9 +643,9 @@ def run_escalation_checks(db: Session):
                     )
                     db.add(notif)
                 else:
-                    # Notify respective officers
+                    # Use comp.department (mapped), not comp.category (raw ML prediction)
                     target_officers = db.query(Officer).filter(
-                        Officer.department == comp.category,
+                        Officer.department == comp.department,
                         Officer.escalation_level == next_level
                     ).all()
                     for off in target_officers:
@@ -2786,7 +2815,9 @@ def get_all_officer_stats(db: Session = Depends(get_db)):
 def fix_timestamps(db: Session = Depends(get_db)):
     from datetime import datetime, timedelta
     now = datetime.now()
-    comps = db.query(Complaint).all()
+    comps = db.query(Complaint).filter(
+        ~Complaint.status.in_(["Resolved", "Closed", "Rejected"])
+    ).all()
     updated = 0
     for c in comps:
         # Reset timestamp to 2 hours ago

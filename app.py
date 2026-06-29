@@ -2143,9 +2143,9 @@ def login_page(target_role):
                         user_data, error = api_login(username, password)
                         if user_data:
                             # Enforce role restriction checks: citizen portal can't login officer etc.
-                            user_role = user_data.get('role')
+                            user_role = user_data.get('role', '').lower()
                             # Allow commissioner to log in through officer portal
-                            role_match = (user_role == target_role) or (user_role == 'commissioner' and target_role == 'officer')
+                            role_match = (user_role == target_role.lower()) or (user_role == 'commissioner' and target_role.lower() == 'officer')
                             if not role_match:
                                 st.session_state.login_error = f"Access denied: You are attempting to log in as a {user_role.capitalize()} on the {role_label} Portal. Please use the appropriate portal."
                             else:
@@ -3454,6 +3454,9 @@ def main():
         render_citizen_sidebar_layout()
     
     # Role-based sidebar navigation
+    raw_role = role
+    role = raw_role.lower() if raw_role else ''
+    
     if role == 'citizen':
         # Default citizen view
         if 'citizen_view' not in st.session_state:
@@ -3486,7 +3489,7 @@ def main():
                 admin_dashboard(admin_page)
     
     else:
-        st.error(f"Unknown role: {role}")
+        st.error(f"Unknown role: {raw_role}")
 
 
 if __name__ == "__main__":

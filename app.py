@@ -2225,6 +2225,10 @@ def citizen_portal():
                     off = c.get('assigned_officer_id')
                     if off:
                         st.markdown(f"**Handling Officer:** `{get_officer_display_name(off)}`")
+                    
+                    esc_level = c.get('escalation_level', 1)
+                    if esc_level > 1:
+                        st.markdown(f"🚨 **Escalated to Level {esc_level}** due to priority or SLA breach.")
                         
                     if s not in ["Submitted", "Assigned", "Reassigned", "Open", "Rejected"]:
                         draft = c.get('suggested_response') or (c.get('structured_json') or {}).get('suggested_response')

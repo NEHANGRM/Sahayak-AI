@@ -968,16 +968,18 @@ def render_notifications_bell(user_id):
     notifs = get_notifications(user_id)
     unread = [n for n in notifs if not n.get("is_read")]
     
-    col1, col2 = st.columns([10, 1])
-    with col2:
+    # We want it to be fully right-aligned at the top
+    col1, col2, col3 = st.columns([8, 2, 1])
+    with col3:
         if hasattr(st, "popover"):
-            with st.popover(f"Inbox ({len(unread)})"):
+            icon_str = ":material/notifications_unread:" if len(unread) > 0 else ":material/notifications:"
+            with st.popover(f"Alerts ({len(unread)})", icon=icon_str):
                 st.markdown("### Notifications")
                 if not notifs:
                     st.write("No notifications.")
                 else:
                     for n in notifs:
-                        icon = "[UNREAD]" if not n.get("is_read") else "[READ]"
+                        icon = "🔴" if not n.get("is_read") else "⚪"
                         st.markdown(f"**{icon} {n.get('timestamp')}**\n\n{n.get('message')}")
                         if not n.get("is_read"):
                             if st.button("Mark Read", key=f"read_{n.get('id')}"):
@@ -986,7 +988,7 @@ def render_notifications_bell(user_id):
                         st.markdown("---")
         else:
             # Fallback for older Streamlit
-            st.button(f"Inbox ({len(unread)})")
+            st.button(f"Alerts ({len(unread)})")
 
 def render_government_banner():
     """Renders a formal government banner at the top of the main area"""
@@ -2245,8 +2247,8 @@ def citizen_portal():
 
 def officer_dashboard():
     """Officer dashboard with lifecycle tracking and performance panel at top"""
-    render_government_banner()
     render_notifications_bell(st.session_state.user['officer_id'])
+    render_government_banner()
     user = st.session_state.user
     officer_id = user.get('officer_id', '')
     officer_name = user.get('name', user.get('username', 'Officer'))
@@ -2334,8 +2336,8 @@ def render_commissioner_dashboard():
 
 def admin_dashboard(active_tab="Command Center (KPIs)"):
     """Admin dashboard with Command Center, Escalation Queue, Audit Trail Viewer + 5 Intelligence Modules"""
-    render_government_banner()
     render_notifications_bell("admin")
+    render_government_banner()
     st.markdown("### Admin Control Panel")
     st.markdown("Full system access. Manage complaints, SLA escalations, and system analytics.")
     st.markdown("---")

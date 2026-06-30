@@ -1974,7 +1974,8 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
                 'zone': officer.zone,
                 'ward': officer.ward,
                 'designation': officer.designation,
-                'profile_pic': officer.profile_pic
+                'profile_pic': officer.profile_pic,
+                'escalation_level': officer.escalation_level
             }
     return result
 
@@ -2034,7 +2035,8 @@ def list_officers(db: Session = Depends(get_db)):
         'designation': o.designation,
         'email': o.email,
         'role': o.role,
-        'profile_pic': o.profile_pic
+        'profile_pic': o.profile_pic,
+        'escalation_level': o.escalation_level
     } for o in officers]
 
 @app.get("/officers/{officer_id}")

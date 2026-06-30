@@ -379,6 +379,7 @@ class OverrideDepartmentRequest(BaseModel):
 
 class AcceptRequest(BaseModel):
     officer_id: str
+    officer_message: Optional[str] = None
 
 class StartProgressRequest(BaseModel):
     officer_id: str
@@ -1593,6 +1594,15 @@ def triage_complaint(req: TriageRequest, db: Session = Depends(get_db)):
         db.commit()
     else:
         log_audit(db, comp.id, "status_change", None, "Rejected", "SYSTEM", "system", f"Rejected: {rejection_reason}")
+        # Notify citizen of rejection
+        if req.submitted_by:
+            n_citizen = Notification(
+                user_id=req.submitted_by,
+                message=f"[Complaint {comp.id} Rejected] Your complaint was not admissible. Reason: {rejection_reason}",
+                type="alert",
+                timestamp=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            )
+            db.add(n_citizen)
         db.commit()
         
     return to_dict(comp)
@@ -1739,6 +1749,7 @@ def resolve_complaint(id: str, req: ResolveRequest, db: Session = Depends(get_db
         raise HTTPException(status_code=404, detail="Complaint not found")
         
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    resolve_message = getattr(req, 'officer_message', None) or req.notes or "Your complaint has been resolved by the concerned officer."
     
     # Resolve all complaints in this cluster (the lead itself plus all duplicates)
     actual_lead_id = comp.lead_id or comp.id
@@ -1751,14 +1762,24 @@ def resolve_complaint(id: str, req: ResolveRequest, db: Session = Depends(get_db
             c_item.status = "Resolved"
             c_hist = json.loads(c_item.resolution_history or "[]")
             if c_item.id == id:
-                c_hist.append({"status": "Resolved", "date": timestamp, "notes": req.notes})
+                c_hist.append({"status": "Resolved", "date": timestamp, "notes": resolve_message})
             else:
-                c_hist.append({"status": "Resolved", "date": timestamp, "notes": f"Resolved automatically with lead complaint {id}: {req.notes}"})
+                c_hist.append({"status": "Resolved", "date": timestamp, "notes": f"Resolved automatically with lead complaint {id}: {resolve_message}"})
             c_item.resolution_history = json.dumps(c_hist)
             
             # Audit log
             c_item.resolved_at = timestamp
-            log_audit(db, c_item.id, "status_change", c_item.status, "Resolved", c_item.assigned_officer_id or "unknown", "officer", req.notes)
+            log_audit(db, c_item.id, "status_change", c_item.status, "Resolved", c_item.assigned_officer_id or "unknown", "officer", resolve_message)
+            
+            # Notify citizen
+            if c_item.submitted_by:
+                n_citizen = Notification(
+                    user_id=c_item.submitted_by,
+                    message=f"[Complaint {c_item.id} Resolved] {resolve_message}",
+                    type="update",
+                    timestamp=timestamp
+                )
+                db.add(n_citizen)
         
     db.commit()
     return {"message": "Complaint and duplicates marked as resolved."}
@@ -1805,11 +1826,24 @@ def accept_complaint(complaint_id: str, req: AcceptRequest, db: Session = Depend
     comp.status = "Accepted"
     comp.accepted_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
+    officer_msg = req.officer_message or f"Your complaint {complaint_id} has been accepted and is now being reviewed by the concerned officer."
+    
     res_hist = json.loads(comp.resolution_history or '[]')
-    res_hist.append({"status": "Accepted", "date": comp.accepted_at, "notes": f"Accepted by officer {req.officer_id}"})
+    res_hist.append({"status": "Accepted", "date": comp.accepted_at, "notes": f"Accepted by officer {req.officer_id}. Message: {officer_msg}"})
     comp.resolution_history = json.dumps(res_hist)
     
     log_audit(db, complaint_id, "status_change", old_status, "Accepted", req.officer_id, "officer", "Officer accepted the assignment.")
+    
+    # Notify the citizen
+    if comp.submitted_by:
+        n_citizen = Notification(
+            user_id=comp.submitted_by,
+            message=f"[Complaint {complaint_id} Accepted] {officer_msg}",
+            type="update",
+            timestamp=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        )
+        db.add(n_citizen)
+    
     db.commit()
     return {"message": "Complaint accepted.", "complaint": to_dict(comp)}
 

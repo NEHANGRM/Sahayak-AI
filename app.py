@@ -1197,9 +1197,7 @@ def render_complaint_expander(complaint, idx, show_actions=True, officer_id_for_
                 if status in ["Assigned", "Reassigned", "Submitted"]:
                     with action_cols[0]:
                         if st.button("Accept Assignment", key=f"btn_accept_{complaint['id']}"):
-                            success, res = accept_complaint(complaint['id'], officer_id_for_override)
-                            if success: st.success("Accepted!"); st.rerun()
-                            else: st.error(res)
+                            st.session_state[f"show_accept_{complaint['id']}"] = True
                 
                 if status in ["Accepted", "Field Inspection", "Escalated"]:
                     with action_cols[0]:
@@ -1237,14 +1235,55 @@ def render_complaint_expander(complaint, idx, show_actions=True, officer_id_for_
                         st.session_state[f"show_reassign_{complaint['id']}"] = True
             
             # Action forms
+            
+            # ── Accept form with citizen message ──
+            if st.session_state.get(f"show_accept_{complaint['id']}", False):
+                st.markdown("---")
+                st.markdown("##### Accept & Message Citizen")
+                ai_default_msg = (complaint.get('suggested_response') or 
+                                  (complaint.get('structured_json') or {}).get('suggested_response') or
+                                  f"Your complaint ({complaint['id']}) has been accepted by the concerned officer and is now under active review. We will keep you updated on the progress.")
+                with st.form(f"accept_form_{complaint['id']}"):
+                    st.markdown("**Default AI-generated message** (edit or leave as-is):")
+                    officer_message = st.text_area(
+                        "Message to Citizen:",
+                        value=ai_default_msg,
+                        height=100,
+                        help="This message will be sent to the citizen as a notification. You may edit it or keep the AI-generated default."
+                    )
+                    col_accept_submit, col_accept_cancel = st.columns(2)
+                    with col_accept_submit:
+                        if st.form_submit_button("Confirm Accept & Notify Citizen", type="primary"):
+                            try:
+                                r = requests.post(
+                                    f"{API_URL}/complaints/{complaint['id']}/accept",
+                                    json={"officer_id": officer_id_for_override, "officer_message": officer_message}
+                                )
+                                if r.status_code == 200:
+                                    st.success("Accepted! Citizen has been notified.")
+                                    st.session_state[f"show_accept_{complaint['id']}"] = False
+                                    st.rerun()
+                                else:
+                                    st.error(f"Error: {r.text}")
+                            except Exception as e:
+                                st.error(f"Failed: {e}")
+                    with col_accept_cancel:
+                        if st.form_submit_button("Cancel"):
+                            st.session_state[f"show_accept_{complaint['id']}"] = False
+                            st.rerun()
+            
             if st.session_state.get(f"show_resolve_{complaint['id']}", False):
                 with st.form(f"resolve_form_{complaint['id']}"):
-                    notes = st.text_area("Resolution Notes:")
-                    if st.form_submit_button("Submit Resolution"):
+                    ai_resolve_msg = (complaint.get('suggested_response') or 
+                                      (complaint.get('structured_json') or {}).get('suggested_response') or
+                                      f"Your complaint ({complaint['id']}) has been successfully resolved by the concerned officer.")
+                    notes = st.text_area("Resolution Notes / Message to Citizen:", value=ai_resolve_msg, height=100,
+                                        help="This message will be sent to the citizen as a notification.")
+                    if st.form_submit_button("Submit Resolution & Notify Citizen"):
                         try:
                             r = requests.post(f"{API_URL}/complaints/{complaint['id']}/resolve", json={"notes": notes})
                             if r.status_code == 200:
-                                st.success("Resolved successfully.")
+                                st.success("Resolved successfully. Citizen has been notified.")
                                 st.session_state[f"show_resolve_{complaint['id']}"] = False
                                 st.rerun()
                             else:
@@ -2178,6 +2217,7 @@ def login_page(target_role):
 
 def citizen_portal():
     """Citizen portal with timeline and SLA tracking"""
+    render_notifications_bell(st.session_state.user.get('username'))
     render_government_banner()
     st.markdown("### Grievance Registration Portal")
     st.markdown("Submit and track your public service grievances.")

@@ -2810,18 +2810,17 @@ def get_all_officer_stats(db: Session = Depends(get_db)):
 
 @app.post("/fix-timestamps")
 def fix_timestamps(db: Session = Depends(get_db)):
-    from datetime import datetime, timedelta
-    now = datetime.now()
+    now = datetime.datetime.now()
     comps = db.query(Complaint).filter(
         ~Complaint.status.in_(["Resolved", "Closed", "Rejected"])
     ).all()
     updated = 0
     for c in comps:
         # Reset timestamp to 2 hours ago
-        new_time = now - timedelta(hours=2)
+        new_time = now - datetime.timedelta(hours=2)
         c.timestamp = new_time.strftime('%Y-%m-%d %H:%M:%S')
         # Reset sla_deadline to 46 hours from now
-        c.sla_deadline = (new_time + timedelta(hours=48)).strftime('%Y-%m-%d %H:%M:%S')
+        c.sla_deadline = (new_time + datetime.timedelta(hours=48)).strftime('%Y-%m-%d %H:%M:%S')
         # Reset SLA breach and escalation
         c.sla_breached = False
         c.escalation_level = 1

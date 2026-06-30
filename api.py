@@ -476,14 +476,18 @@ def check_and_escalate_sla(db: Session):
                 new_level = min(current_level + 1, 3)
                 comp.escalation_level = new_level
                 
-                # Reassign to higher level officer
+                # Reassign to higher level 
+                old_officer_id = comp.assigned_officer_id
                 import utils
                 new_officer_id = utils.reassign_to_escalation_level(comp.department, new_level, db)
-                if new_officer_id and new_officer_id != comp.assigned_officer_id:
+                if new_officer_id and new_officer_id != old_officer_id:
                     comp.assigned_officer_id = new_officer_id
-                    n_off = Notification(user_id=new_officer_id, message=f"SLA Breach: Complaint {comp.id} auto-escalated to you.", type="escalation", timestamp=now.strftime('%Y-%m-%d %H:%M:%S'))
+                    n_off = Notification(user_id=new_officer_id, message=f"SLA Breach: Complaint {comp.id} auto-escalated to you.", type="alert", timestamp=now.strftime('%Y-%m-%d %H:%M:%S'))
                     db.add(n_off)
-                    
+                    if old_officer_id:
+                        n_old_off = Notification(user_id=old_officer_id, message=f"SLA Breach: Complaint {comp.id} has been escalated to {ESCALATION_LEVELS.get(new_level, f'L{new_level}')}.", type="alert", timestamp=now.strftime('%Y-%m-%d %H:%M:%S'))
+                        db.add(n_old_off)
+                        
                 n_admin = Notification(user_id="admin", message=f"SLA Breach: Complaint {comp.id} auto-escalated to {ESCALATION_LEVELS.get(new_level, f'L{new_level}')}.", type="alert", timestamp=now.strftime('%Y-%m-%d %H:%M:%S'))
                 db.add(n_admin)
                 
@@ -1855,12 +1859,16 @@ def escalate_complaint(complaint_id: str, req: EscalateRequest, db: Session = De
     
     # Reassign to higher level officer
     import utils
+    old_officer_id = comp.assigned_officer_id
     new_officer_id = utils.reassign_to_escalation_level(comp.department, new_level, db)
-    if new_officer_id and new_officer_id != comp.assigned_officer_id:
+    if new_officer_id and new_officer_id != old_officer_id:
         comp.assigned_officer_id = new_officer_id
         n_off = Notification(user_id=new_officer_id, message=f"Complaint {comp.id} escalated to you.", type="escalation", timestamp=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         db.add(n_off)
-        
+        if old_officer_id:
+            n_old_off = Notification(user_id=old_officer_id, message=f"Complaint {comp.id} has been escalated to {ESCALATION_LEVELS.get(new_level, f'L{new_level}')}.", type="escalation", timestamp=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            db.add(n_old_off)
+            
     n_admin = Notification(user_id="admin", message=f"Complaint {comp.id} escalated to {ESCALATION_LEVELS.get(new_level, f'L{new_level}')}.", type="escalation", timestamp=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     db.add(n_admin)
     

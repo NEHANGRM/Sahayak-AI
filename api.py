@@ -1475,7 +1475,7 @@ def triage_complaint(req: TriageRequest, db: Session = Depends(get_db)):
                 llm_vulnerable_population_risk = review_result.get("vulnerable_population_risk", "Medium")
                 llm_infrastructure_risk = review_result.get("infrastructure_risk", "Medium")
                 suggested_response = review_result.get("suggested_response", "")
-                suggested_action = review_result.get("suggested_action", "")
+                suggested_action = review_result.get("officer_handbook", review_result.get("suggested_action", ""))
             except Exception as e:
                 print(f"Error calling LLM Client: {e}")
                 llm_reviewed = False

@@ -973,9 +973,18 @@ def render_notifications_bell(user_id):
     with col2:
         if hasattr(st, "popover"):
             icon_str = ":material/notifications_unread:" if len(unread) > 0 else ":material/notifications:"
-            # Just show the number if unread, or a space if none, to keep the button compact
-            label = f" {len(unread)}" if len(unread) > 0 else " "
-            with st.popover(label, icon=icon_str, use_container_width=True):
+            # Hide the dropdown caret and center the icon
+            st.markdown("""
+            <style>
+            div[data-testid="stPopover"] button svg:last-of-type:not(:first-of-type) {
+                display: none !important;
+            }
+            div[data-testid="stPopover"] button p {
+                display: none !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            with st.popover("", icon=icon_str, use_container_width=True):
                 st.markdown("### Notifications")
                 if not notifs:
                     st.write("No notifications.")
@@ -997,7 +1006,7 @@ def render_government_banner():
     logo_b64 = get_logo_base64()
     if logo_b64:
         html = f"""<div class="gov-banner" style="background-color: #0f294a; padding: 15px 22px; border-top: 5px solid #ff9933; border-bottom: 5px solid #138808; display: flex; align-items: center; gap: 20px; margin-bottom: 25px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-<img src="data:image/png;base64,{logo_b64}" style="height: 65px; width: auto; border-radius: 4px;" alt="Sahayak AI Logo">
+<img src="data:image/png;base64,{logo_b64}" style="height: 90px; width: 90px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.8); box-shadow: 0 4px 8px rgba(0,0,0,0.3); object-fit: cover;" alt="Sahayak AI Logo">
 <div style="text-align: left;">
 <div style="font-size: 11px; color: #ff9933; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;">Government of India Middleware Platform</div>
 <h1 class="gov-banner-title" style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 1.5px; color: #ffffff; text-transform: uppercase; line-height: 1.1;">SAHAYAK AI</h1>
@@ -1893,13 +1902,11 @@ def landing_page():
     # 2. Hero banner introduction
     st.markdown("""
     <div class="landing-hero">
-        <h2>Revolutionizing Grievance Redressal with Intelligent AI Middleware</h2>
+        <h2>Revolutionizing Grievance Redressal with Intelligent AI</h2>
         <p>
-            Sahayak AI is a state-of-the-art Natural Language Processing (NLP) and Machine Learning platform serving as the 
-            official grievance triage board for the Government of India. By acting as an automated middleware layer 
-            for portals like CPGRAMS, Sahayak AI ingests civic complaints, classifies them to correct departments, 
-            identifies geographical jurisdictions (zones and wards), calculates multi-dimensional priorities, and 
-            routes them directly to action officers—cutting resolution cycles from days to minutes.
+            Sahayak AI is an intelligent civic grievance platform designed to bridge the gap between citizens and government authorities. 
+            Serving as a smart, automated bridge for public portals, Sahayak AI instantly reads civic complaints, understands the exact issue 
+            and location, determines its true urgency, and routes it directly to the right department officer—cutting resolution times from days to mere minutes.
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -1911,11 +1918,10 @@ def landing_page():
     with col1:
         st.markdown("""
         <div class="info-card accent-saffron">
-            <h4>Rapid Automated Triage</h4>
+            <h4>Instant Issue Routing</h4>
             <p>
-                Civic issues submitted by citizens are parsed instantaneously. Advanced NLP classifiers determine whether 
-                a grievance is admissible, assign it to a category (e.g. Sanitation, Roads, Water & Sewerage), and extract 
-                crucial entity details like street names, landmarks, zones, and municipal wards.
+                Civic issues submitted by citizens are understood instantly. Our intelligent system automatically determines the nature of the problem 
+                (e.g., Sanitation, Roads, Water) and extracts crucial details like street names and landmarks, ensuring no complaint gets lost or misrouted.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -1923,12 +1929,10 @@ def landing_page():
     with col2:
         st.markdown("""
         <div class="info-card accent-navy">
-            <h4>Multi-Dimensional Priority</h4>
+            <h4>Smart Prioritization</h4>
             <p>
-                Sahayak AI computes a detailed priority score using a 5-dimension weighted matrix: 
-                <strong>Severity</strong>, <strong>Public Impact</strong> (detecting proximity to schools, hospitals, or transport hubs), 
-                <strong>Urgency</strong>, <strong>Vulnerability</strong>, and <strong>Duplicate Clusters</strong>. 
-                Scores are tailored to specific department policy weight profiles.
+                Sahayak AI goes beyond 'first-come, first-served'. It evaluates the true urgency of a problem by considering its severity, the number of 
+                people affected, and its proximity to vulnerable areas like schools or hospitals, ensuring critical community issues are addressed first.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -1936,17 +1940,16 @@ def landing_page():
     with col3:
         st.markdown("""
         <div class="info-card accent-green">
-            <h4>Officer Mapping & Trust</h4>
+            <h4>AI-Assisted Resolution</h4>
             <p>
-                Complaints are dynamically assigned to the responsible Junior Inspector or action officer based on department 
-                and location jurisdiction. Officer overrides are fed back to the learning engine, recalculating agreement rates 
-                and trust scores for continuous improvement.
+                Complaints are seamlessly assigned to the right on-ground officer. To help them act faster, the platform generates step-by-step 
+                AI resolution handbooks and automatically groups duplicate complaints together, saving time and building public trust.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### End-to-End Workflow Flowchart")
+    st.markdown("### End-to-End Citizen Workflow")
     
     # 4. Use Case Workflow Steps
     st.markdown("""
@@ -1954,29 +1957,29 @@ def landing_page():
         <div class="workflow-step">
             <div class="step-badge">1</div>
             <div class="step-content">
-                <h5>Citizen Grievance Submission</h5>
-                <p>Citizens lodge grievances in plain language through the Citizen Portal. The AI accepts unstructured text and tracks it with a unique Grievance ID.</p>
+                <h5>Citizen Submission</h5>
+                <p>Citizens lodge their grievances in plain, everyday language through an easy-to-use portal. They receive a unique tracking ID to monitor real-time progress.</p>
             </div>
         </div>
         <div class="workflow-step">
             <div class="step-badge">2</div>
             <div class="step-content">
-                <h5>AI Parsing, Categorization & NER Extraction</h5>
-                <p>The NLP pipeline filters out spam/inadmissible text, identifies the civic category, and performs Named Entity Recognition (NER) to locate the exact ward and zone.</p>
+                <h5>Intelligent Understanding</h5>
+                <p>The system instantly reads the complaint, filters out spam, identifies the core civic issue, and pinpoints the exact neighborhood and zone where help is needed.</p>
             </div>
         </div>
         <div class="workflow-step">
             <div class="step-badge">3</div>
             <div class="step-content">
-                <h5>Smart Routing & Priority Scoring</h5>
-                <p>The system computes default and department-specific priority levels. It checks for duplicates (RAG-based cluster matching) and escalates aged complaints automatically.</p>
+                <h5>Automated Escalation</h5>
+                <p>The platform calculates how urgent the issue is, sets strict deadlines, and spots duplicate reports. If delays occur, the system automatically escalates the issue to higher authorities.</p>
             </div>
         </div>
         <div class="workflow-step">
             <div class="step-badge">4</div>
             <div class="step-content">
-                <h5>Officer Assignment & Resolution</h5>
-                <p>The mapped Officer views their active queue, accesses similar historical resolutions, and takes corrective action, providing resolution details back to the middleware.</p>
+                <h5>Action & Resolution</h5>
+                <p>The assigned officer receives the complaint alongside an AI-generated action plan. They resolve the issue on the ground and provide official updates directly back to the citizen.</p>
             </div>
         </div>
     </div>
@@ -3419,8 +3422,7 @@ def main():
                                         "System-Wide Queue",
                     "Escalation & SLA Queue",
                     "Audit Trail Viewer",
-                    "SLA Configurations",
-                    "Escalation Configurations",
+
                     "Officer Management",
                     "Department Policies",
                     "Hotspot Intelligence",

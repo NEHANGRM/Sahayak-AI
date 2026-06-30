@@ -1620,18 +1620,20 @@ class GroqClient(LLMClientBase):
                 try:
                     completion = self.client.chat.completions.create(
                         model=self.model,
+                        response_format={"type": "json_object"},
                         messages=[
-                            {"role": "system", "content": "You are a senior public governance auditor. Analyze the complaint and provide a structured review in JSON format. Do not recommend priority labels like Critical/High directly, but recommend a priority_adjustment between -0.15 and +0.15 based on public safety, infrastructure, and vulnerability risk assessment. Return ONLY a valid JSON object without any markdown code blocks."},
+                            {"role": "system", "content": "You are a senior public governance auditor. Analyze the complaint and provide a structured review in JSON format. Do not recommend priority labels like Critical/High directly, but recommend a priority_adjustment between -0.15 and +0.15 based on public safety, infrastructure, and vulnerability risk assessment. CRITICAL: You must output a raw JSON object. DO NOT wrap the ENTIRE OUTPUT in ```json or any other markdown blocks. The text must start directly with { and end with }. However, the string values inside the JSON (like officer_handbook) CAN and SHOULD use markdown formatting internally."},
                             {"role": "user", "content": prompt}
                         ]
                     )
                     
                     text = completion.choices[0].message.content.strip()
-                    if text.startswith("```json"): text = text[7:]
-                    elif text.startswith("```"): text = text[3:]
-                    if text.endswith("```"): text = text[:-3]
+                    import re
+                    match = re.search(r'\{.*\}', text, re.DOTALL)
+                    if match:
+                        text = match.group(0)
                     
-                    result = json.loads(text.strip())
+                    result = json.loads(text, strict=False)
                     return self._parse_result(result)
                 except Exception as e:
                     if 'rate_limit_exceeded' in str(e) or '429' in str(e):
@@ -1678,6 +1680,15 @@ class GroqClient(LLMClientBase):
             adj = float(result.get("recommended_adjustment", 0.0))
         except (ValueError, TypeError):
             adj = 0.0
+        handbook = result.get("officer_handbook", result.get("suggested_action", ""))
+        if isinstance(handbook, dict):
+            md = ""
+            for k, v in handbook.items():
+                md += f"### {k}\n{v}\n\n"
+            handbook = md
+        elif not isinstance(handbook, str):
+            handbook = str(handbook)
+            
         return {
             "recommended_adjustment": round(max(-0.15, min(0.15, adj)), 2),
             "reasoning": str(result.get("reasoning", "LLM review completed.")),
@@ -1686,7 +1697,7 @@ class GroqClient(LLMClientBase):
             "vulnerable_population_risk": str(result.get("vulnerable_population_risk", "Medium")),
             "infrastructure_risk": str(result.get("infrastructure_risk", "Medium")),
             "suggested_response": str(result.get("suggested_response", "")),
-            "officer_handbook": str(result.get("officer_handbook", result.get("suggested_action", "")))
+            "officer_handbook": handbook
         }
 
     def generate_suggestions(self, text, category):
@@ -1721,18 +1732,20 @@ class GroqClient(LLMClientBase):
                 try:
                     completion = self.client.chat.completions.create(
                         model=self.model,
+                        response_format={"type": "json_object"},
                         messages=[
-                            {"role": "system", "content": "You are a senior public governance assistant. Return ONLY a valid JSON object without any markdown code blocks."},
+                            {"role": "system", "content": "You are a senior public governance assistant. CRITICAL: You must output a raw JSON object. DO NOT wrap the ENTIRE OUTPUT in ```json or any other markdown blocks. The text must start directly with { and end with }. However, the string values inside the JSON CAN and SHOULD use markdown formatting internally."},
                             {"role": "user", "content": prompt}
                         ]
                     )
                     
                     text = completion.choices[0].message.content.strip()
-                    if text.startswith("```json"): text = text[7:]
-                    elif text.startswith("```"): text = text[3:]
-                    if text.endswith("```"): text = text[:-3]
+                    import re
+                    match = re.search(r'\{.*\}', text, re.DOTALL)
+                    if match:
+                        text = match.group(0)
                     
-                    result = json.loads(text.strip())
+                    result = json.loads(text, strict=False)
                     break
                 except Exception as e:
                     if 'rate_limit_exceeded' in str(e) or '429' in str(e):
@@ -1740,9 +1753,18 @@ class GroqClient(LLMClientBase):
                             time.sleep(2 * (attempt + 1))
                             continue
                     raise e
+            handbook = result.get("officer_handbook", result.get("suggested_action", ""))
+            if isinstance(handbook, dict):
+                md = ""
+                for k, v in handbook.items():
+                    md += f"### {k}\n{v}\n\n"
+                handbook = md
+            elif not isinstance(handbook, str):
+                handbook = str(handbook)
+                
             return (
                 str(result.get("suggested_response", "")),
-                str(result.get("officer_handbook", result.get("suggested_action", "")))
+                handbook
             )
         except Exception as e:
             print(f"Error in Groq generate_suggestions: {e}. Falling back to templates.")

@@ -971,14 +971,14 @@ def render_notifications_bell(user_id):
     col1, col2 = st.columns([10, 1])
     with col2:
         if hasattr(st, "popover"):
-            with st.popover(f" ({len(unread)})"):
+            with st.popover(f"Inbox ({len(unread)})"):
                 st.markdown("### Notifications")
                 if not notifs:
                     st.write("No notifications.")
                 else:
                     for n in notifs:
-                        icon = "" if not n.get("is_read") else ""
-                        st.markdown(f"{icon} **{n.get('timestamp')}**\n{n.get('message')}")
+                        icon = "[UNREAD]" if not n.get("is_read") else "[READ]"
+                        st.markdown(f"**{icon} {n.get('timestamp')}**\n\n{n.get('message')}")
                         if not n.get("is_read"):
                             if st.button("Mark Read", key=f"read_{n.get('id')}"):
                                 mark_notification_read(n.get("id"))
@@ -986,7 +986,7 @@ def render_notifications_bell(user_id):
                         st.markdown("---")
         else:
             # Fallback for older Streamlit
-            st.button(f" ({len(unread)})")
+            st.button(f"Inbox ({len(unread)})")
 
 def render_government_banner():
     """Renders a formal government banner at the top of the main area"""

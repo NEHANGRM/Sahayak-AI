@@ -781,8 +781,9 @@ def to_dict(c: Complaint) -> Dict[str, Any]:
         "age_days": round(age_days, 1),
         "aging_boost": round(aging_boost, 2),
         "relative_time": relative_time,
-        "sla_deadline": c.sla_deadline,
-        "sla_breached": getattr(c, 'sla_breached', False)
+        "sla_deadline": c.sla_deadline if c.sla_deadline else "N/A",
+        "sla_breached": getattr(c, 'sla_breached', False),
+        "escalation_level": c.escalation_level
     }
 
 
@@ -1240,7 +1241,8 @@ def seed_database(db: Session):
             llm_infrastructure_risk=llm_infrastructure_risk,
             llm_trigger_reasons=json.dumps(llm_trigger_reasons),
             assigned_officer_id=assigned_officer_id,
-            submitted_by="citizen2" if int(comp_id.split("-")[1]) % 2 == 0 else "citizen1"
+            submitted_by="citizen2" if int(comp_id.split("-")[1]) % 2 == 0 else "citizen1",
+            sla_deadline=calculate_sla_deadline(priority_label, timestamp) if is_admissible else None
         )
         db.add(comp)
     db.commit()

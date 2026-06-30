@@ -294,16 +294,14 @@ def startup_db_init():
                             status = CASE WHEN status IN ('Resolved','Closed','Rejected') THEN status ELSE 'Assigned' END, 
                             sla_breached = false, 
                             escalation_level = 1
-                        WHERE id LIKE 'CMP-30%'
-                          AND status NOT IN ('Resolved','Closed','Rejected')
+                        WHERE status NOT IN ('Resolved','Closed','Rejected')
                     """))
                     # Reassign back to L1 officer of the same department
                     conn.execute(text("""
                         UPDATE complaints c
                         SET assigned_officer_id = o.officer_id
                         FROM officers o
-                        WHERE c.id LIKE 'CMP-30%' 
-                          AND c.status NOT IN ('Resolved','Closed','Rejected')
+                        WHERE c.status NOT IN ('Resolved','Closed','Rejected')
                           AND c.department = o.department 
                           AND o.escalation_level = 1
                     """))
@@ -521,12 +519,11 @@ def get_db():
         db.close()
 
 
-from datetime import datetime, timedelta
 import asyncio
 
 def run_escalation_checks(db: Session):
     try:
-        now = datetime.now()
+        now = datetime.datetime.now()
         # Get unresolved complaints
         unresolved = db.query(Complaint).filter(
             Complaint.closed_at == None,

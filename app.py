@@ -969,11 +969,13 @@ def render_notifications_bell(user_id):
     unread = [n for n in notifs if not n.get("is_read")]
     
     # We want it to be fully right-aligned at the top
-    col1, col2, col3 = st.columns([8, 2, 1])
-    with col3:
+    col1, col2 = st.columns([11, 1])
+    with col2:
         if hasattr(st, "popover"):
             icon_str = ":material/notifications_unread:" if len(unread) > 0 else ":material/notifications:"
-            with st.popover(f"Alerts ({len(unread)})", icon=icon_str):
+            # Just show the number if unread, or a space if none, to keep the button compact
+            label = f" {len(unread)}" if len(unread) > 0 else " "
+            with st.popover(label, icon=icon_str, use_container_width=True):
                 st.markdown("### Notifications")
                 if not notifs:
                     st.write("No notifications.")
@@ -988,7 +990,7 @@ def render_notifications_bell(user_id):
                         st.markdown("---")
         else:
             # Fallback for older Streamlit
-            st.button(f"Alerts ({len(unread)})")
+            st.button(f" {len(unread)}" if len(unread) > 0 else " ")
 
 def render_government_banner():
     """Renders a formal government banner at the top of the main area"""

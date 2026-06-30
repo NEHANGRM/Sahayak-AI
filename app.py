@@ -2464,11 +2464,27 @@ def admin_dashboard(active_tab="Command Center (KPIs)"):
             
             if selected_dept:
                 st.markdown(f"**{selected_dept} Officers:**")
-                for off in sorted(dept_officers[selected_dept], key=lambda x: x.get('escalation_level', 1)):
+                dept_offs = sorted(dept_officers[selected_dept], key=lambda x: x.get('escalation_level', 1))
+                
+                # Convert to dataframe for a detailed table view
+                table_data = []
+                for off in dept_offs:
                     level = off.get('escalation_level', 1)
-                    if level == 4: badge = "Commissioner"
-                    else: badge = f"L{level}"
-                    st.markdown(f"-  **{off.get('name', 'Unknown')}** (`{off.get('officer_id')}`) - *{badge}*")
+                    badge = "Commissioner" if level == 4 else f"L{level}"
+                    table_data.append({
+                        "ID": off.get('officer_id', ''),
+                        "Name": off.get('name', ''),
+                        "Escalation Level": badge,
+                        "Role": off.get('role', 'officer'),
+                        "Zone": off.get('zone', 'N/A'),
+                        "Ward": off.get('ward', 'N/A'),
+                        "Designation": off.get('designation', 'N/A')
+                    })
+                
+                if table_data:
+                    st.dataframe(pd.DataFrame(table_data), use_container_width=True, hide_index=True)
+                else:
+                    st.info("No officers found for this department.")
                 st.markdown("---")
         
     # ── Department Policies ──

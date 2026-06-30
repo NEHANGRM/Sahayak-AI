@@ -711,6 +711,67 @@ def route_to_department(category):
     """
     return DEPARTMENT_MAP.get(category, "General Administration Department")
 
+# Keyword signals that indicate involvement of each department
+DEPT_KEYWORDS = {
+    "Health Department": [
+        "dengue", "malaria", "disease", "epidemic", "outbreak", "hospital", "clinic",
+        "health", "sick", "illness", "fever", "fogging", "vaccination", "sanitation risk",
+        "contaminated water", "food poisoning", "medical", "ambulance"
+    ],
+    "Public Works Department (PWD)": [
+        "road", "pothole", "bridge", "highway", "pavement", "footpath", "construction",
+        "cracked", "infrastructure", "building collapse", "drain overflow", "culvert",
+        "dam", "canal", "public work", "street repair"
+    ],
+    "Water & Sewerage Board": [
+        "water supply", "sewage", "sewer", "drainage", "pipeline", "waterlogging",
+        "flooding", "muddy water", "water shortage", "water leak", "blocked drain",
+        "overflow", "sewerage", "water board"
+    ],
+    "Electricity Utilities Board": [
+        "electricity", "power cut", "transformer", "wire", "electric", "outage",
+        "sparking", "shock", "blackout", "power failure", "electric pole", "voltage",
+        "power supply", "electric board"
+    ],
+    "Municipal Sanitation Department": [
+        "garbage", "waste", "trash", "litter", "dustbin", "sanitation", "cleaning",
+        "sweeper", "dump", "rubbish", "sewage smell", "hygiene", "solid waste",
+        "municipal", "stray animal", "rodent"
+    ],
+    "Police & Disaster Response": [
+        "crime", "theft", "robbery", "violence", "assault", "mob", "vandalism",
+        "police", "law and order", "fire", "disaster", "riot", "encroachment",
+        "trespassing", "illegal", "security threat"
+    ],
+    "Transport & Traffic Authority": [
+        "traffic", "signal", "road block", "bus", "auto", "vehicle", "parking",
+        "transport", "highway jam", "accident", "traffic light", "public transport",
+        "commute", "road rage"
+    ],
+    "Education Department": [
+        "school", "college", "teacher", "student", "classroom", "education",
+        "textbook", "scholarship", "university", "primary school", "tuition fee"
+    ],
+    "Vigilance Bureau": [
+        "bribe", "corruption", "contractor", "fraud", "scam", "embezzlement",
+        "substandard material", "tender irregularity", "misappropriation", "kickback"
+    ],
+}
+
+def detect_secondary_departments(complaint_text: str, primary_department: str) -> list:
+    """
+    Detect additional departments involved in a complaint beyond the primary one.
+    Returns a list of secondary department names.
+    """
+    text_lower = complaint_text.lower()
+    secondary = []
+    for dept, keywords in DEPT_KEYWORDS.items():
+        if dept == primary_department:
+            continue
+        if any(kw in text_lower for kw in keywords):
+            secondary.append(dept)
+    return secondary
+
 def assign_officer(department, location_text, db_session):
     """Assign the best matching officer based on department + location (zone/ward).
     Returns officer_id or None if no officers found.

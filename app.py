@@ -1173,6 +1173,16 @@ def render_complaint_expander(complaint, idx, show_actions=True, officer_id_for_
             st.markdown(f"**Category:** `{complaint['category']}`")
             st.markdown(f"**Department:** `{complaint['department']}`")
             st.markdown(f"**Status:** `{status}`")
+            
+            # Multi-dept badge
+            secondary_depts = complaint.get('secondary_departments', [])
+            if secondary_depts:
+                st.markdown(
+                    f"<span style='background:#fbbf24;color:#1e1e1e;padding:2px 8px;"
+                    f"border-radius:4px;font-size:12px;font-weight:600;'>"
+                    f"MULTI-DEPT | Also: {', '.join(secondary_depts)}</span>",
+                    unsafe_allow_html=True
+                )
         with c2:
             st.markdown(f"**Registered:** `{complaint['timestamp']}`")
             st.markdown(f"**SLA Deadline:** `{sla_deadline}` {'(BREACHED)' if sla_breached else ''}")

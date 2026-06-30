@@ -112,6 +112,10 @@ class Complaint(Base):
     closed_at = Column(String, nullable=True)
     escalation_level = Column(Integer, default=1)     # 1=Assigned, 2=Supervisor, 3=Dept Head, 4=Commissioner
     sla_start_time = Column(String, nullable=True)
+    
+    # Multi-department support: secondary departments and their assigned officers
+    secondary_departments = Column(Text, default="[]")   # JSON list of department names
+    secondary_officer_ids = Column(Text, default="[]")   # JSON list of officer IDs
 
 # Officer Model for Smart Routing
 class Officer(Base):
@@ -245,7 +249,9 @@ def startup_db_init():
             ("resolved_at", "VARCHAR"),
             ("closed_at", "VARCHAR"),
             ("escalation_level", "INTEGER"),
-            ("sla_start_time", "VARCHAR")
+            ("sla_start_time", "VARCHAR"),
+            ("secondary_departments", "TEXT"),
+            ("secondary_officer_ids", "TEXT")
         ]
         with engine.connect() as conn:
             for col_name, col_type in columns_to_add:
@@ -784,7 +790,9 @@ def to_dict(c: Complaint) -> Dict[str, Any]:
         "relative_time": relative_time,
         "sla_deadline": c.sla_deadline if c.sla_deadline else "N/A",
         "sla_breached": getattr(c, 'sla_breached', False),
-        "escalation_level": c.escalation_level
+        "escalation_level": c.escalation_level,
+        "secondary_departments": json.loads(c.secondary_departments or "[]"),
+        "secondary_officer_ids": json.loads(c.secondary_officer_ids or "[]")
     }
 
 
@@ -1582,6 +1590,35 @@ def triage_complaint(req: TriageRequest, db: Session = Depends(get_db)):
     if is_admissible:
         comp.sla_deadline = calculate_sla_deadline(priority_label, timestamp)
         
+        # ── Multi-Department Detection ──
+        secondary_depts = utils.detect_secondary_departments(text, department)
+        secondary_officer_ids = []
+        now_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        for sec_dept in secondary_depts:
+            sec_officer_id = utils.assign_officer(sec_dept, ner_details.get("location"), db)
+            if sec_officer_id and sec_officer_id != assigned_officer_id:
+                secondary_officer_ids.append(sec_officer_id)
+                # Notify the secondary officer immediately
+                db.add(Notification(
+                    user_id=sec_officer_id,
+                    message=f"[Multi-Dept] Complaint {comp.id} (primary dept: {department}) also involves your department ({sec_dept}). You are a co-assigned officer. Please coordinate with the lead officer.",
+                    type="info",
+                    timestamp=now_str,
+                    complaint_id=comp.id
+                ))
+        
+        if secondary_depts:
+            comp.secondary_departments = json.dumps(secondary_depts)
+            comp.secondary_officer_ids = json.dumps(secondary_officer_ids)
+            # Also notify admin about multi-dept routing
+            db.add(Notification(
+                user_id="admin",
+                message=f"[Multi-Dept] Complaint {comp.id} spans {len(secondary_depts)+1} departments: {department} (lead) + {', '.join(secondary_depts)}. Officers notified.",
+                type="info",
+                timestamp=now_str,
+                complaint_id=comp.id
+            ))
+        
     db.add(comp)
     db.commit()
     db.refresh(comp)
@@ -1624,14 +1661,49 @@ def get_complaints(officer_id: Optional[str] = Query(None), db: Session = Depend
         officer = db.query(Officer).filter(Officer.officer_id == officer_id).first()
         if officer:
             if officer.escalation_level <= 1:
-                query = query.filter(Complaint.assigned_officer_id == officer_id)
+                # Primary assigned + secondary multi-dept co-assigned
+                primary_comps = db.query(Complaint).filter(
+                    Complaint.admissible == True,
+                    ~Complaint.status.in_(["Resolved", "Closed", "Rejected"]),
+                    Complaint.assigned_officer_id == officer_id
+                ).all()
+                # Find complaints where this officer is a secondary officer
+                all_active = db.query(Complaint).filter(
+                    Complaint.admissible == True,
+                    ~Complaint.status.in_(["Resolved", "Closed", "Rejected"]),
+                    Complaint.secondary_officer_ids != None,
+                    Complaint.secondary_officer_ids != "[]"
+                ).all()
+                secondary_comps = [
+                    c for c in all_active
+                    if officer_id in json.loads(c.secondary_officer_ids or "[]")
+                    and c.assigned_officer_id != officer_id
+                ]
+                admissible_comps = primary_comps + secondary_comps
+                # Deduplicate
+                seen = set()
+                admissible_comps = [c for c in admissible_comps if not (c.id in seen or seen.add(c.id))]
+                # Sort by priority
+                admissible_comps.sort(key=lambda c: c.final_priority_score or 0.0, reverse=True)
             elif officer.escalation_level > 1 and officer.role != 'commissioner':
-                query = query.filter(Complaint.department == officer.department, Complaint.escalation_level == officer.escalation_level)
+                admissible_comps = db.query(Complaint).filter(
+                    Complaint.admissible == True,
+                    ~Complaint.status.in_(["Resolved", "Closed", "Rejected"]),
+                    Complaint.department == officer.department,
+                    Complaint.escalation_level == officer.escalation_level
+                ).all()
             elif officer.role == 'commissioner':
-                query = query.filter(Complaint.escalation_level >= 4)
+                admissible_comps = db.query(Complaint).filter(
+                    Complaint.admissible == True,
+                    ~Complaint.status.in_(["Resolved", "Closed", "Rejected"]),
+                    Complaint.escalation_level >= 4
+                ).all()
+            else:
+                admissible_comps = query.filter(Complaint.assigned_officer_id == officer_id).all()
         else:
-            query = query.filter(Complaint.assigned_officer_id == officer_id)
-    admissible_comps = query.all()
+            admissible_comps = query.filter(Complaint.assigned_officer_id == officer_id).all()
+    else:
+        admissible_comps = query.all()
     
     if not admissible_comps:
         return []
@@ -1827,22 +1899,56 @@ def accept_complaint(complaint_id: str, req: AcceptRequest, db: Session = Depend
     comp.accepted_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     officer_msg = req.officer_message or f"Your complaint {complaint_id} has been accepted and is now being reviewed by the concerned officer."
+    accepting_officer_id = req.officer_id
     
     res_hist = json.loads(comp.resolution_history or '[]')
-    res_hist.append({"status": "Accepted", "date": comp.accepted_at, "notes": f"Accepted by officer {req.officer_id}. Message: {officer_msg}"})
+    res_hist.append({"status": "Accepted", "date": comp.accepted_at, "notes": f"Accepted by officer {accepting_officer_id}. Message: {officer_msg}"})
     comp.resolution_history = json.dumps(res_hist)
     
-    log_audit(db, complaint_id, "status_change", old_status, "Accepted", req.officer_id, "officer", "Officer accepted the assignment.")
+    # Determine if the accepting officer is a secondary officer — if so, reassign complaint under them
+    secondary_officer_ids = json.loads(comp.secondary_officer_ids or "[]")
+    is_secondary_accept = accepting_officer_id in secondary_officer_ids and accepting_officer_id != comp.assigned_officer_id
+    
+    if is_secondary_accept:
+        # Reassign the complaint to this secondary officer
+        original_officer_id = comp.assigned_officer_id
+        comp.assigned_officer_id = accepting_officer_id
+        # Notify original primary officer
+        now_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        db.add(Notification(
+            user_id=original_officer_id,
+            message=f"[Multi-Dept Accept] Complaint {complaint_id} was accepted by the co-assigned officer ({accepting_officer_id}) from a secondary department. The complaint is now under their ownership.",
+            type="info",
+            timestamp=now_str,
+            complaint_id=complaint_id
+        ))
+    else:
+        original_officer_id = accepting_officer_id
+    
+    # Cross-notify all other co-assigned secondary officers
+    now_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    all_co_officers = set(secondary_officer_ids)
+    all_co_officers.add(comp.assigned_officer_id or "")
+    for co_off_id in all_co_officers:
+        if co_off_id and co_off_id != accepting_officer_id:
+            db.add(Notification(
+                user_id=co_off_id,
+                message=f"[Multi-Dept Accept] Complaint {complaint_id} (which involves your department) has been accepted by officer {accepting_officer_id}. Please coordinate accordingly.",
+                type="info",
+                timestamp=now_str,
+                complaint_id=complaint_id
+            ))
+    
+    log_audit(db, complaint_id, "status_change", old_status, "Accepted", accepting_officer_id, "officer", "Officer accepted the assignment.")
     
     # Notify the citizen
     if comp.submitted_by:
-        n_citizen = Notification(
+        db.add(Notification(
             user_id=comp.submitted_by,
             message=f"[Complaint {complaint_id} Accepted] {officer_msg}",
             type="update",
-            timestamp=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        )
-        db.add(n_citizen)
+            timestamp=now_str
+        ))
     
     db.commit()
     return {"message": "Complaint accepted.", "complaint": to_dict(comp)}

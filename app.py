@@ -971,13 +971,13 @@ def render_notifications_bell(user_id):
     col1, col2 = st.columns([10, 1])
     with col2:
         if hasattr(st, "popover"):
-            with st.popover(f"🔔 ({len(unread)})"):
+            with st.popover(f" ({len(unread)})"):
                 st.markdown("### Notifications")
                 if not notifs:
                     st.write("No notifications.")
                 else:
                     for n in notifs:
-                        icon = "🔴" if not n.get("is_read") else "⚪"
+                        icon = "" if not n.get("is_read") else ""
                         st.markdown(f"{icon} **{n.get('timestamp')}**\n{n.get('message')}")
                         if not n.get("is_read"):
                             if st.button("Mark Read", key=f"read_{n.get('id')}"):
@@ -986,7 +986,7 @@ def render_notifications_bell(user_id):
                         st.markdown("---")
         else:
             # Fallback for older Streamlit
-            st.button(f"🔔 ({len(unread)})")
+            st.button(f" ({len(unread)})")
 
 def render_government_banner():
     """Renders a formal government banner at the top of the main area"""
@@ -1433,7 +1433,7 @@ def render_notification_center():
             notifs = r.json()
             unread = sum(1 for n in notifs if not n['is_read'])
             
-            with st.sidebar.expander(f"🔔 Notifications ({unread})", expanded=unread > 0):
+            with st.sidebar.expander(f" Notifications ({unread})", expanded=unread > 0):
                 if not notifs:
                     st.info("No notifications.")
                 for n in notifs:
@@ -2228,7 +2228,7 @@ def citizen_portal():
                     
                     esc_level = c.get('escalation_level', 1)
                     if esc_level > 1:
-                        st.markdown(f"🚨 **Escalated to Level {esc_level}** due to priority or SLA breach.")
+                        st.markdown(f" **Escalated to Level {esc_level}** due to priority or SLA breach.")
                         
                     if s not in ["Submitted", "Assigned", "Reassigned", "Open", "Rejected"]:
                         draft = c.get('suggested_response') or (c.get('structured_json') or {}).get('suggested_response')
@@ -2293,7 +2293,7 @@ def officer_dashboard():
 
 
 def render_commissioner_dashboard():
-    st.header("🏢 Commissioner Dashboard")
+    st.header(" Commissioner Dashboard")
     st.markdown("Monitor critical, disaster, and heavily escalated complaints across all departments.")
     
     col1, col2, col3 = st.columns(3)
@@ -2346,7 +2346,7 @@ def admin_dashboard(active_tab="Command Center (KPIs)"):
     if unassigned:
         from collections import Counter
         dept_counts = Counter([c.get('department', 'Unknown') for c in unassigned])
-        alert_msg = "🚨 **Workload Alert:** "
+        alert_msg = " **Workload Alert:** "
         for dept, count in dept_counts.items():
             alert_msg += f"{count} complaints in {dept} are unassigned. "
         alert_msg += "All existing officers have reached their 10-complaint limit. Please add a new officer to automatically route them."
@@ -2472,7 +2472,7 @@ def admin_dashboard(active_tab="Command Center (KPIs)"):
                                 level = off.get('escalation_level', 1)
                                 if level == 4: badge = "Commissioner"
                                 else: badge = f"L{level}"
-                                st.markdown(f"- 🔹 **{off.get('name', 'Unknown')}** (`{off.get('officer_id')}`) - *{badge}*")
+                                st.markdown(f"-  **{off.get('name', 'Unknown')}** (`{off.get('officer_id')}`) - *{badge}*")
                             st.markdown("---")
         
     # ── Department Policies ──

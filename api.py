@@ -305,7 +305,7 @@ def startup_db_init():
                           AND c.department = o.department 
                           AND o.escalation_level = 1
                     """))
-            print("✅ Auto-fixed seeded complaint timestamps and assignments on startup.")
+            print(" Auto-fixed seeded complaint timestamps and assignments on startup.")
         except Exception as e:
             print(f"Error auto-fixing SLAs: {e}")
         
@@ -318,7 +318,7 @@ def startup_db_init():
         try:
             deleted = db.query(Complaint).filter(Complaint.id.in_(["CMP-2006", "CMP-2007"])).delete(synchronize_session=False)
             db.commit()
-            print(f"🧹 Database cleanup: deleted {deleted} complaints (CMP-2006, CMP-2007)")
+            print(f" Database cleanup: deleted {deleted} complaints (CMP-2006, CMP-2007)")
         except Exception as e:
             print(f"Error during db cleanup: {e}")
         db.close()
@@ -697,9 +697,9 @@ def load_ml_models():
             CATEGORY_MODEL = pickle.load(f)
         with open('severity_model.pkl', 'rb') as f:
             SEVERITY_MODEL = pickle.load(f)
-        print("✅ Backend loaded ML models successfully.")
+        print(" Backend loaded ML models successfully.")
     except Exception as e:
-        print(f"❌ Backend failed to load ML models: {e}. Running fallback vectors if needed.")
+        print(f" Backend failed to load ML models: {e}. Running fallback vectors if needed.")
 
 # Load models on startup
 load_ml_models()
@@ -962,11 +962,11 @@ def seed_database(db: Session):
     new_officers_exist = db.query(Officer).filter(Officer.officer_id == "OFF1_W_L1").count() > 0
     
     if new_seeds_exist and new_officers_exist:
-        print("ℹ️ New seeded data already exists. Skipping database wipe and seed.")
+        print(" New seeded data already exists. Skipping database wipe and seed.")
         return
         
     # Wipe ALL tables to start fresh with new format
-    print("🧹 Wiping all existing data for re-seeding with new format...")
+    print(" Wiping all existing data for re-seeding with new format...")
     db.query(Complaint).delete()
     db.query(User).delete()
     db.query(Officer).delete()
@@ -984,7 +984,7 @@ def seed_database(db: Session):
     seed_officers(db)
     seed_users(db)
     
-    print("✅ All tables wiped and re-seeded successfully.")
+    print(" All tables wiped and re-seeded successfully.")
     
     seeds = [
         # Citizen 2 Complaints (Mapped to 10 departments)
@@ -1244,7 +1244,7 @@ def seed_database(db: Session):
         )
         db.add(comp)
     db.commit()
-    print("✅ Seed complaints triaged and inserted successfully.")
+    print(" Seed complaints triaged and inserted successfully.")
 
 
 

@@ -29,7 +29,7 @@ st.set_page_config(
 @st.cache_data
 def get_logo_base64():
     try:
-        with open("logo.png", "rb") as f:
+        with open("logo_new.png", "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
     except Exception:
         return ""
@@ -1006,7 +1006,7 @@ def render_government_banner():
     logo_b64 = get_logo_base64()
     if logo_b64:
         html = f"""<div class="gov-banner" style="background-color: #0f294a; padding: 15px 22px; border-top: 5px solid #ff9933; border-bottom: 5px solid #138808; display: flex; align-items: center; gap: 20px; margin-bottom: 25px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
-<img src="data:image/png;base64,{logo_b64}" style="height: 90px; width: 90px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.8); box-shadow: 0 4px 8px rgba(0,0,0,0.3); object-fit: cover;" alt="Sahayak AI Logo">
+<img src="data:image/png;base64,{logo_b64}" style="height: 120px; width: 120px; border-radius: 50%; border: 4px solid rgba(255, 255, 255, 0.8); box-shadow: 0 4px 12px rgba(0,0,0,0.4); object-fit: cover;" alt="Sahayak AI Logo">
 <div style="text-align: left;">
 <div style="font-size: 11px; color: #ff9933; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;">Government of India Middleware Platform</div>
 <h1 class="gov-banner-title" style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 1.5px; color: #ffffff; text-transform: uppercase; line-height: 1.1;">SAHAYAK AI</h1>
@@ -1874,7 +1874,7 @@ def landing_page():
     # 1. Full-width top header banner
     logo_b64 = get_logo_base64()
     if logo_b64:
-        logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 60px; width: auto; border-radius: 4px;" alt="Sahayak AI Logo">'
+        logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 100px; width: 100px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.8); box-shadow: 0 4px 8px rgba(0,0,0,0.3); object-fit: cover;" alt="Sahayak AI Logo">'
         left_html = f"""<div class="gov-header-left" style="display: flex; align-items: center; gap: 15px;">
 {logo_html}
 <div>

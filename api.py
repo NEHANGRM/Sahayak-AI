@@ -425,10 +425,10 @@ VALID_TRANSITIONS = {
 SLA_HOURS = {"Critical": 24, "High": 72, "Medium": 120, "Low": 168}
 
 ESCALATION_LEVELS = {
-    0: "L1 - Junior Inspector",
-    1: "L2 - Senior Inspector",
-    2: "L3 - Department Head",
-    3: "L4 - Ministry Level"
+    1: "L1 - Junior Inspector",
+    2: "L2 - Senior Inspector",
+    3: "L3 - Department Head",
+    4: "L4 - Ministry Level"
 }
 
 def validate_transition(current_status: str, new_status: str):
@@ -1644,6 +1644,27 @@ def triage_complaint(req: TriageRequest, db: Session = Depends(get_db)):
         
     return to_dict(comp)
 
+
+def propagate_cluster_state(db, comp):
+    """Propagates the status, assignment, and history from the lead/actioned complaint to all other complaints in the same duplicate cluster."""
+    if comp.lead_id:
+        cluster = db.query(Complaint).filter((Complaint.id == comp.lead_id) | (Complaint.lead_id == comp.lead_id)).all()
+    else:
+        cluster = db.query(Complaint).filter(Complaint.lead_id == comp.id).all()
+        
+    for c in cluster:
+        if c.id != comp.id:
+            c.status = comp.status
+            c.assigned_officer_id = comp.assigned_officer_id
+            c.resolution_history = comp.resolution_history
+            if hasattr(comp, 'accepted_at') and comp.accepted_at:
+                c.accepted_at = comp.accepted_at
+            if hasattr(comp, 'resolved_at') and comp.resolved_at:
+                c.resolved_at = comp.resolved_at
+            if hasattr(comp, 'closed_at') and comp.closed_at:
+                c.closed_at = comp.closed_at
+
+
 @app.get("/complaints")
 def get_complaints(officer_id: Optional[str] = Query(None), db: Session = Depends(get_db)):
     """
@@ -1667,10 +1688,10 @@ def get_complaints(officer_id: Optional[str] = Query(None), db: Session = Depend
                     ~Complaint.status.in_(["Resolved", "Closed", "Rejected"]),
                     Complaint.assigned_officer_id == officer_id
                 ).all()
-                # Find complaints where this officer is a secondary officer
+                # Find complaints where this officer is a secondary officer and it is still 'Assigned'
                 all_active = db.query(Complaint).filter(
                     Complaint.admissible == True,
-                    ~Complaint.status.in_(["Resolved", "Closed", "Rejected"]),
+                    Complaint.status == "Assigned",
                     Complaint.secondary_officer_ids != None,
                     Complaint.secondary_officer_ids != "[]"
                 ).all()
@@ -1853,6 +1874,7 @@ def resolve_complaint(id: str, req: ResolveRequest, db: Session = Depends(get_db
                 )
                 db.add(n_citizen)
         
+    propagate_cluster_state(db, comp)
     db.commit()
     return {"message": "Complaint and duplicates marked as resolved."}
  
@@ -1950,6 +1972,7 @@ def accept_complaint(complaint_id: str, req: AcceptRequest, db: Session = Depend
             timestamp=now_str
         ))
     
+    propagate_cluster_state(db, comp)
     db.commit()
     return {"message": "Complaint accepted.", "complaint": to_dict(comp)}
 
@@ -1967,6 +1990,7 @@ def start_progress(complaint_id: str, req: StartProgressRequest, db: Session = D
     comp.resolution_history = json.dumps(res_hist)
     
     log_audit(db, complaint_id, "status_change", old_status, "In Progress", req.officer_id, "officer", req.notes or "Started working.")
+    propagate_cluster_state(db, comp)
     db.commit()
     return {"message": "Complaint is now in progress.", "complaint": to_dict(comp)}
 
@@ -1984,6 +2008,7 @@ def field_inspection(complaint_id: str, req: FieldInspectionRequest, db: Session
     comp.resolution_history = json.dumps(res_hist)
     
     log_audit(db, complaint_id, "status_change", old_status, "Field Inspection", req.officer_id, "officer", req.notes or "Field inspection started.")
+    propagate_cluster_state(db, comp)
     db.commit()
     return {"message": "Complaint marked for field inspection.", "complaint": to_dict(comp)}
 
@@ -2023,6 +2048,7 @@ def escalate_complaint(complaint_id: str, req: EscalateRequest, db: Session = De
     comp.resolution_history = json.dumps(res_hist)
     
     log_audit(db, complaint_id, "status_change", old_status, "Escalated", req.officer_id, "officer", req.reason)
+    propagate_cluster_state(db, comp)
     db.commit()
     return {"message": f"Complaint escalated to {ESCALATION_LEVELS.get(new_level, 'higher authority')}.", "complaint": to_dict(comp)}
 
@@ -2041,6 +2067,7 @@ def close_complaint(complaint_id: str, req: CloseRequest, db: Session = Depends(
     comp.resolution_history = json.dumps(res_hist)
     
     log_audit(db, complaint_id, "status_change", old_status, "Closed", req.admin_id, "admin", req.notes or "Closed by admin.")
+    propagate_cluster_state(db, comp)
     db.commit()
     return {"message": "Complaint closed.", "complaint": to_dict(comp)}
 
@@ -2065,6 +2092,7 @@ def reassign_complaint(complaint_id: str, req: ReassignRequest, db: Session = De
     
     log_audit(db, complaint_id, "officer_reassignment", old_officer or 'none', req.new_officer_id, req.admin_id, "admin", req.reason)
     log_audit(db, complaint_id, "status_change", old_status, "Assigned", req.admin_id, "admin", f"Reassigned to {req.new_officer_id}")
+    propagate_cluster_state(db, comp)
     db.commit()
     return {"message": f"Complaint reassigned to {req.new_officer_id}.", "complaint": to_dict(comp)}
 
@@ -2832,10 +2860,35 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
 
 @app.get("/stats/officer/{officer_id}")
 def get_officer_stats(officer_id: str, db: Session = Depends(get_db)):
-    officer_complaints = db.query(Complaint).filter(
+    primary_comps = db.query(Complaint).filter(
         Complaint.assigned_officer_id == officer_id,
         Complaint.admissible == True
     ).all()
+    
+    # Also fetch secondary complaints where this officer is co-assigned, but ONLY if they are still "Assigned"
+    all_secondary = db.query(Complaint).filter(
+        Complaint.admissible == True,
+        Complaint.status == "Assigned",
+        Complaint.secondary_officer_ids != None,
+        Complaint.secondary_officer_ids != "[]"
+    ).all()
+    secondary_comps = [
+        c for c in all_secondary
+        if officer_id in json.loads(c.secondary_officer_ids or "[]")
+        and c.assigned_officer_id != officer_id
+    ]
+    
+    officer_complaints_raw = primary_comps + secondary_comps
+    
+    # Group by lead_id to represent duplicate clusters as a single task
+    groups = {}
+    for c in officer_complaints_raw:
+        lid = c.lead_id or c.id
+        if lid not in groups:
+            groups[lid] = []
+        groups[lid].append(c)
+        
+    officer_complaints = [group[0] for group in groups.values()]
     
     total = len(officer_complaints)
     resolved = sum(1 for c in officer_complaints if c.status in ["Resolved", "Closed"])
@@ -2911,10 +2964,34 @@ def get_all_officer_stats(db: Session = Depends(get_db)):
 
     for officer in officers:
         oid = officer.officer_id
-        officer_complaints = db.query(Complaint).filter(
+        primary_comps = db.query(Complaint).filter(
             Complaint.assigned_officer_id == oid,
             Complaint.admissible == True
         ).all()
+        
+        all_secondary = db.query(Complaint).filter(
+            Complaint.admissible == True,
+            Complaint.status == "Assigned",
+            Complaint.secondary_officer_ids != None,
+            Complaint.secondary_officer_ids != "[]"
+        ).all()
+        secondary_comps = [
+            c for c in all_secondary
+            if oid in json.loads(c.secondary_officer_ids or "[]")
+            and c.assigned_officer_id != oid
+        ]
+        
+        officer_complaints_raw = primary_comps + secondary_comps
+        
+        # Group by lead_id to represent duplicate clusters as a single task
+        groups = {}
+        for c in officer_complaints_raw:
+            lid = c.lead_id or c.id
+            if lid not in groups:
+                groups[lid] = []
+            groups[lid].append(c)
+            
+        officer_complaints = [group[0] for group in groups.values()]
 
         total = len(officer_complaints)
         resolved = sum(1 for c in officer_complaints if c.status in ["Resolved", "Closed"])

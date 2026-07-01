@@ -458,7 +458,15 @@ def inject_custom_css():
     }
     
     /* Protect button text colors */
-    .stButton>button p, .stButton>button span {
+    .stButton>button p, .stButton>button span,
+    div[data-testid="stFormSubmitButton"] button p, 
+    div[data-testid="stFormSubmitButton"] button span,
+    div[data-testid="stFormSubmitButton"] button div,
+    div[data-testid="stFormSubmitButton"] button,
+    button[kind="primary"] p,
+    button[kind="primary"] span,
+    button[kind="primaryFormSubmit"] p,
+    button[kind="primaryFormSubmit"] span {
         color: white !important;
     }
     
@@ -1173,6 +1181,13 @@ def render_complaint_expander(complaint, idx, show_actions=True, officer_id_for_
     sla_warning = "[SLA BREACHED]" if sla_breached else f"SLA: {sla_deadline}"
     
     with st.expander(f"Ref: {complaint['id']} | Status: {status.upper()} | Priority: {display_label.upper()} | Category: {complaint['category']} | {sla_warning}", expanded=False):
+        if status == "Escalated":
+            esc_data = get_escalation_history(complaint['id'])
+            esc_list = esc_data.get('escalation_history', [])
+            if esc_list:
+                latest_esc = esc_list[-1]
+                st.error(f"**ESCALATED to {latest_esc['level']}** on {latest_esc['date']}\n\n**Reason:** {latest_esc.get('reason', 'N/A')}")
+                
         st.markdown("**Grievance Description:**")
         st.info(complaint['complaint_text'])
         
@@ -1517,7 +1532,7 @@ def render_notification_center():
 def render_sidebar_header():
     """Renders the sidebar government header"""
     logo_b64 = get_logo_base64()
-    logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 40px; width: auto; margin-bottom: 8px;" alt="Logo">' if logo_b64 else ''
+    logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 70px; width: 70px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.8); object-fit: cover; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);" alt="Logo">' if logo_b64 else ''
     st.sidebar.markdown(f"""<div class="sidebar-gov-header" style="background-color: #0f294a; padding: 12px; border-bottom: 3px solid #ff9933; text-align: center; margin-bottom: 20px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
 {logo_html}
 <h4 class="sidebar-gov-title" style="margin: 0; font-size: 13px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; color: #ffffff !important;">Portal Navigation</h4>
@@ -1597,7 +1612,7 @@ def render_citizen_sidebar_layout():
     """Renders the entire sidebar content for the citizen: header, dashboard nav, profile photo + name nav, and logout at the bottom"""
     # 1. Header (this is render_sidebar_header)
     logo_b64 = get_logo_base64()
-    logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 40px; width: auto; margin-bottom: 8px;" alt="Logo">' if logo_b64 else ''
+    logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 70px; width: 70px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.8); object-fit: cover; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);" alt="Logo">' if logo_b64 else ''
     st.sidebar.markdown(
         f'<div class="sidebar-gov-header" style="background-color: #0f294a; padding: 12px; border-bottom: 3px solid #ff9933; text-align: center; margin-bottom: 20px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center;">'
         f'{logo_html}'
@@ -2119,7 +2134,7 @@ def login_page(target_role):
                 logo_b64 = get_logo_base64()
                 if logo_b64:
                     banner_html = f"""<div class="login-header-banner" style="display: flex; align-items: center; justify-content: center; gap: 15px;">
-<img src="data:image/png;base64,{logo_b64}" style="height: 50px; width: auto; border-radius: 4px;" alt="Sahayak AI Logo">
+<img src="data:image/png;base64,{logo_b64}" style="height: 70px; width: 70px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.8); object-fit: cover; box-shadow: 0 2px 6px rgba(0,0,0,0.3);" alt="Sahayak AI Logo">
 <div style="text-align: left;">
 <h2 style="margin: 0; line-height: 1.1;">SAHAYAK AI</h2>
 <div class="subtitle-role">Citizen Registration Portal</div>
@@ -2170,7 +2185,7 @@ def login_page(target_role):
                 logo_b64 = get_logo_base64()
                 if logo_b64:
                     banner_html = f"""<div class="login-header-banner" style="display: flex; align-items: center; justify-content: center; gap: 15px;">
-<img src="data:image/png;base64,{logo_b64}" style="height: 50px; width: auto; border-radius: 4px;" alt="Sahayak AI Logo">
+<img src="data:image/png;base64,{logo_b64}" style="height: 70px; width: 70px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.8); object-fit: cover; box-shadow: 0 2px 6px rgba(0,0,0,0.3);" alt="Sahayak AI Logo">
 <div style="text-align: left;">
 <h2 style="margin: 0; line-height: 1.1;">SAHAYAK AI</h2>
 <div class="subtitle-role">{role_label} Access Portal</div>
@@ -2451,10 +2466,21 @@ def admin_dashboard(active_tab="Command Center (KPIs)"):
     if active_tab == "Escalation & SLA Queue":
         st.markdown("#### SLA Breaches & Escalated Grievances")
         breached = get_sla_breached()
-        if not breached:
-            st.success("No SLA breaches currently active.")
+        escalated_active = [c for c in complaints if c.get('status') == 'Escalated']
+        
+        # Merge lists and deduplicate to prevent showing the same complaint twice
+        combined_queue = breached + escalated_active
+        seen_ids = set()
+        unique_queue = []
+        for c in combined_queue:
+            if c['id'] not in seen_ids:
+                unique_queue.append(c)
+                seen_ids.add(c['id'])
+                
+        if not unique_queue:
+            st.success("No SLA breaches or escalated complaints currently active.")
         else:
-            for idx, c in enumerate(breached, 1):
+            for idx, c in enumerate(unique_queue, 1):
                 render_complaint_expander(c, idx, True, "ADMIN", True)
                 
     # ── Audit Trail Viewer ──

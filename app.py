@@ -438,8 +438,9 @@ def inject_custom_css():
         color: #2d3748 !important;
     }
     
-    /* Buttons style */
-    .stButton>button {
+    /* Buttons style — applies to both regular and form-submit buttons */
+    .stButton > button,
+    div[data-testid="stFormSubmitButton"] button {
         background-color: #0f294a !important;
         color: white !important;
         border: 1px solid #0f294a !important;
@@ -451,22 +452,16 @@ def inject_custom_css():
         transition: none !important;
     }
     
-    .stButton>button:hover {
+    .stButton > button:hover,
+    div[data-testid="stFormSubmitButton"] button:hover {
         background-color: #1a3d66 !important;
         border-color: #1a3d66 !important;
         color: white !important;
     }
     
-    /* Protect button text colors */
-    .stButton>button p, .stButton>button span,
-    div[data-testid="stFormSubmitButton"] button p, 
-    div[data-testid="stFormSubmitButton"] button span,
-    div[data-testid="stFormSubmitButton"] button div,
-    div[data-testid="stFormSubmitButton"] button,
-    button[kind="primary"] p,
-    button[kind="primary"] span,
-    button[kind="primaryFormSubmit"] p,
-    button[kind="primaryFormSubmit"] span {
+    /* Force white text on all child elements inside every button */
+    .stButton > button *,
+    div[data-testid="stFormSubmitButton"] button * {
         color: white !important;
     }
     

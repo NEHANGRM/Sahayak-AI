@@ -2461,7 +2461,8 @@ def admin_dashboard(active_tab="Command Center (KPIs)"):
     if active_tab == "Escalation & SLA Queue":
         st.markdown("#### SLA Breaches & Escalated Grievances")
         breached = get_sla_breached()
-        escalated_active = [c for c in complaints if c.get('status') == 'Escalated']
+        all_complaints = get_complaints()
+        escalated_active = [c for c in all_complaints if c.get('status') == 'Escalated']
         
         # Merge lists and deduplicate to prevent showing the same complaint twice
         combined_queue = breached + escalated_active

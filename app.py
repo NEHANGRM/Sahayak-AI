@@ -438,36 +438,70 @@ def inject_custom_css():
         color: #2d3748 !important;
     }
     
-    /* Buttons style */
-    .stButton>button {
-        background-color: #0f294a !important;
-        color: white !important;
-        border: 1px solid #0f294a !important;
-        border-radius: 4px !important;
-        padding: 6px 16px !important;
-        font-weight: bold !important;
-        font-size: 14px !important;
-        box-shadow: 0px 1px 3px rgba(0,0,0,0.1) !important;
-        transition: none !important;
-    }
-    
-    .stButton>button:hover {
-        background-color: #1a3d66 !important;
-        border-color: #1a3d66 !important;
-        color: white !important;
-    }
-    
-    /* Protect button text colors */
-    .stButton>button p, .stButton>button span,
-    div[data-testid="stFormSubmitButton"] button p, 
-    div[data-testid="stFormSubmitButton"] button span,
-    div[data-testid="stFormSubmitButton"] button div,
+    /* ── GLOBAL BUTTON STYLING (all variants) ── */
+    /* Standard buttons */
+    .stButton > button,
+    /* Form submit buttons */
+    div[data-testid="stFormSubmitButton"] > button,
     div[data-testid="stFormSubmitButton"] button,
-    button[kind="primary"] p,
-    button[kind="primary"] span,
-    button[kind="primaryFormSubmit"] p,
-    button[kind="primaryFormSubmit"] span {
+    /* Download buttons */
+    div[data-testid="stDownloadButton"] > button,
+    /* Link buttons */
+    div[data-testid="stLinkButton"] > button,
+    /* kind attribute variants */
+    button[kind="primary"],
+    button[kind="secondary"],
+    button[kind="primaryFormSubmit"],
+    button[kind="secondaryFormSubmit"],
+    button[kind="headerNoPadding"],
+    button[kind="minimal"] {
+        background-color: #1a56db !important;
         color: white !important;
+        border: 1px solid #1a56db !important;
+        border-radius: 6px !important;
+        padding: 6px 18px !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        box-shadow: 0 1px 3px rgba(26,86,219,0.25) !important;
+        transition: background-color 0.15s ease, box-shadow 0.15s ease !important;
+    }
+
+    .stButton > button:hover,
+    div[data-testid="stFormSubmitButton"] > button:hover,
+    div[data-testid="stFormSubmitButton"] button:hover,
+    div[data-testid="stDownloadButton"] > button:hover,
+    div[data-testid="stLinkButton"] > button:hover,
+    button[kind="primary"]:hover,
+    button[kind="secondary"]:hover,
+    button[kind="primaryFormSubmit"]:hover,
+    button[kind="secondaryFormSubmit"]:hover {
+        background-color: #1e429f !important;
+        border-color: #1e429f !important;
+        color: white !important;
+        box-shadow: 0 2px 6px rgba(26,86,219,0.40) !important;
+    }
+
+    .stButton > button:active,
+    div[data-testid="stFormSubmitButton"] > button:active,
+    button[kind="primary"]:active,
+    button[kind="secondary"]:active {
+        background-color: #1a3d80 !important;
+        border-color: #1a3d80 !important;
+        color: white !important;
+    }
+
+    /* Force white text on ALL child elements inside any button */
+    .stButton > button *,
+    div[data-testid="stFormSubmitButton"] > button *,
+    div[data-testid="stFormSubmitButton"] button *,
+    div[data-testid="stDownloadButton"] > button *,
+    div[data-testid="stLinkButton"] > button *,
+    button[kind="primary"] *,
+    button[kind="secondary"] *,
+    button[kind="primaryFormSubmit"] *,
+    button[kind="secondaryFormSubmit"] * {
+        color: white !important;
+        fill: white !important;
     }
     
     /* Text inputs */
@@ -1302,7 +1336,7 @@ def render_complaint_expander(complaint, idx, show_actions=True, officer_id_for_
                             except Exception as e:
                                 st.error(f"Failed: {e}")
                     with col_accept_cancel:
-                        if st.form_submit_button("Cancel"):
+                        if st.form_submit_button("Cancel", type="primary"):
                             st.session_state[f"show_accept_{complaint['id']}"] = False
                             st.rerun()
             

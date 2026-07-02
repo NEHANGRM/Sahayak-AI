@@ -1,14 +1,14 @@
 # Sahayak AI - Intelligent NLP-Driven Complaint Triage System
 
-**A Governance-Aware Smart Prioritization and Automated Routing System for Digital Grievance Portal Middleware**
+**A Governance-Aware Smart Prioritization, Automated Routing, and Lifecycle Management System for Digital Grievance Portals**
 
-Sahayak AI is a high-performance NLP middleware prototype designed to solve the critical operational bottleneck of manual complaint processing in public governance. Instead of traditional FIFO (First-In, First-Out) processing, Sahayak AI acts as an intelligent triage Layer, dynamically calculating urgency, extracting assets, detecting duplicates, and routing claims to the relevant government departments in real-time.
+Sahayak AI is a high-performance, intelligent middleware prototype designed to solve the critical operational bottleneck of manual complaint processing in public governance. Instead of traditional FIFO (First-In, First-Out) processing, Sahayak AI acts as an advanced triage layer. It dynamically calculates urgency, extracts infrastructural assets using NER, detects duplicates via FAISS vector search, routes claims to relevant government departments, assigns them to optimal officers based on workload, and enforces strict SLAs—all in real-time.
 
 ---
 
 ## 🏛️ System Architecture & Triage Pipeline
 
-Sahayak AI processes unstructured citizen complaints through a multi-stage NLP and machine learning pipeline, applying governance rules at every stage:
+Sahayak AI processes unstructured citizen complaints through a robust multi-stage NLP and machine learning pipeline, applying governance rules at every stage:
 
 ```mermaid
 graph TD
@@ -25,61 +25,55 @@ graph TD
     end
     
     E & F & G & H & I --> J[Governance-Aware Priority Engine]
-    J --> K[XAI Reasoning Generator]
-    J --> L[Departmental Routing Board]
+    J --> K[LLM Governance Review]
+    K --> L[Smart Departmental Routing & Officer Assignment]
     
     L --> M[Officer Queue Dashboard]
-    K --> M
-    M --> N[Officer Feedback Override Loop]
+    M --> N[SLA Monitoring & Auto-Escalation]
+    M --> O[Officer Feedback Override Loop]
 ```
 
 ### 1. Admissibility Filter
 The first line of defense. The system intercepts and filters out complaints that do not fall under the portal's jurisdiction:
-* **Prohibited Domains**: RTI (Right to Information) requests, Subjudice/Court disputes, Domestic/Family conflicts, Religious matters, Government Employee Service matters (promotions/transfers), and National Integrity/Security affairs.
+* **Prohibited Domains**: RTI (Right to Information) requests, Subjudice/Court disputes, Domestic/Family conflicts, Religious matters, Government Employee Service matters, and National Security affairs.
 * **Mechanism**: A fast keyword-interceptor checks for explicit violations, followed by a trained **Logistic Regression classifier** predicting the category based on **SentenceTransformer** embeddings. Non-admissible complaints are immediately rejected with clear policy citations.
 
-### 2. Category Classification & Automated Departmental Routing
-Admissible complaints are classified into 9 administrative categories using a **Logistic Regression classifier** and automatically routed to the corresponding department:
-* **Health** $\rightarrow$ Health Department
-* **Public Safety** $\rightarrow$ Police & Disaster Response
-* **Corruption** $\rightarrow$ Vigilance Bureau
-* **Transport** $\rightarrow$ Transport & Traffic Authority
-* **Electricity** $\rightarrow$ Electricity Utilities Board
-* **Roads** $\rightarrow$ Public Works Department (PWD)
-* **Education** $\rightarrow$ Education Department
-* **Water** $\rightarrow$ Water & Sewerage Board
-* **Sanitation** $\rightarrow$ Municipal Sanitation Department
-* **Other** $\rightarrow$ General Administration Department
+### 2. Category Classification & Smart Routing
+Admissible complaints are classified into administrative categories (Health, Public Safety, Corruption, Transport, Electricity, Roads, Education, Water, Sanitation, Other) using a **Logistic Regression classifier**. 
+* **Secondary Departments**: Detects if a complaint overlaps with multiple departments.
+* **Smart Officer Assignment**: Automatically assigns the complaint to a specific Level-1 (L1) officer within the target department based on:
+  - **Location Matching**: Matches extracted Zones and Wards to the officer's jurisdiction.
+  - **Workload Balancing**: Avoids officers with $\ge$ 10 active complaints. Tie-breaks using the lowest active workload.
 
 ### 3. Named Entity Recognition (NER) & Asset Extraction
 Powered by **spaCy** (`en_core_web_sm`) and custom regex matchers, the system extracts critical metadata:
-* **Locations**: Identifies cities, neighborhoods, and Indian location suffixes (e.g., *Nagar, Pur, Ganj, Colony, Vihar, Sector, Phase*).
-* **Primary Infrastructure Assets**: Identifies specific facilities affected, such as *Hospitals, Schools, Bridges, Flyovers, Roads, and Government Offices*.
+* **Locations**: Identifies cities, neighborhoods, and Indian location suffixes (e.g., *Nagar, Pur, Colony, Sector*).
+* **Primary Infrastructure Assets**: Identifies specific facilities affected, such as *Hospitals, Schools, Bridges, Flyovers, and Government Offices*.
+
+### 4. FAISS Vector Duplicate Detection & RAG
+Utilizes **SentenceTransformers** (`all-MiniLM-L6-v2`) and **FAISS** (`IndexFlatIP`) for dense vector retrieval. 
+* Prevents spam by grouping semantically identical complaints occurring in the same geographic area.
+* Empowers officers with RAG (Retrieval-Augmented Generation) context by surfacing historically similar complaints and their resolution trajectories.
+
+### 5. LLM Governance Review
+Integrates with the **Groq API** to provide an advanced, secondary assessment. The LLM reviews the AI-generated priority and can dynamically adjust the final priority score based on nuanced public safety, infrastructure, and vulnerable population risk summaries.
 
 ---
 
 ## ⚖️ The 5-Factor Triage & Prioritization Logic
 
-The core of Sahayak AI is its **Governance-Aware Priority Engine**. Instead of simple keyword counts, it computes a weighted priority index based on 5 dimensional scores $[0.00 - 1.00]$:
+The core of Sahayak AI is its **Governance-Aware Priority Engine**, which computes a weighted priority index based on 5 dimensional scores $[0.00 - 1.00]$:
 
 $$\text{Priority Score} = 0.30 \times \text{Severity} + 0.25 \times \text{Public Impact} + 0.20 \times \text{Urgency} + 0.15 \times \text{Vulnerability} + 0.10 \times \text{Duplicate Escalation}$$
 
 ### The 5 Triage Dimensions
-1. **Severity (30% Weight)**: 
-   * Calculated via a **Hybrid ML + Governance Heuristic Engine**. 
-   * Combines an ML regressor (**RandomForestRegressor** trained on SentenceTransformer embeddings - **20% weight**) with deterministic governance heuristics (**80% weight**).
-   * This guarantees that hard governance anchors are respected (e.g., minor streetlights always resolve to *Low* severity) while maintaining semantic flexibility for novel formulations.
-2. **Public Impact (25% Weight)**:
-   * Estimates the scale of disruption based on category scope, infrastructure proximity, and compound hazard conditions (e.g., a flash flood occurring near a hospital scales public impact to a maximum score of `0.90`).
-3. **Urgency (20% Weight)**:
-   * Adjusts the speed of response required. Factors in category baseline speed, emergency exclamation keywords (*ASAP, urgent, fatal, danger*), and proximity to critical installations.
-4. **Vulnerability (15% Weight)**:
-   * Scores the threat to vulnerable populations (hospitals, schools, senior citizen homes, emergency services) and high-severity hazard events (gas leaks, short circuits, fires).
-5. **Duplicate Escalation (10% Weight)**:
-   * Prevents system spam while leveraging public sentiment. Using **TF-IDF + Cosine Similarity** (threshold 0.70), similar complaints are clustered. The duplicate escalation score scales up dynamically with the frequency of duplicate reports (`1 report = 0.30`, `2 reports = 0.60`, `3 reports = 0.85`, `4+ reports = 1.00`) to highlight recurring hotspots.
+1. **Severity (30%)**: Calculated via a Hybrid ML + Governance Heuristic Engine. Combines a **Random Forest Regressor** trained on SentenceTransformer embeddings with deterministic governance heuristics.
+2. **Public Impact (25%)**: Estimates the scale of disruption based on category scope, infrastructure proximity, and compound hazard conditions (e.g., a flash flood occurring near a hospital).
+3. **Urgency (20%)**: Factors in category baseline speed, emergency exclamation keywords (*ASAP, urgent, fatal*), and specific hazard triggers.
+4. **Vulnerability (15%)**: Scores the threat to vulnerable populations (hospitals, schools) and high-severity hazard events (gas leaks, fires).
+5. **Duplicate Escalation (10%)**: Uses FAISS similarity. Scales dynamically with the frequency of duplicate reports (`1 report = 0.30`, `2 reports = 0.60`, `4+ = 1.00`) to highlight recurring civic hotspots.
 
 ### Priority Classifications
-The final score is mapped directly to standard administrative action levels:
 * **🚨 Critical**: $[0.75 - 1.00]$ — Immediate dispatch / life-safety risk
 * **🔴 High**: $[0.50 - 0.749]$ — Urgent attention / major infrastructure failure
 * **🟡 Medium**: $[0.30 - 0.499]$ — Scheduled repair / standard civic grievance
@@ -87,119 +81,105 @@ The final score is mapped directly to standard administrative action levels:
 
 ---
 
-## 🏛️ Government Portal UI Overhaul
+## 🖥️ Role-Based Portals & UI Features
 
-The interface has been redesigned to reflect a formal, secure, high-contrast **Government Middleware Administration Portal**:
+Built with **Streamlit** (Frontend) and **FastAPI** (Backend) using **SQLAlchemy** (SQLite/PostgreSQL), Sahayak AI supports robust role-based access control with JWT/session authentication.
 
-1. **National Grievance Banner**: A dark-navy header block (`#0F294A`) bordered with saffron and green national stripes, providing a formal branding environment.
-2. **Registry Stats & Formula Sidebar**: A clean sidebar displaying active middleware registry stats (logs processed, active queue length, officer overrides) alongside the mathematical priority formula for complete developer transparency.
-3. **Triage Metrics Matrix Table**: When a citizen submits a complaint, the portal avoids basic summaries and displays a detailed evaluation grid. The matrix table shows base scores, weights, contributions, and the rationales behind each dimension.
-4. **Official Triage Certificate Stamp**: Replaces consumer-style badges with a bordered, styled certificate stamp displaying the final priority rating and a clean **Explainable AI (XAI)** justification.
-5. **Color-Coded Officer Queue**: Under the Officer Dashboard, active complaints are organized dynamically inside card layouts styled with high-contrast borders and indicators to ensure readability:
-   * **Critical & High Priority**: Light red background (`#fff5f5`), solid pink border (`#feb2b2`), bold red headers (`#9b2c2c`), and a solid red accent indicator.
-   * **Medium Priority**: Light yellow background (`#fefbeb`), gold border (`#fef3c7`), bold gold headers (`#b45309`), and a solid orange accent indicator.
-   * **Low Priority**: Clean white background (`#ffffff`), light border (`#e2e8f0`), dark-gray headers, and a solid gray accent indicator.
-6. **Officer Override & Feedback Loop**: Officers can manually override the AI-predicted priority. Any override triggers a mandatory text reason field, which is saved to the local database and can be exported as a CSV to retrain the models.
+### 1. Citizen Portal
+* Submit detailed grievances.
+* View dynamic tracking timelines detailing exactly *why* a priority was assigned, including XAI (Explainable AI) transparency breakdowns.
 
----
+### 2. Officer Dashboard
+* **Color-Coded Queue**: High-contrast, accessibility-focused cards highlight Critical (Red), High (Orange), Medium (Yellow), and Low (Green) priority complaints.
+* **SLA Monitoring & Action Engine**: Accept, Resolve, or Escalate complaints. Tracks SLAs tightly, recording breached deadlines.
+* **Feedback Loop**: Officers can manually override the AI predicted priority. Mandatory reasoning is captured to retrain the models in future iterations.
 
-## 🔧 Technical Dependencies & Cloud Deployment Workarounds
-
-Building and deploying NLP applications with PyTorch and spaCy on resource-constrained cloud environments (such as Streamlit Community Cloud) poses unique challenges. Sahayak AI incorporates robust, production-grade solutions for these issues:
-
-### 1. Strict NumPy Compatibility Pinned
-* **Problem**: Newer versions of NumPy (`>=2.0.0`) introduce binary incompatibility with legacy pre-compiled libraries used by `spaCy` and its underlying tensor package `thinc`, causing immediate runtime crashes on Linux servers. Additionally, scikit-learn models pickled on NumPy 2.x will crash on load if the server runs NumPy 1.x.
-* **Solution**: Handled by restricting dependencies to `numpy>=1.24.0,<2.0.0` (pinned to `1.26.4`) in `requirements.txt`. All local model retraining must be conducted in this environment.
-
-### 2. Device-Agnostic Model Serialization (MPS/CUDA Fix)
-* **Problem**: Training and saving models on a macOS device with Apple Silicon utilizes the metal performance shaders (`mps` device) inside PyTorch. If the active `SentenceTransformer` object is pickled directly, it serializes Mac-specific device states. When deployed to a CPU-only Linux server (Streamlit Cloud), loading this model fails with a `RuntimeError` claiming the MPS device is not available. It also inflates the git repository size by saving 91MB of model weights.
-* **Solution**: Implemented custom `__getstate__` and `__setstate__` methods in the `SentenceTransformerWrapper` class (`utils.py`). This prevents pickling the active PyTorch model weights. Only the configuration string (`model_name`) is serialized. When loaded, the model lazily initializes on whatever hardware is available (CPU, CUDA, or MPS), reducing the vectorizer file size from **91.4 MB** to **90 bytes** and making deployment instant.
-
-### 3. Automated spaCy Model Fetching
-* **Problem**: Streamlit Community Cloud runs headlessly and does not allow execution of manual setup commands like `python -m spacy download en_core_web_sm`.
-* **Solution**: The required spaCy English pipeline wheel is linked directly inside `requirements.txt` via its GitHub release page, allowing the package manager to download and compile it automatically during build.
-
-### 4. Lazy-Load Dependency Crashing (torchvision ModuleNotFoundError Fix)
-* **Problem**: When deploying on Streamlit Cloud (using Python 3.14), Streamlit's internal `local_sources_watcher` scans all imported package modules to find their path. When it encounters a lazy-loaded module structure inside Hugging Face `transformers` (used by `sentence-transformers`), accessing its namespace triggers lazy-loading checks. One of the models (ZoeDepth) attempts to dynamically import `torchvision`, which throws `ModuleNotFoundError: No module named 'torchvision'` and crashes the app daemon startup.
-* **Solution**: 
-  1. Disabled the file system watcher by setting `fileWatcherType = "none"` under the `[server]` block in `.streamlit/config.toml`. This is highly recommended for production environments as it saves server resources.
-  2. Added `torchvision` directly to `requirements.txt` to satisfy any lazy imports if the watcher is triggered elsewhere.
+### 3. Admin & Commissioner Dashboard
+* View system-wide analytics, officer workloads, and priority distribution graphs.
+* Monitor escalated complaints, review officer feedback/overrides, and export data.
 
 ---
 
+## 🔧 Technical Dependencies & Cloud Deployment Fixes
+
+Building and deploying NLP applications on resource-constrained environments poses unique challenges. Sahayak AI incorporates production-grade workarounds:
+
+* **Strict NumPy Compatibility**: Restricted to `numpy==1.26.4` to prevent binary incompatibility crashes with `spaCy`/`thinc` introduced in NumPy 2.0+.
+* **Device-Agnostic Model Serialization**: Implemented custom `__getstate__` methods in the `SentenceTransformerWrapper` to prevent pickling Apple Silicon (`mps`) or CUDA device states. This drops the vectorizer payload size from **91.4 MB** to just **90 bytes**, allowing seamless cross-platform deployment.
+* **Automated spaCy Fetching**: The `en_core_web_sm` wheel is directly linked in `requirements-backend.txt` for headless environment builds.
+
+---
 
 ## 🚀 Quick Start Guide
 
 ### Prerequisites
-* Python 3.8 to 3.11
+* Python 3.9 - 3.11
 * Pip package manager
 
-### 1. Setup Environment & Install Dependencies
-Navigate to your project directory and configure a virtual environment:
+### 1. Setup Environment
 ```bash
-# Create virtual environment
-python -m venv .venv
-
-# Activate virtual environment
+# Create and activate virtual environment
+python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Install dependencies
+# Install dependencies for both frontend and backend
 pip install -r requirements.txt
+pip install -r requirements-backend.txt
 ```
 
 ### 2. Train the ML Models
-Execute the training script to load the training dataset, train the classifiers, and save the pickle stores:
+Train the classifiers and save the `.pkl` stores (only required if models are missing or dataset is updated):
 ```bash
 python model_training.py
 ```
-This script will:
-1. Load `ai_priority_training_dataset.csv`.
-2. Generate target severities using governance rules.
-3. Fetch and extract sentence embeddings.
-4. Train the Category Classifier, Priority Classifier, and Severity Regressor.
-5. Export `tfidf_vectorizer.pkl`, `category_classifier.pkl`, `priority_classifier.pkl`, and `severity_model.pkl`.
 
-### 3. Run the Portal Locally
-Launch the Streamlit web server:
-```bash
-streamlit run app.py
-```
-Or execute the automated automation script:
+### 3. Run the Application
+Launch both the FastAPI backend and Streamlit frontend. The provided startup script automates this:
 ```bash
 bash start.sh
 ```
-Navigate to `http://localhost:8501` to access the portal.
+Alternatively, run them manually:
+```bash
+# Terminal 1: Start FastAPI Backend
+uvicorn api:app --port 8000 --host 0.0.0.0
+
+# Terminal 2: Start Streamlit Frontend
+streamlit run app.py
+```
+* **Streamlit Portal**: `http://localhost:8501`
+* **FastAPI Docs**: `http://localhost:8000/docs`
 
 ---
 
 ## 📁 Directory Structure
 ```
 Sahayak-AI/
-├── app.py                           # Main portal app with Government UI & CSS styling
-├── utils.py                         # Core NLP utility libraries (NER, Priority Engines)
+├── app.py                           # Streamlit UI & Role-Based Dashboards
+├── api.py                           # FastAPI Backend, ORM Models, & API Endpoints
+├── utils.py                         # Core NLP, Priority Engines, FAISS RAG, Groq LLM logic
 ├── model_training.py                # ML Model training script & synthetic generator
 ├── data_generator.py                # Synthesizer script for training data
 ├── start.sh                         # Automated installation and launch script
-├── requirements.txt                 # Pinned dependencies & spaCy wheel url
-├── .streamlit/
-│   └── config.toml                  # Streamlit configuration forcing Light Mode
-├── ai_priority_training_dataset.csv # Base dataset containing 1000 complaints
-├── tfidf_vectorizer.pkl            # Serialized lazy-loading SentenceTransformer wrapper (90 bytes)
-├── category_classifier.pkl         # Trained Category Classifier
-├── priority_classifier.pkl         # Trained Priority Classifier
-└── severity_model.pkl              # Trained Severity Regressor (Random Forest)
+├── requirements.txt                 # Frontend dependencies
+├── requirements-backend.txt         # Backend and ML dependencies
+├── .streamlit/config.toml           # Streamlit UI Configuration
+├── ai_priority_training_dataset.csv # Base dataset for model training
+├── tfidf_vectorizer.pkl             # Serialized lazy-loading SentenceTransformer wrapper
+├── category_classifier.pkl          # Trained Logistic Regression Category Classifier
+├── priority_classifier.pkl          # Trained Logistic Regression Priority Classifier
+└── severity_model.pkl               # Trained Random Forest Severity Regressor
 ```
 
 ---
 
 ## 🧪 Demonstration Test Cases (Jury Walkthrough)
 
-To demonstrate the full capability of the triage engines, try submitting these scenarios in the **Citizen Portal** and inspect the **Officer Dashboard**:
+To demonstrate the triage engine's capabilities, submit these scenarios via the **Citizen Portal** and inspect the evaluation matrix:
 
 ### 1. Low Severity Grievance (Streetlight Issue)
-* **Input Text**: `"Street lights are broken and damaged in Anna Nagar Area, Madurai. People suffer a lot while passing through the street especially kids and women. Kindly consider."`
+* **Input Text**: `"Street lights are broken and damaged in Anna Nagar Area, Madurai."`
 * **Expected Result**: **🟢 Low Priority** (~0.21)
-* **Why**: The hybrid engine flags this as an electricity issue. The heuristic severity model overrides the base score to ensure standard streetlights are resolved as low severity.
+* **Why**: The hybrid engine flags this as an electricity issue. The heuristic severity model overrides the base score to ensure standard streetlights resolve as low severity.
 
 ### 2. Critical Public Safety Grievance (Gas Leak near School)
 * **Input Text**: `"A dangerous gas leak has been detected near government primary school in Chennai. Students are experiencing breathing issues. Send immediate help."`
@@ -212,11 +192,10 @@ To demonstrate the full capability of the triage engines, try submitting these s
 * **Why**: The system triggers a compound modifier for flooding + hospital proximity, assigning maximum public impact and vulnerability boosts.
 
 ### 4. Duplicate Escalation Sequence
-1. Submit this complaint once: `"Pothole on MG Road causing minor traffic delays."` $\rightarrow$ Priority: **Low** or **Medium** (Duplicate Escalation = `0.00`).
+1. Submit: `"Pothole on MG Road causing minor traffic delays."` (Priority: **Low/Medium**).
 2. Submit the exact same complaint a second time.
-3. Submit the same complaint a third time.
-4. Go to the **Officer Dashboard**. You will observe that the Duplicate Escalation score has scaled up to `0.85+`, pushing the final priority level to **High** or **Critical** due to the volume of public reports.
+3. Submit the exact same complaint a third time.
+4. Go to the **Officer Dashboard**. You will observe that FAISS matched the texts, and the Duplicate Escalation score has dynamically scaled up to `0.85+`, pushing the final priority level to **High** or **Critical** due to the high volume of public reports.
 
 ---
-
-**Built for enhanced public governance through Explainable AI**
+**Built for enhanced public governance through Explainable AI.**
